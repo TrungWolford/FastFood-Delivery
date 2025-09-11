@@ -13,4 +13,5 @@ public class UpdateUserRequest {
     private String phone;
     private String adress;
     private List<Role> role;
+    private int status;
 }

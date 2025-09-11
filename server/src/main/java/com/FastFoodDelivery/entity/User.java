@@ -19,7 +19,7 @@ public class User {
     private String email;
     private String phone;
     private String address;
-
     private List<Role> roleId;
     private Date createdAt;
+    private int status; // 0: Khoa, 1: Dang hoat dong
 }

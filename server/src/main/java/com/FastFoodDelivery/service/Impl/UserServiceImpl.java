@@ -42,6 +42,7 @@ public class UserServiceImpl implements UserService {
         user.setAddress(request.getAddress());
         user.setRoleId(request.getRole());
         user.setCreatedAt(request.getCreatedAt());
+        user.setStatus(1);
 
         userRepository.save(user);
 
@@ -59,6 +60,7 @@ public class UserServiceImpl implements UserService {
         existingUser.setPhone(request.getPhone());
         existingUser.setAddress(request.getAdress());
         existingUser.setRoleId(request.getRole());
+        existingUser.setStatus(request.getStatus());
 
         userRepository.save(existingUser);
 
@@ -66,12 +68,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<UserResponse> filterByUserRole(String roleId) {
-        return null;
+    public Page<UserResponse> filterByUserRole(Pageable pageable, String roleId) {
+        return userRepository.findByRoleId(pageable, roleId)
+                .map(UserResponse::fromEntity);
     }
 
     @Override
-    public void changeStatus() {
+    public void changeStatus(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        int status = user.getStatus();
+        if (status == 1){
+            user.setStatus(0);
+        } else if (status == 0) {
+            user.setStatus(1);
+        }
 
+        userRepository.save(user);
     }
 }

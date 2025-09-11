@@ -17,9 +17,9 @@ public interface UserService {
 
     public UserResponse updateUser(UpdateUserRequest request, String userId);
 
-    public Page<UserResponse> filterByUserRole(String roleId);
+    public Page<UserResponse> filterByUserRole(Pageable pageable, String roleId);
 
     // This method delete user
-    public void changeStatus();
+    public void changeStatus(String userId);
 
 }

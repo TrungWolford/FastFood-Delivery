@@ -21,6 +21,7 @@ public class UserResponse {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private Date createdAt;
+    int status;
 
     public static UserResponse fromEntity(User user){
         UserResponse response = new UserResponse();
@@ -30,8 +31,9 @@ public class UserResponse {
         response.setEmail(user.getEmail());
         response.setPhone(user.getPhone());
         response.setAddress(user.getAddress());
-        response.setRole(user.getRole());
+        response.setRole(user.getRoleId());
         response.setCreatedAt(user.getCreatedAt());
+        response.setStatus(user.getStatus());
 
         return response;
     }
