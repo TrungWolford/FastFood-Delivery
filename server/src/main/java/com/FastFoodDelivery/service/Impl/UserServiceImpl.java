@@ -40,7 +40,7 @@ public class UserServiceImpl implements UserService {
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setAddress(request.getAddress());
-        user.setRole(request.getRole());
+        user.setRoleId(request.getRole());
         user.setCreatedAt(request.getCreatedAt());
 
         userRepository.save(user);
@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
         existingUser.setEmail(request.getEmail());
         existingUser.setPhone(request.getPhone());
         existingUser.setAddress(request.getAdress());
-        existingUser.setRole(request.getRole());
+        existingUser.setRoleId(request.getRole());
 
         userRepository.save(existingUser);
 

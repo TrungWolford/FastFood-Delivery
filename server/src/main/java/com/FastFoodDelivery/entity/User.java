@@ -20,7 +20,6 @@ public class User {
     private String phone;
     private String address;
 
-    @DBRef // Reference to Collection Role
-    private List<Role> role;
+    private List<Role> roleId;
     private Date createdAt;
 }
