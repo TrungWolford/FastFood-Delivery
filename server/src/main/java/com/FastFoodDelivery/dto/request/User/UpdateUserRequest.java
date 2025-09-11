@@ -12,5 +12,5 @@ public class UpdateUserRequest {
     private String email;
     private String phone;
     private String adress;
-    private List<Role> roleId;
+    private List<Role> role;
 }
