@@ -1,6 +1,6 @@
 package com.FastFoodDelivery.entity;
 
-import jakarta.persistence.Id;
+import org.springframework.data.annotation.Id;
 import lombok.Data;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;

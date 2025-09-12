@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends MongoRepository<User, String> {
-    Page<User> findAllUser(Pageable pageable);
+    Page<User> findAll(Pageable pageable);
 
     Page<User> findByRoleId(Pageable pageable, String roleId);
 }

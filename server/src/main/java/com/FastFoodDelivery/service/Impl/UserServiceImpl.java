@@ -20,7 +20,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Page<UserResponse> getAllUser(Pageable pageable) {
-        return userRepository.findAllUser(pageable)
+        return userRepository.findAll(pageable)
                 .map(UserResponse::fromEntity);
     }
 
