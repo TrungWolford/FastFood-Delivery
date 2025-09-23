@@ -36,7 +36,7 @@ public class UserController {
         return ResponseEntity.ok(userService.createUser(request));
     }
 
-    @PutMapping("{userId}")
+    @PutMapping("/{userId}")
     public ResponseEntity<UserResponse> updateUser(@RequestBody @Valid UpdateUserRequest request,
                                                    @PathVariable String userId){
         return ResponseEntity.ok(userService.updateUser(request, userId));
@@ -51,7 +51,7 @@ public class UserController {
         return ResponseEntity.ok(userService.filterByUserRole(pageable, roleId));
     }
 
-    @PatchMapping("/{userId")
+    @PatchMapping("/{userId}")
     public ResponseEntity<String> changeStatus(@PathVariable String userId){
         userService.changeStatus(userId);
         return ResponseEntity.ok("Thay đổi trạng thái thành công");
