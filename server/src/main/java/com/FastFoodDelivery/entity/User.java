@@ -1,4 +1,4 @@
-package com.FastFoodDelivery.entity;
+﻿package com.FastFoodDelivery.entity;
 
 import org.springframework.data.annotation.Id;
 import lombok.Data;
@@ -11,7 +11,7 @@ import java.util.Date;
 @Data
 public class User {
     @Id
-    private String userID;
+    private ObjectId userID;
     private String fullname;
     private String password;
     private String email;

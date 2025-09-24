@@ -4,6 +4,7 @@ import com.FastFoodDelivery.dto.request.Role.CreateRoleRequest;
 import com.FastFoodDelivery.dto.response.Role.RoleResponse;
 import com.FastFoodDelivery.service.RoleService;
 import jakarta.validation.Valid;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +24,8 @@ public class RoleController {
 
     @GetMapping("/{roleId}")
     public ResponseEntity<RoleResponse> getByRoleId(@PathVariable String roleId){
-        return ResponseEntity.ok(roleService.getByRoleID(roleId));
+        ObjectId objectId = new ObjectId(roleId);
+        return ResponseEntity.ok(roleService.getByRoleID(objectId));
     }
 
     @PostMapping()

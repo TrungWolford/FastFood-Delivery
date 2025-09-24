@@ -15,8 +15,8 @@ import java.util.UUID;
 public class Cart {
     @Id
     private ObjectId cartId;
-    private Object userId;
-    private Object restaurantId;
+    private ObjectId userId;
+    private ObjectId restaurantId;
     private List<CartItem> cartItems;
     private Date createdAt;
     private Date updatedAt;

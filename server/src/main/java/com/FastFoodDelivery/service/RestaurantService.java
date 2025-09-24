@@ -14,9 +14,9 @@ import java.util.Optional;
 public interface RestaurantService {
     List<RestaurantResponse> getAllRestaurants();
     Page<RestaurantResponse> getAllRestaurants(Pageable pageable);
-    RestaurantResponse getRestaurantById(String restaurantId);
+    RestaurantResponse getRestaurantById(ObjectId restaurantId);
     List<RestaurantResponse> getRestaurantsByOwnerId(ObjectId ownerId);
     RestaurantResponse createRestaurant(CreateRestaurantRequest request);
-    RestaurantResponse updateRestaurant(UpdateRestaurantRequest request, String restaurantId);
-    void deleteRestaurant(String restaurantId);
+    RestaurantResponse updateRestaurant(UpdateRestaurantRequest request, ObjectId restaurantId);
+    void deleteRestaurant(ObjectId restaurantId);
 }

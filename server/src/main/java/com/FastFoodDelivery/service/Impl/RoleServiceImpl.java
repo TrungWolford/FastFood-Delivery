@@ -6,6 +6,7 @@ import com.FastFoodDelivery.entity.Role;
 import com.FastFoodDelivery.exception.ResourceNotFoundException;
 import com.FastFoodDelivery.repository.RoleRepository;
 import com.FastFoodDelivery.service.RoleService;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +26,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public RoleResponse getByRoleID(String roleID) {
+    public RoleResponse getByRoleID(ObjectId roleID) {
         Role role = roleRepository.findById(roleID)
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "id", roleID));
         return RoleResponse.fromEntity(role);

@@ -29,7 +29,8 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> getByUserId(@PathVariable String userId){
-        return ResponseEntity.ok(userService.getByUserId(userId));
+        ObjectId objectId = new ObjectId(userId);
+        return ResponseEntity.ok(userService.getByUserId(objectId));
     }
 
     @PostMapping
@@ -40,7 +41,8 @@ public class UserController {
     @PutMapping("/{userId}")
     public ResponseEntity<UserResponse> updateUser(@RequestBody @Valid UpdateUserRequest request,
                                                    @PathVariable String userId){
-        return ResponseEntity.ok(userService.updateUser(request, userId));
+        ObjectId objectId = new ObjectId(userId);
+        return ResponseEntity.ok(userService.updateUser(request, objectId));
     }
 
     @GetMapping("/filter-role/{roleId}")
@@ -55,7 +57,8 @@ public class UserController {
 
     @PatchMapping("/{userId}")
     public ResponseEntity<String> changeStatus(@PathVariable String userId){
-        userService.changeStatus(userId);
+        ObjectId objectId = new ObjectId(userId);
+        userService.changeStatus(objectId);
         return ResponseEntity.ok("Thay đổi trạng thái thành công");
     }
 }

@@ -1,4 +1,4 @@
-package com.FastFoodDelivery.service.Impl;
+﻿package com.FastFoodDelivery.service.Impl;
 
 import com.FastFoodDelivery.dto.request.User.CreateUserRequest;
 import com.FastFoodDelivery.dto.request.User.UpdateUserRequest;
@@ -26,9 +26,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse getByUserId(String userId) {
+    public UserResponse getByUserId(ObjectId userId) {
         User user =  userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
 
         return UserResponse.fromEntity(user);
     }
@@ -51,9 +51,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse updateUser(UpdateUserRequest request, String userId) {
+    public UserResponse updateUser(UpdateUserRequest request, ObjectId userId) {
         User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
 
         existingUser.setFullname(request.getFullname());
         existingUser.setPassword(request.getPassword());
@@ -75,9 +75,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void changeStatus(String userId) {
+    public void changeStatus(ObjectId userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
         int status = user.getStatus();
         if (status == 1){
             user.setStatus(0);

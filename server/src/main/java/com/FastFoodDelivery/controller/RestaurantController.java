@@ -34,7 +34,8 @@ public class RestaurantController {
 
     @GetMapping("/{restaurantId}")
     public ResponseEntity<RestaurantResponse> getRestaurantById(@PathVariable String restaurantId) {
-        RestaurantResponse restaurant = restaurantService.getRestaurantById(restaurantId);
+        ObjectId objectId = new ObjectId(restaurantId);
+        RestaurantResponse restaurant = restaurantService.getRestaurantById(objectId);
         return ResponseEntity.ok(restaurant);
     }
 
@@ -54,13 +55,15 @@ public class RestaurantController {
     @PutMapping("/{restaurantId}")
     public ResponseEntity<RestaurantResponse> updateRestaurant(@RequestBody UpdateRestaurantRequest request,
                                                       @PathVariable String restaurantId) {
-        RestaurantResponse updatedRestaurant = restaurantService.updateRestaurant(request, restaurantId);
+        ObjectId objectId = new ObjectId(restaurantId);
+        RestaurantResponse updatedRestaurant = restaurantService.updateRestaurant(request, objectId);
         return ResponseEntity.ok(updatedRestaurant);
     }
 
     @DeleteMapping("/{restaurantId}")
     public ResponseEntity<String> deleteRestaurant(@PathVariable String restaurantId) {
-        restaurantService.deleteRestaurant(restaurantId);
+        ObjectId objectId = new ObjectId(restaurantId);
+        restaurantService.deleteRestaurant(objectId);
         return ResponseEntity.ok("Restaurant deleted successfully");
     }
 }

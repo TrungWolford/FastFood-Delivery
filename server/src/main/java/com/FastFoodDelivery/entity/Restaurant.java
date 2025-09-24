@@ -1,4 +1,4 @@
-package com.FastFoodDelivery.entity;
+﻿package com.FastFoodDelivery.entity;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -11,7 +11,7 @@ import java.util.Date;
 @Data
 public class Restaurant {
     @Id
-    private String restaurantId;
+    private ObjectId restaurantId;
     private ObjectId ownerId;
     private String restaurantName;
     private String address;

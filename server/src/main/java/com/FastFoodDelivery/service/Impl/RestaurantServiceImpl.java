@@ -40,9 +40,9 @@ public class RestaurantServiceImpl implements RestaurantService {
     }
 
     @Override
-    public RestaurantResponse getRestaurantById(String restaurantId) {
+    public RestaurantResponse getRestaurantById(ObjectId restaurantId) {
         Restaurant restaurant =  restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant", "id", restaurantId));
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant", "id", restaurantId.toString()));
 
         return RestaurantResponse.fromEntity(restaurant);
     }
@@ -71,9 +71,9 @@ public class RestaurantServiceImpl implements RestaurantService {
     }
 
     @Override
-    public RestaurantResponse updateRestaurant(UpdateRestaurantRequest request, String restaurantId) {
+    public RestaurantResponse updateRestaurant(UpdateRestaurantRequest request, ObjectId restaurantId) {
         Restaurant restaurant =  restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant", "id", restaurantId));
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant", "id", restaurantId.toString()));
 
         restaurant.setRestaurantName(request.getRestaurantName());
         restaurant.setAddress(request.getAddress());
@@ -87,7 +87,7 @@ public class RestaurantServiceImpl implements RestaurantService {
     }
 
     @Override
-    public void deleteRestaurant(String restaurantId) {
+    public void deleteRestaurant(ObjectId restaurantId) {
         restaurantRepository.deleteById(restaurantId);
     }
 }

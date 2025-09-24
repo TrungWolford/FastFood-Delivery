@@ -8,6 +8,6 @@ import org.bson.types.ObjectId;
 import java.util.List;
 
 @Repository
-public interface RestaurantRepository extends MongoRepository<Restaurant, String> {
+public interface RestaurantRepository extends MongoRepository<Restaurant, ObjectId> {
     List<Restaurant> findByOwnerId(ObjectId ownerId);
 }

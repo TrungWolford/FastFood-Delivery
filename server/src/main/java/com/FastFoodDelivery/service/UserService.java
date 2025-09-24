@@ -9,9 +9,9 @@ import org.bson.types.ObjectId;
 
 public interface UserService {
     Page<UserResponse> getAllUser(Pageable pageable);
-    UserResponse getByUserId(String userId);
+    UserResponse getByUserId(ObjectId userId);
     UserResponse createUser(CreateUserRequest request);
-    UserResponse updateUser(UpdateUserRequest request, String userId);
+    UserResponse updateUser(UpdateUserRequest request, ObjectId userId);
     Page<UserResponse> filterByUserRole(Pageable pageable, ObjectId roleId);
-    void changeStatus(String userId);
+    void changeStatus(ObjectId userId);
 }
