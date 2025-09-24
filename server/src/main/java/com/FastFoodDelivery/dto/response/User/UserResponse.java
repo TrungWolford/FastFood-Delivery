@@ -15,7 +15,7 @@ public class UserResponse {
     private String email;
     private String phone;
     private String address;
-    private ObjectId roleId;
+    private String roleId;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private Date createdAt;
@@ -23,13 +23,13 @@ public class UserResponse {
 
     public static UserResponse fromEntity(User user){
         UserResponse response = new UserResponse();
-        response.setUserID(user.getUserID());
+        response.setUserID(user.getUserID().toString());
         response.setFullname(user.getFullname());
         response.setPassword(user.getPassword());
         response.setEmail(user.getEmail());
         response.setPhone(user.getPhone());
         response.setAddress(user.getAddress());
-        response.setRoleId(user.getRoleId());
+        response.setRoleId(user.getRoleId().toString());
         response.setCreatedAt(user.getCreatedAt());
         response.setStatus(user.getStatus());
 
