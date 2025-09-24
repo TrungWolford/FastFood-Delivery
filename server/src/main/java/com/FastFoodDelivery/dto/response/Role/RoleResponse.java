@@ -6,7 +6,7 @@ import org.bson.types.ObjectId;
 
 @Data
 public class RoleResponse {
-    private ObjectId roleId;
+    private String roleId;
     private String roleName;
 
     public static RoleResponse fromEntity(Role role){
