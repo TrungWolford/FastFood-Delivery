@@ -1,4 +1,4 @@
-﻿package com.FastFoodDelivery.dto.request.User;
+package com.FastFoodDelivery.dto.request.User;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;

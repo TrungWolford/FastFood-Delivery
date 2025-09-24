@@ -1,4 +1,4 @@
-﻿package com.FastFoodDelivery.controller;
+package com.FastFoodDelivery.controller;
 
 import com.FastFoodDelivery.dto.request.Restaurant.CreateRestaurantRequest;
 import com.FastFoodDelivery.dto.request.Restaurant.UpdateRestaurantRequest;

@@ -1,4 +1,4 @@
-﻿package com.FastFoodDelivery.entity;
+package com.FastFoodDelivery.entity;
 
 import org.springframework.data.annotation.Id;
 import lombok.Data;
