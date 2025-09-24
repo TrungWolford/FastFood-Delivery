@@ -1,11 +1,10 @@
-package com.FastFoodDelivery.dto.request.User;
+﻿package com.FastFoodDelivery.dto.request.User;
 
-import com.FastFoodDelivery.entity.Role;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import org.bson.types.ObjectId;
 
 import java.util.Date;
-import java.util.List;
 
 @Data
 public class CreateUserRequest {
@@ -14,7 +13,7 @@ public class CreateUserRequest {
     private String email;
     private String phone;
     private String address;
-    private List<Role> role;
+    private ObjectId role;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private Date createdAt;

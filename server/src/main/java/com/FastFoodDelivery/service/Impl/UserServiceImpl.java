@@ -1,4 +1,4 @@
-package com.FastFoodDelivery.service.Impl;
+﻿package com.FastFoodDelivery.service.Impl;
 
 import com.FastFoodDelivery.dto.request.User.CreateUserRequest;
 import com.FastFoodDelivery.dto.request.User.UpdateUserRequest;
@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.bson.types.ObjectId;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -68,7 +69,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<UserResponse> filterByUserRole(Pageable pageable, String roleId) {
+    public Page<UserResponse> filterByUserRole(Pageable pageable, ObjectId roleId) {
         return userRepository.findByRoleId(pageable, roleId)
                 .map(UserResponse::fromEntity);
     }

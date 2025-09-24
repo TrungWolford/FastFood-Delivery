@@ -1,9 +1,7 @@
-package com.FastFoodDelivery.dto.request.User;
+﻿package com.FastFoodDelivery.dto.request.User;
 
-import com.FastFoodDelivery.entity.Role;
 import lombok.Data;
-
-import java.util.List;
+import org.bson.types.ObjectId;
 
 @Data
 public class UpdateUserRequest {
@@ -12,6 +10,6 @@ public class UpdateUserRequest {
     private String email;
     private String phone;
     private String adress;
-    private List<Role> role;
+    private ObjectId role;
     private int status;
 }

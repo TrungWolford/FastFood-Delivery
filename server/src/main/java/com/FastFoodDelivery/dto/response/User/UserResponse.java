@@ -1,13 +1,11 @@
-package com.FastFoodDelivery.dto.response.User;
+﻿package com.FastFoodDelivery.dto.response.User;
 
-import com.FastFoodDelivery.entity.Role;
 import com.FastFoodDelivery.entity.User;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.bson.types.ObjectId;
 
 import java.util.Date;
-import java.util.List;
 
 @Data
 public class UserResponse {
@@ -17,11 +15,11 @@ public class UserResponse {
     private String email;
     private String phone;
     private String address;
-    private List<Role> role;
+    private ObjectId roleId;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private Date createdAt;
-    int status;
+    private int status;
 
     public static UserResponse fromEntity(User user){
         UserResponse response = new UserResponse();
@@ -31,7 +29,7 @@ public class UserResponse {
         response.setEmail(user.getEmail());
         response.setPhone(user.getPhone());
         response.setAddress(user.getAddress());
-        response.setRole(user.getRoleId());
+        response.setRoleId(user.getRoleId());
         response.setCreatedAt(user.getCreatedAt());
         response.setStatus(user.getStatus());
 

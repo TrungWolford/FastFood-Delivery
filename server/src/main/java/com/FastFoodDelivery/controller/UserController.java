@@ -1,4 +1,4 @@
-package com.FastFoodDelivery.controller;
+﻿package com.FastFoodDelivery.controller;
 
 import com.FastFoodDelivery.dto.request.User.CreateUserRequest;
 import com.FastFoodDelivery.dto.request.User.UpdateUserRequest;
@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.bson.types.ObjectId;
 
 @RestController
 @RequestMapping("/api/users")
@@ -48,7 +49,8 @@ public class UserController {
             @RequestParam(defaultValue = "10") int size,
             @PathVariable String roleId){
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(userService.filterByUserRole(pageable, roleId));
+        ObjectId objectId = new ObjectId(roleId);
+        return ResponseEntity.ok(userService.filterByUserRole(pageable, objectId));
     }
 
     @PatchMapping("/{userId}")
