@@ -19,7 +19,7 @@ public class Restaurant {
     private String openingHours;
     private double rating;
     private Date createdAt;
-    private int status;           // New field
-    private Date updatedAt;       // New field  
-    private String description;   // New field
+    private int status;
+    private Date updatedAt;
+    private String description;
 }
