@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./server  # chỉ định thư mục chứa pom.xml
+        working-directory: ./server 
 
     steps:
       - uses: actions/checkout@v4
@@ -20,6 +20,10 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      - name: Remove BOM from Java files
+        run: |
+          find . -type f -name "*.java" -exec sed -i '1s/^\xEF\xBB\xBF//' {} \;
 
       - name: Build with Maven
         run: mvn clean package -DskipTests
