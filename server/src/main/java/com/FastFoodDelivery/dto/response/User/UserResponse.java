@@ -1,5 +1,6 @@
 package com.FastFoodDelivery.dto.response.User;
 
+import com.FastFoodDelivery.entity.Role;
 import com.FastFoodDelivery.entity.User;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
@@ -16,12 +17,13 @@ public class UserResponse {
     private String phone;
     private String address;
     private String roleId;
+    private String roleText;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private Date createdAt;
     private int status;
 
-    public static UserResponse fromEntity(User user){
+    public static UserResponse fromEntity(User user, Role role){
         UserResponse response = new UserResponse();
         response.setUserID(user.getUserID().toString());
         response.setFullname(user.getFullname());
@@ -30,6 +32,7 @@ public class UserResponse {
         response.setPhone(user.getPhone());
         response.setAddress(user.getAddress());
         response.setRoleId(user.getRoleId().toString());
+        response.setRoleText(role.getRoleName());
         response.setCreatedAt(user.getCreatedAt());
         response.setStatus(user.getStatus());
 
