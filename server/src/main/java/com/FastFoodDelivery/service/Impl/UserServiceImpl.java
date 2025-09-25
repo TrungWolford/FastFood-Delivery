@@ -1,10 +1,12 @@
-package com.FastFoodDelivery.service.Impl;
+﻿package com.FastFoodDelivery.service.Impl;
 
 import com.FastFoodDelivery.dto.request.User.CreateUserRequest;
 import com.FastFoodDelivery.dto.request.User.UpdateUserRequest;
 import com.FastFoodDelivery.dto.response.User.UserResponse;
+import com.FastFoodDelivery.entity.Role;
 import com.FastFoodDelivery.entity.User;
 import com.FastFoodDelivery.exception.ResourceNotFoundException;
+import com.FastFoodDelivery.repository.RoleRepository;
 import com.FastFoodDelivery.repository.UserRepository;
 import com.FastFoodDelivery.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,24 +15,64 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.bson.types.ObjectId;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private RoleRepository roleRepository;
+
     @Override
     public Page<UserResponse> getAllUser(Pageable pageable) {
-        return userRepository.findAll(pageable)
-                .map(UserResponse::fromEntity);
+        Page<User> userPage = userRepository.findAll(pageable);
+        List<User> users = userPage.getContent();
+        
+        // Lấy tất cả role IDs từ users
+        List<ObjectId> roleIds = users.stream()
+                .map(User::getRoleId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        // Fetch tất cả roles một lần
+        List<Role> roles = roleRepository.findAllById(roleIds);
+        Map<ObjectId, Role> roleMap = roles.stream()
+                .collect(Collectors.toMap(Role::getRoleID, role -> role));
+        
+        // Map users với roles
+        List<UserResponse> userResponses = users.stream()
+                .map(user -> {
+                    Role role = roleMap.get(user.getRoleId());
+                    if (role == null) {
+                        throw new ResourceNotFoundException("Role", "id", user.getRoleId().toString());
+                    }
+                    return UserResponse.fromEntity(user, role);
+                })
+                .toList();
+        
+        return userPage.map(user -> {
+            Role role = roleMap.get(user.getRoleId());
+            if (role == null) {
+                throw new ResourceNotFoundException("Role", "id", user.getRoleId().toString());
+            }
+            return UserResponse.fromEntity(user, role);
+        });
     }
 
     @Override
     public UserResponse getByUserId(ObjectId userId) {
-        User user =  userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
 
-        return UserResponse.fromEntity(user);
+        Role role = roleRepository.findById(user.getRoleId())
+                .orElseThrow(() -> new ResourceNotFoundException("Role", "id", user.getRoleId().toString()));
+        
+        return UserResponse.fromEntity(user, role);
     }
 
     @Override
@@ -47,7 +89,10 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(user);
 
-        return UserResponse.fromEntity(user);
+        Role role = roleRepository.findById(user.getRoleId())
+                .orElseThrow(() -> new ResourceNotFoundException("Role", "id", user.getRoleId().toString()));
+        
+        return UserResponse.fromEntity(user, role);
     }
 
     @Override
@@ -65,13 +110,35 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(existingUser);
 
-        return UserResponse.fromEntity(existingUser);
+        Role role = roleRepository.findById(existingUser.getRoleId())
+                .orElseThrow(() -> new ResourceNotFoundException("Role", "id", existingUser.getRoleId().toString()));
+        
+        return UserResponse.fromEntity(existingUser, role);
     }
 
     @Override
     public Page<UserResponse> filterByUserRole(Pageable pageable, ObjectId roleId) {
-        return userRepository.findByRoleId(pageable, roleId)
-                .map(UserResponse::fromEntity);
+        Page<User> userPage = userRepository.findByRoleId(pageable, roleId);
+        List<User> users = userPage.getContent();
+        
+        // Lấy tất cả role IDs từ users
+        List<ObjectId> roleIds = users.stream()
+                .map(User::getRoleId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        // Fetch tất cả roles một lần
+        List<Role> roles = roleRepository.findAllById(roleIds);
+        Map<ObjectId, Role> roleMap = roles.stream()
+                .collect(Collectors.toMap(Role::getRoleID, role -> role));
+        
+        return userPage.map(user -> {
+            Role role = roleMap.get(user.getRoleId());
+            if (role == null) {
+                throw new ResourceNotFoundException("Role", "id", user.getRoleId().toString());
+            }
+            return UserResponse.fromEntity(user, role);
+        });
     }
 
     @Override
