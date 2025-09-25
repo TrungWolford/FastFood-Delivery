@@ -8,6 +8,7 @@ import java.util.Date;
 
 @Data
 public class RestaurantResponse {
+    private String restaurantId;
     private String restaurantName;
     private String address;
     private String phone;
@@ -21,6 +22,7 @@ public class RestaurantResponse {
 
     public static RestaurantResponse fromEntity(Restaurant restaurant){
         RestaurantResponse response = new RestaurantResponse();
+        response.setRestaurantId(restaurant.getRestaurantId().toString());
         response.setRestaurantName(restaurant.getRestaurantName());
         response.setAddress(restaurant.getAddress());
         response.setPhone(restaurant.getPhone());
