@@ -1,4 +1,4 @@
-﻿package com.FastFoodDelivery.service.Impl;
+package com.FastFoodDelivery.service.Impl;
 
 import com.FastFoodDelivery.dto.request.User.CreateUserRequest;
 import com.FastFoodDelivery.dto.request.User.UpdateUserRequest;
@@ -43,17 +43,6 @@ public class UserServiceImpl implements UserService {
         List<Role> roles = roleRepository.findAllById(roleIds);
         Map<ObjectId, Role> roleMap = roles.stream()
                 .collect(Collectors.toMap(Role::getRoleID, role -> role));
-        
-        // Map users với roles
-        List<UserResponse> userResponses = users.stream()
-                .map(user -> {
-                    Role role = roleMap.get(user.getRoleId());
-                    if (role == null) {
-                        throw new ResourceNotFoundException("Role", "id", user.getRoleId().toString());
-                    }
-                    return UserResponse.fromEntity(user, role);
-                })
-                .toList();
         
         return userPage.map(user -> {
             Role role = roleMap.get(user.getRoleId());
@@ -154,4 +143,4 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(user);
     }
-}
+} 
