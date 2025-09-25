@@ -22,6 +22,7 @@ public class UserResponse {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private Date createdAt;
     private int status;
+    private String statusText;
 
     public static UserResponse fromEntity(User user, Role role){
         UserResponse response = new UserResponse();
@@ -35,6 +36,7 @@ public class UserResponse {
         response.setRoleText(role.getRoleName());
         response.setCreatedAt(user.getCreatedAt());
         response.setStatus(user.getStatus());
+        response.setStatusText(user.getStatus() == 1 ? "Đang hoạt động" : "Đã khóa");
 
         return response;
     }
