@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface RestaurantRepository extends MongoRepository<Restaurant, ObjectId> {
     List<Restaurant> findByOwnerId(ObjectId ownerId);
+
+    boolean existsByPhone(String phone);
 }
