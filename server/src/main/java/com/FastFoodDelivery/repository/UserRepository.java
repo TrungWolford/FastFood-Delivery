@@ -1,4 +1,4 @@
-package com.FastFoodDelivery.repository;
+﻿package com.FastFoodDelivery.repository;
 
 import com.FastFoodDelivery.entity.User;
 import org.springframework.data.domain.Page;
@@ -12,4 +12,8 @@ public interface UserRepository extends MongoRepository<User, ObjectId> {
     Page<User> findAll(Pageable pageable);
 
     Page<User> findByRoleId(Pageable pageable, ObjectId roleId);
+    
+    boolean existsByEmail(String email);
+    
+    boolean existsByPhone(String phone);
 }
