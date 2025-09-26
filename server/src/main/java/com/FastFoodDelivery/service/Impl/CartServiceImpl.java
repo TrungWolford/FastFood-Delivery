@@ -2,6 +2,8 @@ package com.FastFoodDelivery.service.Impl;
 
 import com.FastFoodDelivery.dto.request.Cart.CreateCartRequest;
 import com.FastFoodDelivery.dto.request.Cart.UpdateCartRequest;
+import com.FastFoodDelivery.dto.request.CartItem.CreateCartItemRequest;
+import com.FastFoodDelivery.dto.request.CartItem.UpdateCartItemRequest;
 import com.FastFoodDelivery.dto.response.Cart.CartResponse;
 import com.FastFoodDelivery.dto.response.CartItem.CartItemResponse;
 import com.FastFoodDelivery.entity.Cart;
@@ -112,5 +114,63 @@ public class CartServiceImpl implements CartService {
             throw new ResourceNotFoundException("Cart", "id", cartId.toString());
         }
         cartRepository.deleteById(cartId);
+    }
+
+    @Override
+    public CartResponse addItemToCart(ObjectId cartId, CreateCartItemRequest request) {
+        Cart cart = cartRepository.findByCartId(cartId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy cart phù hợp"));
+
+        CartItem newItem = new CartItem();
+        newItem.setItemId(request.getItemId());
+        newItem.setQuantity(request.getQuantity());
+        newItem.setNote(request.getNote());
+        newItem.setAddedAt(new Date());
+
+        cart.getCartItems().add(newItem);
+        cart.setUpdatedAt(new Date());
+
+        cart = cartRepository.save(cart);
+
+        return CartResponse.fromEntity(cart);
+    }
+
+    @Override
+    public CartResponse updateItemInCart(ObjectId cartId, ObjectId itemId, UpdateCartItemRequest request) {
+        Cart cart = cartRepository.findByCartId(cartId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy cart phù hợp"));
+
+        CartItem item = cart.getCartItems().stream()
+                .filter(ci -> ci.getItemId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm phù hợp trong cart"));
+
+        if (request.getQuantity() != null) {
+            item.setQuantity(request.getQuantity());
+        }
+        if (request.getNote() != null) {
+            item.setNote(request.getNote());
+        }
+
+        cart.setUpdatedAt(new Date());
+        cart = cartRepository.save(cart);
+
+        return CartResponse.fromEntity(cart);
+    }
+
+    @Override
+    public CartResponse removeItemFromCart(ObjectId cartId, ObjectId itemId) {
+        Cart cart = cartRepository.findByCartId(cartId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy cart phù hợp"));
+
+        boolean removed = cart.getCartItems().removeIf(ci -> ci.getItemId().equals(itemId));
+        if (!removed) {
+            throw new RuntimeException("Không tìm thấy sản phẩm phù hợp trong cart");
+        }
+
+        cart.setUpdatedAt(new Date());
+        cart = cartRepository.save(cart);
+
+        return CartResponse.fromEntity(cart);
     }
 }

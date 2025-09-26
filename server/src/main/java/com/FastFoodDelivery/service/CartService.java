@@ -2,6 +2,8 @@ package com.FastFoodDelivery.service;
 
 import com.FastFoodDelivery.dto.request.Cart.CreateCartRequest;
 import com.FastFoodDelivery.dto.request.Cart.UpdateCartRequest;
+import com.FastFoodDelivery.dto.request.CartItem.CreateCartItemRequest;
+import com.FastFoodDelivery.dto.request.CartItem.UpdateCartItemRequest;
 import com.FastFoodDelivery.dto.response.Cart.CartResponse;
 import com.FastFoodDelivery.dto.response.CartItem.CartItemResponse;
 import org.bson.types.ObjectId;
@@ -18,4 +20,8 @@ public interface CartService {
     CartResponse createCart(CreateCartRequest request);
     CartResponse updateCart(UpdateCartRequest request, ObjectId cartId);
     void deleteCart(ObjectId cartId);
+
+    CartResponse addItemToCart(ObjectId cartId, CreateCartItemRequest request);
+    CartResponse updateItemInCart(ObjectId cartId, ObjectId itemId, UpdateCartItemRequest request);
+    CartResponse removeItemFromCart(ObjectId cartId, ObjectId itemId);
 }
