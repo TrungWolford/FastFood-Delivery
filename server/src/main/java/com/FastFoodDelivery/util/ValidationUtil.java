@@ -21,12 +21,14 @@ public class ValidationUtil {
         this.menuItemRepository = menuItemRepository;
     }
 
+    // Validate User
     public void validateUser(ObjectId userId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User", "id", userId.toString());
         }
     }
 
+    // Validate Restaurant
     public void validateRestaurant(ObjectId restaurantId) {
         if (!restaurantRepository.existsById(restaurantId)) {
             throw new ResourceNotFoundException("Restaurant", "id", restaurantId.toString());
@@ -36,6 +38,13 @@ public class ValidationUtil {
     public void validateMenuItem(ObjectId itemId) {
         if (!menuItemRepository.existsById(itemId)) {
             throw new ResourceNotFoundException("MenuItem", "id", itemId.toString());
+        }
+    }
+
+
+    public void validateUniquePhone(String phone) {
+        if (restaurantRepository.existsByPhone(phone)) {
+            throw new IllegalArgumentException("Số điện thoại đã được đăng ký cho nhà hàng khác.");
         }
     }
 }
