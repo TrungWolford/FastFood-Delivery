@@ -1,5 +1,6 @@
 package com.FastFoodDelivery.util;
 
+import com.FastFoodDelivery.exception.BadRequestException;
 import com.FastFoodDelivery.exception.ResourceNotFoundException;
 import com.FastFoodDelivery.repository.MenuItemRepository;
 import com.FastFoodDelivery.repository.RestaurantRepository;
@@ -30,6 +31,9 @@ public class ValidationUtil {
 
     // Validate Restaurant
     public void validateRestaurant(ObjectId restaurantId) {
+        if (restaurantId == null) {
+            throw new BadRequestException("RestaurantId must not be null");
+        }
         if (!restaurantRepository.existsById(restaurantId)) {
             throw new ResourceNotFoundException("Restaurant", "id", restaurantId.toString());
         }
@@ -45,6 +49,18 @@ public class ValidationUtil {
     public void validateUniquePhone(String phone) {
         if (restaurantRepository.existsByPhone(phone)) {
             throw new IllegalArgumentException("Số điện thoại đã được đăng ký cho nhà hàng khác.");
+        }
+    }
+
+    public void validatePositive(double value, String fieldName) {
+        if (value <= 0) {
+            throw new BadRequestException(fieldName + " must be greater than 0");
+        }
+    }
+
+    public void validateNotEmpty(String value, String fieldName) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new BadRequestException(fieldName + " must not be empty");
         }
     }
 }
