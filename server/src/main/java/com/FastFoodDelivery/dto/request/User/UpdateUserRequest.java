@@ -9,7 +9,7 @@ public class UpdateUserRequest {
     private String password;
     private String email;
     private String phone;
-    private String adress;
+    private String address;
     private ObjectId role;
     private int status;
 }
