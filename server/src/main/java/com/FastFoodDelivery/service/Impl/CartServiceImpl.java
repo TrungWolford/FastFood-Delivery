@@ -11,17 +11,24 @@ import com.FastFoodDelivery.entity.CartItem;
 import com.FastFoodDelivery.exception.ResourceNotFoundException;
 import com.FastFoodDelivery.repository.CartRepository;
 import com.FastFoodDelivery.service.CartService;
+import com.FastFoodDelivery.util.ValidationUtil;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
 
+@Service
 public class CartServiceImpl implements CartService {
+
     @Autowired
     private CartRepository cartRepository;
+
+    @Autowired
+    private ValidationUtil validationUtil;
 
     @Override
     public CartResponse getCartById(ObjectId cartId) {
@@ -34,7 +41,6 @@ public class CartServiceImpl implements CartService {
     @Override
     public Page<CartResponse> getCartsByUserId(ObjectId userId, Pageable pageable) {
         Page<Cart> carts = cartRepository.findByUserId(userId, pageable);
-
         return carts.map(CartResponse::fromEntity);
     }
 
@@ -43,20 +49,32 @@ public class CartServiceImpl implements CartService {
         Cart cart = cartRepository.findByCartId(cartId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart", "id", cartId.toString()));
 
-        List<CartItem> items = cart.getCartItems();
-        return items.stream()
+        return cart.getCartItems().stream()
                 .map(CartItemResponse::fromEntity)
                 .toList();
     }
 
-
     @Override
     public CartResponse createCart(CreateCartRequest request) {
-        Cart cart = new Cart();
-        cart.setUserId(request.getUserId());
-        cart.setRestaurantId(request.getRestaurantId());
+        // Validate user
+        validationUtil.validateUser(request.getUserId());
 
+        // Check user đã có cart chưa
+        if (cartRepository.findByUserId(request.getUserId(), Pageable.unpaged()).hasContent()) {
+            throw new IllegalArgumentException("User đã có cart, không thể tạo thêm.");
+        }
+
+        // Validate restaurant
+        validationUtil.validateRestaurant(request.getRestaurantId());
+
+        // Validate item list
         List<CartItem> cartItems = request.getCartItems().stream().map(itemReq -> {
+            validationUtil.validateMenuItem(itemReq.getItemId());
+
+            if (itemReq.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Số lượng phải lớn hơn 0");
+            }
+
             CartItem item = new CartItem();
             item.setItemId(itemReq.getItemId());
             item.setQuantity(itemReq.getQuantity());
@@ -64,13 +82,15 @@ public class CartServiceImpl implements CartService {
             item.setAddedAt(new Date());
             return item;
         }).toList();
-        cart.setCartItems(cartItems);
 
+        Cart cart = new Cart();
+        cart.setUserId(request.getUserId());
+        cart.setRestaurantId(request.getRestaurantId());
+        cart.setCartItems(cartItems);
         cart.setCreatedAt(new Date());
         cart.setUpdatedAt(new Date());
 
         Cart savedCart = cartRepository.save(cart);
-
         return CartResponse.fromEntity(savedCart);
     }
 
@@ -79,17 +99,20 @@ public class CartServiceImpl implements CartService {
         Cart existingCart = cartRepository.findByCartId(cartId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart", "id", cartId.toString()));
 
-        // Không cho đổi restaurant
         if (request.getRestaurantId() != null
                 && !request.getRestaurantId().equals(existingCart.getRestaurantId())) {
             throw new IllegalArgumentException("Không thể đổi restaurant của cart");
         }
 
-        // Update cart items
         if (request.getCartItems() != null) {
-            // Thay toàn bộ list
             existingCart.setCartItems(
                     request.getCartItems().stream().map(itemReq -> {
+                        validationUtil.validateMenuItem(itemReq.getItemId());
+
+                        if (itemReq.getQuantity() <= 0) {
+                            throw new IllegalArgumentException("Số lượng phải lớn hơn 0");
+                        }
+
                         CartItem item = new CartItem();
                         item.setItemId(itemReq.getItemId());
                         item.setQuantity(itemReq.getQuantity());
@@ -100,11 +123,8 @@ public class CartServiceImpl implements CartService {
             );
         }
 
-        // Update thời gian
         existingCart.setUpdatedAt(new Date());
-
         Cart updatedCart = cartRepository.save(existingCart);
-
         return CartResponse.fromEntity(updatedCart);
     }
 
@@ -121,6 +141,11 @@ public class CartServiceImpl implements CartService {
         Cart cart = cartRepository.findByCartId(cartId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cart phù hợp"));
 
+        validationUtil.validateMenuItem(request.getItemId());
+        if (request.getQuantity() <= 0) {
+            throw new IllegalArgumentException("Số lượng phải lớn hơn 0");
+        }
+
         CartItem newItem = new CartItem();
         newItem.setItemId(request.getItemId());
         newItem.setQuantity(request.getQuantity());
@@ -131,7 +156,6 @@ public class CartServiceImpl implements CartService {
         cart.setUpdatedAt(new Date());
 
         cart = cartRepository.save(cart);
-
         return CartResponse.fromEntity(cart);
     }
 
@@ -144,6 +168,10 @@ public class CartServiceImpl implements CartService {
                 .filter(ci -> ci.getItemId().equals(itemId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm phù hợp trong cart"));
+
+        if (request.getQuantity() != null && request.getQuantity() <= 0) {
+            throw new IllegalArgumentException("Số lượng phải lớn hơn 0");
+        }
 
         if (request.getQuantity() != null) {
             item.setQuantity(request.getQuantity());
@@ -170,7 +198,6 @@ public class CartServiceImpl implements CartService {
 
         cart.setUpdatedAt(new Date());
         cart = cartRepository.save(cart);
-
         return CartResponse.fromEntity(cart);
     }
 }
