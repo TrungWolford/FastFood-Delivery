@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -50,6 +51,9 @@ public class MenuItemServiceImpl implements MenuItemService {
         menuItem.setDescription(request.getDescription());
         menuItem.setImageUrl(request.getImageUrl());
         menuItem.setPrice(request.getPrice());
+        menuItem.setAvailable(true);
+        menuItem.setCreatedAt(new Date());
+        menuItem.setUpdatedAt(new Date());
 
         menuItemRepository.save(menuItem);
 
@@ -65,6 +69,7 @@ public class MenuItemServiceImpl implements MenuItemService {
         menuItem.setDescription(request.getDescription());
         menuItem.setImageUrl(request.getImageUrl());
         menuItem.setPrice(request.getPrice());
+        menuItem.setUpdatedAt(new Date());
 
         menuItemRepository.save(menuItem);
 
