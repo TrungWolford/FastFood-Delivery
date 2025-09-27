@@ -8,8 +8,12 @@ import java.util.Date;
 
 @Data
 public class CartItem {
-    @Id
+    // id của entry trong mảng cartItems (unique per row)
+    private ObjectId cartItemId;
+
+    // tham chiếu tới menu item
     private ObjectId itemId;
+
     private Integer quantity;
     private String note;
     private Date addedAt;
