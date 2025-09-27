@@ -6,7 +6,7 @@ import org.bson.types.ObjectId;
 import java.util.List;
 
 public class UpdateOrderRequest {
-    private ObjectId restaurantId;
+    private ObjectId orderId;
 
     private String deliveryAddress;
     private String status;
