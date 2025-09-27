@@ -15,10 +15,14 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
+@Service
 public class CartServiceImpl implements CartService {
     @Autowired
     private CartRepository cartRepository;
@@ -58,6 +62,7 @@ public class CartServiceImpl implements CartService {
 
         List<CartItem> cartItems = request.getCartItems().stream().map(itemReq -> {
             CartItem item = new CartItem();
+            item.setCartItemId(new ObjectId());
             item.setItemId(itemReq.getItemId());
             item.setQuantity(itemReq.getQuantity());
             item.setNote(itemReq.getNote());
@@ -91,6 +96,7 @@ public class CartServiceImpl implements CartService {
             existingCart.setCartItems(
                     request.getCartItems().stream().map(itemReq -> {
                         CartItem item = new CartItem();
+                        item.setCartItemId(new ObjectId());
                         item.setItemId(itemReq.getItemId());
                         item.setQuantity(itemReq.getQuantity());
                         item.setNote(itemReq.getNote());
@@ -121,29 +127,42 @@ public class CartServiceImpl implements CartService {
         Cart cart = cartRepository.findByCartId(cartId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cart phù hợp"));
 
-        CartItem newItem = new CartItem();
-        newItem.setItemId(request.getItemId());
-        newItem.setQuantity(request.getQuantity());
-        newItem.setNote(request.getNote());
-        newItem.setAddedAt(new Date());
+        // Tìm cartItem có cùng itemId và note
+        Optional<CartItem> existingItemOpt = cart.getCartItems().stream()
+                .filter(ci -> ci.getItemId().equals(request.getItemId())
+                        && Objects.equals(ci.getNote(), request.getNote()))
+                .findFirst();
 
-        cart.getCartItems().add(newItem);
+        if (existingItemOpt.isPresent()) {
+            // Nếu có thì cộng dồn số lượng
+            CartItem existingItem = existingItemOpt.get();
+            existingItem.setQuantity(existingItem.getQuantity() + request.getQuantity());
+        } else {
+            // Nếu không thì thêm mới (cần set cartItemId riêng)
+            CartItem newItem = new CartItem();
+            newItem.setCartItemId(new ObjectId());
+            newItem.setItemId(request.getItemId());
+            newItem.setQuantity(request.getQuantity());
+            newItem.setNote(request.getNote());
+            newItem.setAddedAt(new Date());
+            cart.getCartItems().add(newItem);
+        }
+
         cart.setUpdatedAt(new Date());
-
         cart = cartRepository.save(cart);
 
         return CartResponse.fromEntity(cart);
     }
 
     @Override
-    public CartResponse updateItemInCart(ObjectId cartId, ObjectId itemId, UpdateCartItemRequest request) {
+    public CartResponse updateItemInCart(ObjectId cartId, ObjectId cartItemId, UpdateCartItemRequest request) {
         Cart cart = cartRepository.findByCartId(cartId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cart phù hợp"));
 
         CartItem item = cart.getCartItems().stream()
-                .filter(ci -> ci.getItemId().equals(itemId))
+                .filter(ci -> ci.getCartItemId().equals(cartItemId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm phù hợp trong cart"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy CartItem phù hợp"));
 
         if (request.getQuantity() != null) {
             item.setQuantity(request.getQuantity());
@@ -159,13 +178,13 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public CartResponse removeItemFromCart(ObjectId cartId, ObjectId itemId) {
+    public CartResponse removeItemFromCart(ObjectId cartId, ObjectId cartItemId) {
         Cart cart = cartRepository.findByCartId(cartId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy cart phù hợp"));
 
-        boolean removed = cart.getCartItems().removeIf(ci -> ci.getItemId().equals(itemId));
+        boolean removed = cart.getCartItems().removeIf(ci -> ci.getCartItemId().equals(cartItemId));
         if (!removed) {
-            throw new RuntimeException("Không tìm thấy sản phẩm phù hợp trong cart");
+            throw new RuntimeException("Không tìm thấy CartItem phù hợp trong cart");
         }
 
         cart.setUpdatedAt(new Date());
