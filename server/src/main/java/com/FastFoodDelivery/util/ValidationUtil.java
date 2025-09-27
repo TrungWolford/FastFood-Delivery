@@ -1,4 +1,4 @@
-﻿package com.FastFoodDelivery.util;
+package com.FastFoodDelivery.util;
 
 import com.FastFoodDelivery.entity.User;
 import com.FastFoodDelivery.exception.BadRequestException;

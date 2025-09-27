@@ -1,4 +1,4 @@
-﻿package com.FastFoodDelivery.repository;
+package com.FastFoodDelivery.repository;
 
 import com.FastFoodDelivery.entity.User;
 import org.springframework.data.domain.Page;
