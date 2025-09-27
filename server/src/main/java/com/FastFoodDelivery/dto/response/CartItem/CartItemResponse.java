@@ -8,6 +8,7 @@ import java.util.Date;
 
 @Data
 public class CartItemResponse {
+    private String cartItemId;
     private String itemId;
     private Integer quantity;
     private String note;
@@ -17,6 +18,7 @@ public class CartItemResponse {
 
     public static CartItemResponse fromEntity(CartItem cartItem) {
         CartItemResponse response = new CartItemResponse();
+        response.setCartItemId(cartItem.getCartItemId().toString());
         response.setItemId(cartItem.getItemId().toString());
         response.setQuantity(cartItem.getQuantity());
         response.setNote(cartItem.getNote());
