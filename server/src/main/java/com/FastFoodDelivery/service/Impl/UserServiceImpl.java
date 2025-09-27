@@ -1,4 +1,4 @@
-package com.FastFoodDelivery.service.Impl;
+﻿package com.FastFoodDelivery.service.Impl;
 
 import com.FastFoodDelivery.dto.request.User.CreateUserRequest;
 import com.FastFoodDelivery.dto.request.User.UpdateUserRequest;
@@ -9,12 +9,14 @@ import com.FastFoodDelivery.exception.ResourceNotFoundException;
 import com.FastFoodDelivery.repository.RoleRepository;
 import com.FastFoodDelivery.repository.UserRepository;
 import com.FastFoodDelivery.service.UserService;
+import com.FastFoodDelivery.util.ValidationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.bson.types.ObjectId;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,6 +29,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private ValidationUtil validationUtil;
 
     @Override
     public Page<UserResponse> getAllUser(Pageable pageable) {
@@ -66,6 +71,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse createUser(CreateUserRequest request) {
+        // Validate input data
+        validationUtil.validateNotEmpty(request.getFullname(), "Full name");
+        validationUtil.validateNotEmpty(request.getPassword(), "Password");
+        validationUtil.validateEmail(request.getEmail());
+        validationUtil.validatePhone(request.getPhone());
+        validationUtil.validateNotEmpty(request.getAddress(), "Address");
+        
+        // Validate role exists before creating user
+        validationUtil.validateRole(request.getRole());
+        
+        // Validate unique email and phone
+        validationUtil.validateUniqueEmail(request.getEmail());
+        validationUtil.validateUniquePhone(request.getPhone());
+
         User user = new User();
         user.setFullname(request.getFullname());
         user.setPassword(request.getPassword());
@@ -73,7 +92,7 @@ public class UserServiceImpl implements UserService {
         user.setPhone(request.getPhone());
         user.setAddress(request.getAddress());
         user.setRoleId(request.getRole());
-        user.setCreatedAt(request.getCreatedAt());
+        user.setCreatedAt(new Date());
         user.setStatus(1);
 
         userRepository.save(user);
@@ -89,11 +108,25 @@ public class UserServiceImpl implements UserService {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
 
+        // Validate input data
+        validationUtil.validateNotEmpty(request.getFullname(), "Full name");
+        validationUtil.validateNotEmpty(request.getPassword(), "Password");
+        validationUtil.validateEmail(request.getEmail());
+        validationUtil.validatePhone(request.getPhone());
+        validationUtil.validateNotEmpty(request.getAddress(), "Address");
+        
+        // Validate role exists before updating user
+        validationUtil.validateRole(request.getRole());
+        
+        // Validate unique email and phone (excluding current user)
+        validationUtil.validateUniqueEmailForUpdate(request.getEmail(), userId);
+        validationUtil.validateUniquePhoneForUpdate(request.getPhone(), userId);
+
         existingUser.setFullname(request.getFullname());
         existingUser.setPassword(request.getPassword());
         existingUser.setEmail(request.getEmail());
         existingUser.setPhone(request.getPhone());
-        existingUser.setAddress(request.getAdress());
+        existingUser.setAddress(request.getAddress());
         existingUser.setRoleId(request.getRole());
         existingUser.setStatus(request.getStatus());
 
@@ -143,4 +176,4 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(user);
     }
-} 
+}

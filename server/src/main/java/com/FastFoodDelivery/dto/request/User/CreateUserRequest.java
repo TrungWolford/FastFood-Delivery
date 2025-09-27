@@ -15,6 +15,4 @@ public class CreateUserRequest {
     private String address;
     private ObjectId role;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
-    private Date createdAt;
 }

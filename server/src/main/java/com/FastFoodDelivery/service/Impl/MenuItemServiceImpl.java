@@ -8,6 +8,7 @@ import com.FastFoodDelivery.entity.User;
 import com.FastFoodDelivery.exception.ResourceNotFoundException;
 import com.FastFoodDelivery.repository.MenuItemRepository;
 import com.FastFoodDelivery.service.MenuItemService;
+import com.FastFoodDelivery.util.ValidationUtil;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,6 +24,9 @@ public class MenuItemServiceImpl implements MenuItemService {
     @Autowired
     private MenuItemRepository menuItemRepository;
 
+    @Autowired
+    private ValidationUtil validationUtil;
+
     @Override
     public Page<MenuItemResponse> getAllMenuItem(Pageable pageable) {
         return menuItemRepository.findAll(pageable)
@@ -32,7 +36,7 @@ public class MenuItemServiceImpl implements MenuItemService {
     @Override
     public MenuItemResponse getByMenuItemId(ObjectId menuItemId) {
         MenuItem menuItem = menuItemRepository.findById(menuItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", menuItemId.toString()));
+                .orElseThrow(() -> new ResourceNotFoundException("MenuItem", "id", menuItemId.toString()));
         return MenuItemResponse.fromEntity(menuItem);
     }
 
@@ -45,6 +49,10 @@ public class MenuItemServiceImpl implements MenuItemService {
 
     @Override
     public MenuItemResponse createMenuItem(CreateMenuItemRequest request) {
+        validationUtil.validateNotEmpty(request.getName(), "MenuItem name");
+        validationUtil.validatePositive(request.getPrice(), "MenuItem price");
+        validationUtil.validateRestaurant(request.getRestaurantId());
+
         MenuItem menuItem = new MenuItem();
         menuItem.setRestaurantId(request.getRestaurantId());
         menuItem.setName(request.getName());
@@ -55,33 +63,30 @@ public class MenuItemServiceImpl implements MenuItemService {
         menuItem.setCreatedAt(new Date());
         menuItem.setUpdatedAt(new Date());
 
-        menuItemRepository.save(menuItem);
-
-        return MenuItemResponse.fromEntity(menuItem);
+        return MenuItemResponse.fromEntity(menuItemRepository.save(menuItem));
     }
 
     @Override
     public MenuItemResponse updateMenuItem(UpdateMenuItemRequest request, ObjectId menuItemId) {
         MenuItem menuItem = menuItemRepository.findById(menuItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", menuItemId.toString()));
+                .orElseThrow(() -> new ResourceNotFoundException("MenuItem", "id", menuItemId.toString()));
 
-        menuItem.setName(request.getName());
-        menuItem.setDescription(request.getDescription());
-        menuItem.setImageUrl(request.getImageUrl());
-        menuItem.setPrice(request.getPrice());
+        if (request.getName() != null) menuItem.setName(request.getName());
+        if (request.getDescription() != null) menuItem.setDescription(request.getDescription());
+        if (request.getImageUrl() != null) menuItem.setImageUrl(request.getImageUrl());
+        if (request.getPrice() > 0) menuItem.setPrice(request.getPrice());
+
         menuItem.setUpdatedAt(new Date());
-
-        menuItemRepository.save(menuItem);
-
-        return MenuItemResponse.fromEntity(menuItem);
+        return MenuItemResponse.fromEntity(menuItemRepository.save(menuItem));
     }
 
     @Override
     public void changeStatus(ObjectId menuItemId) {
         MenuItem menuItem = menuItemRepository.findById(menuItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", menuItemId.toString()));
-        boolean status = menuItem.isAvailable();
-        menuItem.setAvailable(!status);
+                .orElseThrow(() -> new ResourceNotFoundException("MenuItem", "id", menuItemId.toString()));
+
+        menuItem.setAvailable(!menuItem.isAvailable());
+        menuItem.setUpdatedAt(new Date());
 
         menuItemRepository.save(menuItem);
     }
