@@ -10,6 +10,7 @@ import java.util.List;
 
 @Data
 public class CartResponse {
+    private String cartId;
     private String userId;
     private String restaurantId;
     private List<CartItemResponse> cartItems;
@@ -22,6 +23,7 @@ public class CartResponse {
 
     public static CartResponse fromEntity(Cart cart) {
         CartResponse response = new CartResponse();
+        response.setCartId(cart.getCartId().toString());
         response.setUserId(cart.getUserId().toString());
         response.setRestaurantId(cart.getRestaurantId().toString());
         // map cartItems từ entity sang DTO
