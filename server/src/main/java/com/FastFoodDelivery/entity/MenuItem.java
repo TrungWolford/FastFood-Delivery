@@ -1,6 +1,7 @@
 package com.FastFoodDelivery.entity;
 
 import lombok.Data;
+import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -15,7 +16,7 @@ public class MenuItem {
     private ObjectId restaurantId;
     private String name;
     private String description;
-    private double price;
+    private long price;
     private String imageUrl;
     private boolean isAvailable;
     private Date createdAt;
