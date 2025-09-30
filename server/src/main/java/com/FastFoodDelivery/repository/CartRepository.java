@@ -14,5 +14,5 @@ public interface CartRepository extends MongoRepository<Cart, ObjectId> {
     Optional<Cart> findByCartId(ObjectId cartId);
     Page<Cart> findByUserId(ObjectId userId, Pageable pageable);
 
-    Optional<Cart> findByUserIdAndRestaurantId(ObjectId userId, ObjectId restaurantId);
+    boolean findByUserIdAndRestaurantId(ObjectId userId, ObjectId restaurantId);
 }

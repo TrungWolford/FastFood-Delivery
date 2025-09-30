@@ -63,7 +63,7 @@ public class CartServiceImpl implements CartService {
         validationUtil.validateUser(request.getUserId());
 
         // Check user đã có cart chưa
-        if (cartRepository.findByUserId(request.getUserId(), Pageable.unpaged()).hasContent()) {
+        if (cartRepository.findByUserIdAndRestaurantId(request.getUserId(), request.getRestaurantId())) {
             throw new IllegalArgumentException("User đã có cart, không thể tạo thêm.");
         }
 
