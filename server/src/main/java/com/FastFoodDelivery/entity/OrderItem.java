@@ -10,6 +10,6 @@ public class OrderItem {
     private ObjectId itemId;
     private Integer quantity;
     private String note;
-    private Decimal128 price;
-    private Decimal128 subTotal;
+    private long price;
+    private long subTotal;
 }

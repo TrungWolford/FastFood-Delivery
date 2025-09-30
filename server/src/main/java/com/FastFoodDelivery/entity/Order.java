@@ -19,10 +19,10 @@ public class Order {
     private ObjectId customerId;
     private ObjectId restaurantId;
 
-    private Decimal128 totalPrice;
+    private long totalPrice;
     private String deliveryAddress;
-    private String status;
     private List<OrderItem> orderItems;
+    private String status; // "PENDING", "CONFIRMED", "DELIVERING", "COMPLETED", "CANCELLED"
     private Date createdAt;
     private Date updatedAt;
 }

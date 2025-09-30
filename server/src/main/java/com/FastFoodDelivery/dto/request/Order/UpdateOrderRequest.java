@@ -1,14 +1,9 @@
 package com.FastFoodDelivery.dto.request.Order;
 
-import com.FastFoodDelivery.entity.OrderItem;
-import org.bson.types.ObjectId;
+import lombok.Data;
 
-import java.util.List;
-
+@Data
 public class UpdateOrderRequest {
-    private ObjectId orderId;
-
     private String deliveryAddress;
     private String status;
-    private List<OrderItem> orderItems;
 }
