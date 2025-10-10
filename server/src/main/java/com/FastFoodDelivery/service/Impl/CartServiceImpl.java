@@ -104,12 +104,6 @@ public class CartServiceImpl implements CartService {
         Cart existingCart = cartRepository.findByCartId(cartId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart", "id", cartId.toString()));
 
-        // Không cho đổi restaurant
-        if (request.getRestaurantId() != null
-                && !request.getRestaurantId().equals(existingCart.getRestaurantId())) {
-            throw new IllegalArgumentException("Không thể đổi restaurant của cart");
-        }
-
         // Update cart items
         if (request.getCartItems() != null) {
             // Thay toàn bộ list

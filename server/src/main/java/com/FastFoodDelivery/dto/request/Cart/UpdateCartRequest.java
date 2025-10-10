@@ -8,6 +8,5 @@ import java.util.List;
 
 @Data
 public class UpdateCartRequest {
-    private ObjectId restaurantId;
     private List<CreateCartItemRequest> cartItems;
 }
