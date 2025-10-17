@@ -30,7 +30,7 @@ public class LocationServiceImpl implements LocationService {
 
         // 3️⃣ Lưu location vào Redis (dưới dạng Object, sẽ tự động serialize)
         // Set expire time để tự động xóa location cũ
-        redisTemplate.opsForValue().set(key, location, LOCATION_EXPIRY_MINUTE, TimeUnit.HOURS);
+        redisTemplate.opsForValue().set(key, location, LOCATION_EXPIRY_MINUTE, TimeUnit.MINUTES);
 
         // 4️⃣ Gửi realtime tới các client subscribe WebSocket
         // Client sẽ subscribe topic: /topic/drone/{droneId}
