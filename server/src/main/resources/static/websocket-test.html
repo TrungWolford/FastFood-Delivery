@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test Client</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #messages {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+        .message {
+            padding: 5px;
+            margin: 5px 0;
+            border-left: 3px solid #4CAF50;
+            background-color: white;
+        }
+        .error {
+            color: red;
+            border-left-color: red;
+        }
+        .info {
+            color: blue;
+            border-left-color: blue;
+        }
+        input {
+            padding: 8px;
+            width: 300px;
+            margin: 5px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FastFood Delivery - WebSocket Test Client</h1>
+        
+        <div id="status" class="status disconnected">
+            Disconnected
+        </div>
+
+        <div>
+            <h3>Connection Settings</h3>
+            <label>Server URL:</label>
+            <input type="text" id="serverUrl" value="http://localhost:8080/ws" />
+            <br>
+            <label>Drone ID:</label>
+            <input type="text" id="droneId" value="68eb9b6396f4f202f414b5a2" placeholder="Enter Drone ID" />
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button id="connectBtn" onclick="connect()">Connect</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled> Disconnect</button>
+            <button onclick="clearMessages()">Clear Messages</button>
+            <button onclick="testSendLocation()">   Test Send Location</button>
+        </div>
+
+        <div id="messages">
+            <div class="message info">Waiting for connection...</div>
+        </div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let currentSubscription = null;
+
+        function setConnected(connected) {
+            document.getElementById("connectBtn").disabled = connected;
+            document.getElementById("disconnectBtn").disabled = !connected;
+            
+            const statusDiv = document.getElementById("status");
+            if (connected) {
+                statusDiv.className = "status connected";
+                statusDiv.innerHTML = "Connected";
+            } else {
+                statusDiv.className = "status disconnected";
+                statusDiv.innerHTML = "Disconnected";
+            }
+        }
+
+        function connect() {
+            const serverUrl = document.getElementById("serverUrl").value;
+            const droneId = document.getElementById("droneId").value;
+            
+            addMessage("Connecting to " + serverUrl + "...", "info");
+            
+            // Create SockJS connection
+            const socket = new SockJS(serverUrl);
+            stompClient = Stomp.over(socket);
+
+            // Enable debug
+            stompClient.debug = function(str) {
+                console.log('STOMP: ' + str);
+            };
+
+            // Connect to server
+            stompClient.connect({}, function(frame) {
+                setConnected(true);
+                addMessage("Connected successfully!", "info");
+                console.log('Connected: ' + frame);
+
+                // Subscribe to drone topic
+                const topic = '/topic/drone/' + droneId;
+                addMessage("Subscribing to: " + topic, "info");
+                
+                currentSubscription = stompClient.subscribe(topic, function(message) {
+                    addMessage("Received message:", "info");
+                    const payload = JSON.parse(message.body);
+                    addMessage(JSON.stringify(payload, null, 2), "");
+                    console.log('Received:', payload);
+                });
+
+                addMessage("Subscribed to " + topic, "info");
+                
+            }, function(error) {
+                setConnected(false);
+                addMessage("Connection error: " + error, "error");
+                console.error('Connection error:', error);
+            });
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                if (currentSubscription !== null) {
+                    currentSubscription.unsubscribe();
+                }
+                stompClient.disconnect();
+                addMessage("🔌 Disconnected", "info");
+            }
+            setConnected(false);
+        }
+
+        function addMessage(message, type) {
+            const messagesDiv = document.getElementById("messages");
+            const messageDiv = document.createElement("div");
+            messageDiv.className = "message " + type;
+            messageDiv.innerHTML = "<strong>" + new Date().toLocaleTimeString() + "</strong>: " + message;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function clearMessages() {
+            document.getElementById("messages").innerHTML = "";
+        }
+
+        function testSendLocation() {
+            const droneId = document.getElementById("droneId").value;
+            
+            addMessage(" Testing: Sending location update via REST API...", "info");
+            
+            fetch('http://localhost:8080/api/locations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    droneId: droneId,
+                    latitude: 10.762622 + (Math.random() * 0.01),
+                    longitude: 106.660172 + (Math.random() * 0.01)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage("Location sent successfully. Waiting for WebSocket message...", "info");
+                console.log('Response:', data);
+            })
+            .catch(error => {
+                addMessage("Error sending location: " + error, "error");
+                console.error('Error:', error);
+            });
+        }
+
+        // Auto-disconnect on page unload
+        window.addEventListener('beforeunload', function() {
+            if (stompClient !== null) {
+                disconnect();
+            }
+        });
+    </script>
+</body>
+</html>
