@@ -86,7 +86,15 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepository.save(payment);
 
         // Nếu muốn cập nhật luôn Order tại đây:
-         Order order = orderRepository.findByOrderId(payment.getOrderId()).orElse(null);
-         if (order != null && isSuccess) { order.setStatus("PAID"); orderRepository.save(order); }
+        Order order = orderRepository.findByOrderId(payment.getOrderId()).orElse(null);
+        if (order != null) {
+            if (isSuccess) {
+                order.setStatus("CONFIRMED");
+                orderRepository.save(order);
+            } else {
+                order.setStatus("CANCELLED");
+                orderRepository.save(order);
+            }
+        }
     }
 }
