@@ -7,6 +7,8 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import org.bson.types.ObjectId;
 
+import java.util.Optional;
+
 @Repository
 public interface UserRepository extends MongoRepository<User, ObjectId> {
     Page<User> findAll(Pageable pageable);
@@ -16,4 +18,7 @@ public interface UserRepository extends MongoRepository<User, ObjectId> {
     boolean existsByEmail(String email);
     
     boolean existsByPhone(String phone);
+    
+    // Find user by phone for login
+    Optional<User> findByPhone(String phone);
 }
