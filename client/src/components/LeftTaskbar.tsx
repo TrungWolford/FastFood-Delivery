@@ -60,7 +60,7 @@ const LeftTaskbar: React.FC = () => {
     },
     {
       icon: Users,
-      label: 'Account',
+      label: 'Tài khoản',
       path: '/admin/accounts'
     },
     {
@@ -78,22 +78,22 @@ const LeftTaskbar: React.FC = () => {
   // if (!user) return null
 
   return (
-    <div className="fixed left-4 top-4 bottom-4 w-56 bg-slate-800 text-white flex flex-col rounded-xl shadow-2xl z-50">
+    <div className="fixed left-0 top-0 bottom-0 w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col shadow-2xl z-50 border-r border-slate-700">
       {/* Header */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-6 border-b border-slate-700">
         <div className="flex items-center gap-3">
-          <div className="bg-amber-500 p-2 rounded-full">
-            <User className="w-5 h-5 text-white" />
+          <div className="bg-gradient-to-br from-orange-500 to-red-500 p-3 rounded-xl shadow-lg">
+            <User className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-white text-sm">{user?.accountName || 'Admin'}</h3>
-            <p className="text-xs text-slate-300">{user?.roles?.[0]?.roleName || 'ADMIN'}</p>
+            <h3 className="font-bold text-white text-base">{user?.accountName || 'Admin'}</h3>
+            <p className="text-xs text-slate-400">{user?.roles?.[0]?.roleName || 'ADMIN'}</p>
           </div>
         </div>
       </div>
 
       {/* Body - Menu Items */}
-      <div className="flex-1 py-3">
+      <div className="flex-1 py-4 overflow-y-auto">
         <nav className="space-y-1 px-3">
           {menuItems.map((item) => {
             const Icon = item.icon
@@ -103,14 +103,14 @@ const LeftTaskbar: React.FC = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                   isActive 
-                    ? 'bg-amber-500 text-white shadow-lg' 
-                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg transform scale-105' 
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-white hover:shadow-md'
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
+                <Icon className={`w-5 h-5 ${isActive ? 'animate-pulse' : ''}`} />
+                <span className="font-medium text-sm">{item.label}</span>
               </button>
             )
           })}
@@ -118,20 +118,20 @@ const LeftTaskbar: React.FC = () => {
         </div>
 
         {/* Footer - Customer Page & Logout */}
-        <div className="p-3 border-t border-slate-700 space-y-2">
+        <div className="p-4 border-t border-slate-700 space-y-2">
           <button
             onClick={() => navigate('/')}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-slate-300 hover:bg-blue-600 hover:text-white rounded-lg transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-slate-300 hover:bg-blue-600 hover:text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
           >
-            <Home className="w-4 h-4" />
-            <span className="font-medium">Về trang khách hàng</span>
+            <Home className="w-5 h-5" />
+            <span>Trang khách hàng</span>
           </button>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-slate-300 hover:bg-red-600 hover:text-white rounded-lg transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-slate-300 hover:bg-red-600 hover:text-white rounded-xl transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg"
           >
-            <LogOut className="w-4 h-4" />
-            <span className="font-medium">Đăng xuất</span>
+            <LogOut className="w-5 h-5" />
+            <span>Đăng xuất</span>
           </button>
         </div>
       </div>

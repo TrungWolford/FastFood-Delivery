@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import TopNavigation from '../../components/ui/Header/Header';
 import MainBanner from '../../components/MainBanner';
 import ProductGrid from '../../components/ProductGrid';
-import CategoryMainPage from '../../components/CategoryMainPage';
 import Footer from '../../components/ui/Footer/Footer';
 
 const Home: React.FC = () => {
@@ -22,20 +21,10 @@ const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <TopNavigation />
-  {/* Hero Section with Category and Banner side by side */}
-        <section className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-12 gap-6">
-            {/* Left: Category Menu */}
-            <div className="col-span-12 lg:col-span-3">
-              <CategoryMainPage />
-            </div>
-            
-            {/* Right: Main Banner */}
-            <div className="col-span-12 lg:col-span-9">
-              <MainBanner />
-            </div>
-          </div>
-        </section>
+      {/* Hero Section with Main Banner */}
+      <section className="container mx-auto px-4 py-6">
+        <MainBanner />
+      </section>
       
       {/* Featured Products */}
       <section className="container mx-auto px-36 py-8">
