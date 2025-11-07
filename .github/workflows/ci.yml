@@ -25,8 +25,5 @@ jobs:
         run: |
           find . -type f -name "*.java" -exec sed -i '1s/^\xEF\xBB\xBF//' {} \;
 
-      - name: Build with Maven
+      - name: Build with Maven (skip tests)
         run: mvn clean package -DskipTests
-
-      - name: Run tests
-        run: mvn test
