@@ -18,6 +18,8 @@ import ProductDetail from './pages/ProductDetail/ProductDetail';
 import PaymentPage from './pages/Payment/PaymentPage';
 import OrderSuccessPage from './pages/OrderSuccess/OrderSuccessPage';
 import ErrorBoundary from './components/ErrorBoundary';
+import LoginFastFood from './pages/FastFoodServer/LoginFastFood';
+import FastFoodDashboard from './pages/FastFoodServer/FastFoodDashboard';
 
 const App: React.FC = () => {
   return (
@@ -69,6 +71,8 @@ const App: React.FC = () => {
           </ErrorBoundary>
         }
       />
+      
+      {/* Admin Routes */}
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/products" element={<AdminProduct />} />
@@ -78,6 +82,10 @@ const App: React.FC = () => {
       <Route path="/admin/accounts" element={<AdminAccounts />} />
       <Route path="/admin/roles" element={<AdminRoles />} />
       <Route path="/admin/categories" element={<AdminCategory />} />
+
+      {/* FastFood Server Routes */}
+      <Route path="/fastfood/login" element={<LoginFastFood />} />
+      <Route path="/fastfood/dashboard" element={<FastFoodDashboard />} />
 
       {/* Redirect old auth routes to home */}
       <Route path="/auth/login" element={<Navigate to="/" replace />} />
