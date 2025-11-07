@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { imgaes } from '../../../assets/img';
 import { localStorageCartService } from '@/services/localStorageCartService';
 import type { CartItem } from '@/types/cart';
+import CategoryNavbar from '../../CategoryNavbar';
 
 const TopNavigation: React.FC = () => {
   const navigate = useNavigate();
@@ -233,19 +234,20 @@ const TopNavigation: React.FC = () => {
   };
 
   return (
-    <div className="bg-primary text-white">
-      {/* Top bar with hotline */}
-      <div className="bg-[#F38258] text-white px-4 py-1 text-sm">
-        <div className="container mx-auto flex items-center">
-          <Phone className="w-4 h-4 mr-2" />
-          <span className="font-medium">Hotline: 0903.400.028</span>
-          <span className="ml-2 text-white-700">(8h - 12h, 13h30 - 17h)</span>
-          <span className="ml-auto">Liên hệ hợp tác</span>
+    <>
+      <div className="bg-primary text-white">
+        {/* Top bar with hotline */}
+        <div className="bg-[#F38258] text-white px-4 py-1 text-sm">
+          <div className="container mx-auto flex items-center">
+            <Phone className="w-4 h-4 mr-2" />
+            <span className="font-medium">Hotline: 0903.400.028</span>
+            <span className="ml-2 text-white-700">(8h - 12h, 13h30 - 17h)</span>
+            <span className="ml-auto">Liên hệ hợp tác</span>
+          </div>
         </div>
-      </div>
 
-      {/* Main navigation */}
-      <div className="container h-[75px]  mx-auto px-[70px] py-3 flex justify-between">
+        {/* Main navigation */}
+        <div className="container h-[75px]  mx-auto px-[70px] py-3 flex justify-between">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
           <button
@@ -459,12 +461,16 @@ const TopNavigation: React.FC = () => {
         </div>
       </div>
 
-      {/* Login Dialog */}
-      <LoginDialog isOpen={isLoginDialogOpen} onClose={() => setIsLoginDialogOpen(false)} />
+        {/* Login Dialog */}
+        <LoginDialog isOpen={isLoginDialogOpen} onClose={() => setIsLoginDialogOpen(false)} />
 
-      {/* Cart Dialog */}
-      <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-    </div>
+        {/* Cart Dialog */}
+        <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      </div>
+      
+      {/* Category Navigation Bar */}
+      <CategoryNavbar />
+    </>
   );
 };
 
