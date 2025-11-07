@@ -20,6 +20,11 @@ import OrderSuccessPage from './pages/OrderSuccess/OrderSuccessPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoginFastFood from './pages/FastFoodServer/LoginFastFood';
 import FastFoodDashboard from './pages/FastFoodServer/FastFoodDashboard';
+import FastFoodAccount from './pages/FastFoodServer/FastFoodAccount';
+import FastFoodRole from './pages/FastFoodServer/FastFoodRole';
+import FastFoodOrder from './pages/FastFoodServer/FastFoodOrder';
+import FastFoodRestaurant from './pages/FastFoodServer/FastFoodRestaurant';
+import FastFoodDrone from './pages/FastFoodServer/FastFoodDrone';
 
 const App: React.FC = () => {
   return (
@@ -86,6 +91,11 @@ const App: React.FC = () => {
       {/* FastFood Server Routes */}
       <Route path="/fastfood/login" element={<LoginFastFood />} />
       <Route path="/fastfood/dashboard" element={<FastFoodDashboard />} />
+      <Route path="/fastfood/accounts" element={<FastFoodAccount />} />
+      <Route path="/fastfood/roles" element={<FastFoodRole />} />
+      <Route path="/fastfood/orders" element={<FastFoodOrder />} />
+      <Route path="/fastfood/restaurants" element={<FastFoodRestaurant />} />
+      <Route path="/fastfood/drones" element={<FastFoodDrone />} />
 
       {/* Redirect old auth routes to home */}
       <Route path="/auth/login" element={<Navigate to="/" replace />} />

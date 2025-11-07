@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../hooks/redux'
 import { mockProducts, mockCategories, mockAccounts } from '../../hooks/data'
-import LeftTaskbar from '../../components/LeftTaskbar'
+import LeftTaskBarFastFood from '../../components/LeftTaskBarFastFood'
 import { 
   BarChart, 
   Package, 
@@ -90,7 +90,7 @@ const FastFoodDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <LeftTaskbar />
+      <LeftTaskBarFastFood />
       
       <div className="ml-64 p-4">
         {/* Header */}

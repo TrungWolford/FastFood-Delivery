@@ -18,21 +18,30 @@ export interface LoginResponse {
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
-      const response: AxiosResponse<Account> = await axiosInstance.post(API.ACCOUNT_LOGIN, {
+      // Backend returns LoginResponse with { success, message, user }
+      const response: AxiosResponse<LoginResponse> = await axiosInstance.post(API.ACCOUNT_LOGIN, {
         accountPhone: credentials.email, // Using email field as phone
         password: credentials.password
       });
       
-      // Save user data to localStorage
-      if (response.data) {
-        localStorage.setItem('user', JSON.stringify(response.data))
+      // Check if login was successful
+      if (response.data.success && response.data.user) {
+        // Save user data to localStorage
+        localStorage.setItem('user', JSON.stringify(response.data.user))
         localStorage.setItem('isAuthenticated', 'true')
+        
+        return {
+          success: true,
+          user: response.data.user,
+          message: response.data.message
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || 'Đăng nhập thất bại'
+        };
       }
       
-      return {
-        success: true,
-        user: response.data
-      };
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 
                           error.message || 
