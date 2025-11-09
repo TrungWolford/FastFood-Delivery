@@ -2,12 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/redux';
 import { toast } from 'sonner';
-import { mockProducts, searchProducts } from '../../hooks/data';
 import LeftTaskbar from '../../components/LeftTaskbar';
 import AddProductModal from '../../components/modals/AddProductModal';
 import EditProductModal from '../../components/modals/EditProductModal';
 import ViewProductModal from '../../components/modals/ViewProductModal';
-import { productService } from '../../services/productService';
+import { menuItemService, type MenuItemResponse } from '../../services/menuItemService';
 import { Button } from '../../components/ui/Button/Button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
@@ -42,88 +41,44 @@ const AdminProduct: React.FC = () => {
     const [totalItems, setTotalItems] = useState(0);
     const itemsPerPage = 10;
 
-    // Load products from backend
+    // Load menu items from backend
     const loadProducts = async (page: number = 0) => {
         try {
             setLoading(true);
-            let response;
-
-            // Use search if searchTerm is provided
-            if (searchTerm.trim()) {
-                response = await productService.searchProducts(searchTerm.trim(), page, itemsPerPage);
-            } else {
-                response = await productService.getAllProducts(page, itemsPerPage);
-            }
+            
+            // Get all menu items with pagination
+            const response = await menuItemService.getAllMenuItems(page, itemsPerPage);
 
             console.log('🔍 Backend Response:', response);
-            console.log('📦 Response type:', typeof response);
-            console.log('📋 Response keys:', Object.keys(response));
 
-            // Giả sử response có cấu trúc { content: Product[], totalPages: number, totalElements: number }
             if (response.content) {
-                console.log('✅ Using paginated response');
-                console.log(
-                    '📸 Products with images:',
-                    response.content.map((p: any) => ({
-                        id: p.productId,
-                        name: p.productName,
-                        images: p.images,
-                    })),
-                );
+                let filteredItems = response.content;
 
-                let filteredProducts = response.content;
-
-                // Apply status filter locally if needed
-                if (statusFilter !== 'all') {
-                    const status = statusFilter === 'active' ? 1 : 0;
-                    filteredProducts = filteredProducts.filter((product: any) => product.status === status);
+                // Apply search filter
+                if (searchTerm.trim()) {
+                    const searchLower = searchTerm.toLowerCase();
+                    filteredItems = filteredItems.filter((item) => 
+                        item.name.toLowerCase().includes(searchLower) ||
+                        item.description.toLowerCase().includes(searchLower)
+                    );
                 }
 
-                setProducts(filteredProducts);
+                // Apply status filter
+                if (statusFilter !== 'all') {
+                    const isActive = statusFilter === 'active';
+                    filteredItems = filteredItems.filter((item) => item.isAvailable === isActive);
+                }
+
+                setProducts(filteredItems as any); // Temporary cast until we update Product type
                 setTotalPages(response.totalPages || 1);
                 setTotalItems(response.totalElements || 0);
-            } else {
-                console.log('⚠️ Using direct response');
-                console.log(
-                    '📸 Products with images:',
-                    response.map((p: any) => ({
-                        id: p.productId,
-                        name: p.productName,
-                        images: p.images,
-                    })),
-                );
-
-                let filteredProducts = response;
-
-                // Apply status filter locally if needed
-                if (statusFilter !== 'all') {
-                    const status = statusFilter === 'active' ? 1 : 0;
-                    filteredProducts = filteredProducts.filter((product: any) => product.status === status);
-                }
-
-                // Fallback nếu response không có pagination
-                setProducts(filteredProducts);
-                setTotalPages(1);
-                setTotalItems(filteredProducts.length || 0);
             }
         } catch (error) {
-            console.error('Error loading products:', error);
-            // Fallback to mock data
-            let filteredProducts = mockProducts;
-
-            // Apply filters to mock data
-            if (searchTerm.trim()) {
-                filteredProducts = searchProducts(searchTerm);
-            }
-
-            if (statusFilter !== 'all') {
-                const status = statusFilter === 'active' ? 1 : 0;
-                filteredProducts = filteredProducts.filter((product) => product.status === status);
-            }
-
-            setProducts(filteredProducts);
-            setTotalPages(Math.ceil(filteredProducts.length / itemsPerPage));
-            setTotalItems(filteredProducts.length);
+            console.error('❌ Error loading menu items:', error);
+            toast.error('Không thể tải danh sách món ăn');
+            setProducts([]);
+            setTotalPages(1);
+            setTotalItems(0);
         } finally {
             setLoading(false);
         }
@@ -419,29 +374,23 @@ const AdminProduct: React.FC = () => {
                         <Table className="w-full">
                             <TableHeader>
                                 <TableRow className="bg-slate-800 hover:bg-slate-800 border-b border-slate-700">
-                                    <TableHead className="font-semibold text-white px-4 py-3 text-center text-sm w-24">
-                                        ID
-                                    </TableHead>
                                     <TableHead className="font-semibold text-white px-4 py-3 text-left text-sm w-20">
                                         Hình ảnh
                                     </TableHead>
-                                    <TableHead className="font-semibold text-white px-4 py-3 text-left text-sm w-48">
-                                        Tên sản phẩm
+                                    <TableHead className="font-semibold text-white px-4 py-3 text-left text-sm w-64">
+                                        Tên món ăn
                                     </TableHead>
-                                    <TableHead className="font-semibold text-white px-4 py-3 text-left text-sm w-48">
-                                        Mô tả
+                                    <TableHead className="font-semibold text-white px-4 py-3 text-left text-sm w-32">
+                                        Danh mục
                                     </TableHead>
                                     <TableHead className="font-semibold text-white px-4 py-3 text-center text-sm w-28">
                                         Giá
-                                    </TableHead>
-                                    <TableHead className="font-semibold text-white px-4 py-3 text-center text-sm w-20">
-                                        Tồn kho
                                     </TableHead>
                                     <TableHead className="font-semibold text-white px-4 py-3 text-center text-sm w-24">
                                         Trạng thái
                                     </TableHead>
                                     <TableHead className="font-semibold text-white px-4 py-3 text-center text-sm w-28">
-                                        Ngày tạo
+                                        Hành động
                                     </TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -451,183 +400,138 @@ const AdminProduct: React.FC = () => {
                                       Array.from({ length: 10 }).map((_, index) => (
                                           <TableRow key={`skeleton-${index}`}>
                                               <TableCell className="px-4 py-3">
-                                                  <div className="flex justify-center">
-                                                      <Skeleton className="h-6 w-16 rounded" />
-                                                  </div>
-                                              </TableCell>
-                                              <TableCell className="px-4 py-3">
                                                   <Skeleton className="h-16 w-16 rounded" />
                                               </TableCell>
                                               <TableCell className="px-4 py-3">
                                                   <div className="space-y-2">
-                                                      <Skeleton className="h-4 w-40" />
-                                                      <Skeleton className="h-3 w-24" />
+                                                      <Skeleton className="h-4 w-48" />
+                                                      <Skeleton className="h-3 w-32" />
                                                   </div>
-                                              </TableCell>
-                                              <TableCell className="px-4 py-3">
-                                                  <Skeleton className="h-4 w-28" />
                                               </TableCell>
                                               <TableCell className="px-4 py-3">
                                                   <Skeleton className="h-4 w-24" />
                                               </TableCell>
                                               <TableCell className="px-4 py-3">
-                                                  <Skeleton className="h-4 w-16" />
+                                                  <Skeleton className="h-4 w-20" />
                                               </TableCell>
                                               <TableCell className="px-4 py-3">
                                                   <Skeleton className="h-6 w-20 rounded-full" />
                                               </TableCell>
                                               <TableCell className="px-4 py-3">
-                                                  <Skeleton className="h-4 w-24" />
+                                                  <Skeleton className="h-8 w-24" />
                                               </TableCell>
                                           </TableRow>
                                       ))
-                                    : currentProducts.map((product, index) => (
+                                    : currentProducts.map((product, index) => {
+                                          // Cast to any to access MenuItem fields temporarily
+                                          const menuItem = product as any;
+                                          
+                                          return (
                                           <TableRow
-                                              key={product.productId}
+                                              key={menuItem.itemId || index}
                                               className={`transition-all duration-300 ease-in-out cursor-pointer ${
                                                   index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                                              } ${
-                                                  selectedProduct?.productId === product.productId
-                                                      ? '!bg-blue-100 !border-l-4 !border-blue-600 shadow-md hover:!bg-blue-100'
-                                                      : '!border-l-4 !border-transparent hover:!bg-transparent'
-                                              }`}
+                                              } hover:bg-blue-50`}
                                               onClick={() => {
                                                   if (selectedProduct?.productId === product.productId) {
-                                                      // Click lần 2: bỏ chọn
                                                       setSelectedProduct(null);
                                                   } else {
-                                                      // Click lần 1 hoặc chọn sản phẩm khác
                                                       setSelectedProduct(product);
                                                   }
                                               }}
                                           >
-                                              <TableCell className="px-4 py-3 select-none">
-                                                  <div className="flex justify-center">
-                                                      <div className="px-2 py-1 bg-amber-100 rounded flex items-center justify-center">
-                                                          <span className="text-xs font-bold text-amber-600">
-                                                              #{product.productId}
-                                                          </span>
-                                                      </div>
-                                                  </div>
-                                              </TableCell>
-                                              <TableCell className="px-4 py-3 select-none">
+                                              {/* Hình ảnh */}
+                                              <TableCell className="px-4 py-3">
                                                   <div className="flex items-center">
-                                                      {(() => {
-                                                          console.log(
-                                                              '🖼️ Rendering image for product:',
-                                                              product.productName,
-                                                          );
-
-                                                          console.log(
-                                                              '🖼️ Product images field:',
-                                                              (product as any).images,
-                                                          );
-
-                                                          // Sử dụng field images từ backend
-                                                          const imagesArray = product.images || [];
-                                                          console.log('🖼️ Images array:', imagesArray);
-
-                                                          if (imagesArray && imagesArray.length > 0) {
-                                                              const firstImage = imagesArray[0];
-                                                              console.log('🖼️ First image object:', firstImage);
-
-                                                              // Lấy imageUrl từ object
-                                                              const imageUrl = firstImage.imageUrl;
-                                                              console.log('🖼️ Extracted image URL:', imageUrl);
-
-                                                              return (
-                                                                  <img
-                                                                      src={getImageUrl(imageUrl)}
-                                                                      alt={product.productName}
-                                                                      className="w-16 h-16 object-cover border border-gray-200"
-                                                                      onError={(e) => {
-                                                                          console.log(
-                                                                              '❌ Image failed to load:',
-                                                                              e.currentTarget.src,
-                                                                          );
-                                                                          e.currentTarget.src =
-                                                                              '/placeholder-image.jpg';
-                                                                      }}
-                                                                      onLoad={() => {
-                                                                          console.log(
-                                                                              '✅ Image loaded successfully:',
-                                                                              imageUrl,
-                                                                          );
-                                                                      }}
-                                                                  />
-                                                              );
-                                                          } else {
-                                                              console.log(
-                                                                  '❌ No images found for product:',
-                                                                  product.productName,
-                                                              );
-                                                              return (
-                                                                  <div className="w-16 h-16 bg-gray-100 flex items-center justify-center border border-gray-200">
-                                                                      <Package className="w-6 h-6 text-gray-400" />
-                                                                  </div>
-                                                              );
-                                                          }
-                                                      })()}
+                                                      {menuItem.imageUrl ? (
+                                                          <img
+                                                              src={menuItem.imageUrl}
+                                                              alt={menuItem.name}
+                                                              className="w-16 h-16 object-cover rounded border border-gray-200"
+                                                              onError={(e) => {
+                                                                  e.currentTarget.src = '/placeholder-image.jpg';
+                                                              }}
+                                                          />
+                                                      ) : (
+                                                          <div className="w-16 h-16 bg-gray-100 flex items-center justify-center rounded border border-gray-200">
+                                                              <Package className="w-6 h-6 text-gray-400" />
+                                                          </div>
+                                                      )}
                                                   </div>
                                               </TableCell>
-                                              <TableCell className="px-4 py-3 select-none">
+                                              
+                                              {/* Tên món ăn */}
+                                              <TableCell className="px-4 py-3">
                                                   <div>
                                                       <div className="font-medium text-gray-900 text-sm">
-                                                          {product.productName}
+                                                          {menuItem.name || 'N/A'}
                                                       </div>
-                                                      {/* cover removed */}
+                                                      <div className="text-xs text-gray-500 mt-1">
+                                                          {menuItem.description ? truncate(menuItem.description, 50) : ''}
+                                                      </div>
                                                   </div>
                                               </TableCell>
-                                              <TableCell className="px-4 py-3 select-none">
-                                                  <div className="font-medium text-gray-700 text-sm">
-                                                      {truncate(product.description, 30)}
-                                                  </div>
+                                              
+                                              {/* Danh mục */}
+                                              <TableCell className="px-4 py-3">
+                                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                      {menuItem.categoryName || 'Chưa phân loại'}
+                                                  </span>
                                               </TableCell>
-                                              <TableCell className="px-4 py-3 select-none">
+                                              
+                                              {/* Giá */}
+                                              <TableCell className="px-4 py-3">
                                                   <div className="flex justify-center">
-                                                      <span className="font-medium text-green-600 text-sm">
-                                                          {formatPrice(product.price)}
+                                                      <span className="font-semibold text-green-600 text-sm">
+                                                          {formatPrice(menuItem.price || 0)}
                                                       </span>
                                                   </div>
                                               </TableCell>
-                                              <TableCell className="px-4 py-3 select-none">
-                                                  <div className="flex justify-center">
-                                                      <span
-                                                          className={`font-bold text-sm ${
-                                                              product.stock > 50
-                                                                  ? 'text-green-700'
-                                                                  : product.stock > 10
-                                                                  ? 'text-yellow-700'
-                                                                  : 'text-red-700'
-                                                          }`}
-                                                      >
-                                                          {product.stock}
-                                                      </span>
-                                                  </div>
-                                              </TableCell>
-                                              <TableCell className="px-4 py-3 select-none">
+                                              
+                                              {/* Trạng thái */}
+                                              <TableCell className="px-4 py-3">
                                                   <div className="flex justify-center">
                                                       <Badge
-                                                          variant={product.status === 1 ? 'default' : 'secondary'}
+                                                          variant={menuItem.isAvailable ? 'default' : 'secondary'}
                                                           className={`px-2 py-1 text-xs font-medium text-white ${
-                                                              product.status === 1
+                                                              menuItem.isAvailable
                                                                   ? 'bg-green-700 border-green-700'
                                                                   : 'bg-red-700 border-red-700'
                                                           }`}
                                                       >
-                                                          {product.status === 1 ? 'Hoạt động' : 'Ngừng'}
+                                                          {menuItem.isAvailable ? 'Có sẵn' : 'Hết hàng'}
                                                       </Badge>
                                                   </div>
                                               </TableCell>
+                                              
+                                              {/* Hành động */}
                                               <TableCell className="px-4 py-3">
-                                                  <div className="flex justify-center">
-                                                      <span className="text-gray-600 text-xs">
-                                                          {formatDate(product.createdAt)}
-                                                      </span>
+                                                  <div className="flex justify-center gap-2">
+                                                      <Button
+                                                          size="sm"
+                                                          variant="outline"
+                                                          onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              handleEditProduct(product);
+                                                          }}
+                                                      >
+                                                          Sửa
+                                                      </Button>
+                                                      <Button
+                                                          size="sm"
+                                                          variant={menuItem.isAvailable ? 'destructive' : 'default'}
+                                                          onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              // Toggle status logic here
+                                                              toast.info('Chức năng đang phát triển');
+                                                          }}
+                                                      >
+                                                          {menuItem.isAvailable ? 'Ẩn' : 'Hiện'}
+                                                      </Button>
                                                   </div>
                                               </TableCell>
                                           </TableRow>
-                                      ))}
+                                      )})}
                             </TableBody>
                         </Table>
                     </div>

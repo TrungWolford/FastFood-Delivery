@@ -38,11 +38,6 @@ const LeftTaskbar: React.FC = () => {
       path: '/admin/products'
     },
     {
-      icon: Tags,
-      label: 'Thể loại',
-      path: '/admin/categories'
-    },
-    {
       icon: ShoppingBag,
       label: 'Đơn hàng',
       path: '/admin/orders'

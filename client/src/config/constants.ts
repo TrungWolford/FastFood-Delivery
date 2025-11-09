@@ -35,7 +35,15 @@ export const API = {
   SEARCH_ACCOUNTS: '/account/search', // GET /api/account/search?accountName=xxx&page=0&size=10
   ACCOUNT_LOGIN: '/account/login', // POST /api/account/login
 
-  // Products - Theo ProductController.java
+  // Menu Items - Theo MenuItemController.java
+  GET_ALL_MENU_ITEMS: '/menu-items', // GET /api/menu-items?page=0&size=10
+  GET_MENU_ITEM_BY_ID: (menuItemId: string) => `/menu-items/${menuItemId}`, // GET /api/menu-items/{menuItemId}
+  GET_MENU_ITEMS_BY_RESTAURANT: (restaurantId: string) => `/menu-items/restaurant/${restaurantId}`, // GET /api/menu-items/restaurant/{restaurantId}
+  CREATE_MENU_ITEM: '/menu-items', // POST /api/menu-items
+  UPDATE_MENU_ITEM: (menuItemId: string) => `/menu-items/${menuItemId}`, // PUT /api/menu-items/{menuItemId}
+  CHANGE_MENU_ITEM_STATUS: (menuItemId: string) => `/menu-items/${menuItemId}/status`, // PATCH /api/menu-items/{menuItemId}/status
+
+  // Products - DEPRECATED - Use Menu Items instead
   GET_ALL_PRODUCTS: '/product', // GET /api/product?page=0&size=10
   GET_PRODUCT_BY_ID: (productId: string) => `/product/${productId}`, // GET /api/product/{productId}
   CREATE_PRODUCT: '/product', // POST /api/product (Admin only)
@@ -195,6 +203,12 @@ export const APP_CONFIG = {
     ACTIVE: 1,     // Đang hoạt động
   },
   
+  // Menu Item status constants (same as Product)
+  MENU_ITEM_STATUS: {
+    INACTIVE: 0,   // Không hoạt động
+    ACTIVE: 1,     // Đang hoạt động
+  },
+  
   // Order status constants
   ORDER_STATUS: {
     PENDING: 0,      // Chờ xử lý
@@ -233,6 +247,12 @@ export const ERROR_MESSAGES = {
   PRODUCT_CREATE_FAILED: 'Tạo sản phẩm thất bại.',
   PRODUCT_UPDATE_FAILED: 'Cập nhật sản phẩm thất bại.',
   
+  // Menu Item specific errors
+  MENU_ITEM_NOT_FOUND: 'Không tìm thấy món ăn.',
+  MENU_ITEM_CREATE_FAILED: 'Tạo món ăn thất bại.',
+  MENU_ITEM_UPDATE_FAILED: 'Cập nhật món ăn thất bại.',
+  MENU_ITEM_STATUS_CHANGE_FAILED: 'Thay đổi trạng thái món ăn thất bại.',
+  
   // Category specific errors
   CATEGORY_NOT_FOUND: 'Không tìm thấy danh mục.',
   CATEGORY_CREATE_FAILED: 'Tạo danh mục thất bại.',
@@ -268,6 +288,11 @@ export const SUCCESS_MESSAGES = {
   PRODUCT_CREATED: 'Tạo sản phẩm thành công!',
   PRODUCT_UPDATED: 'Cập nhật sản phẩm thành công!',
   PRODUCT_STATUS_CHANGED: 'Thay đổi trạng thái sản phẩm thành công!',
+  
+  // Menu Item specific success
+  MENU_ITEM_CREATED: 'Tạo món ăn thành công!',
+  MENU_ITEM_UPDATED: 'Cập nhật món ăn thành công!',
+  MENU_ITEM_STATUS_CHANGED: 'Thay đổi trạng thái món ăn thành công!',
   
   // Category specific success
   CATEGORY_CREATED: 'Tạo danh mục thành công!',

@@ -3,19 +3,37 @@ import { Button } from '../ui/Button/Button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { productService } from '../../services/productService';
-import { categoryService } from '../../services/categoryService';
+import { menuItemService, type CreateMenuItemRequest } from '../../services/menuItemService';
+import { restaurantService } from '../../services/restaurantService';
+import { authService } from '../../services/authService';
 import { imageService } from '../../services/imageService';
 import { cloudinaryService } from '../../services/cloudinaryService';
 
-import { VALIDATION_RULES, SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../config/constants';
-import type { ProductFormData, CreateProductRequest } from '../../types/product';
-import type { Category } from '../../types/category';
+import { VALIDATION_RULES } from '../../config/constants';
 import { Upload, X, BookOpen } from 'lucide-react';
+
+// Fixed categories for FastFood
+const FIXED_CATEGORIES = [
+    'Đồ ăn',
+    'Thực phẩm',
+    'Rượu bia',
+    'Hoa',
+    'Siêu thị',
+    'Thuốc',
+    'Thú cưng'
+];
+
+interface MenuItemFormData {
+    name: string;
+    categoryName: string;
+    price: string;
+    description: string;
+    restaurantId: string;
+    imageUrl: string;
+}
 
 interface AddProductModalProps {
     isOpen: boolean;
@@ -25,60 +43,126 @@ interface AddProductModalProps {
 
 const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSuccess }) => {
     const [isLoading, setIsLoading] = useState(false);
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>(new Array(5).fill(''));
+    const [imagePreviewUrl, setImagePreviewUrl] = useState<string>('');
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [restaurantId, setRestaurantId] = useState<string>('');
 
-    const [formData, setFormData] = useState<ProductFormData>({
-        productName: '',
-        selectedCategories: [],
+    const [formData, setFormData] = useState<MenuItemFormData>({
+        name: '',
+        categoryName: '',
         price: '',
-        stock: '',
         description: '',
-        status: 1,
-        images: [],
+        restaurantId: '',
+        imageUrl: '',
     });
 
-    // Load categories on component mount
+    // Load restaurant ID when modal opens
     useEffect(() => {
         if (isOpen) {
-            loadCategories();
+            loadRestaurantId();
         }
     }, [isOpen]);
 
-    const loadCategories = async () => {
+    const loadRestaurantId = async () => {
         try {
-            const response = await categoryService.getAllCategories();
-            setCategories(response.content);
-        } catch (error) {
-            console.error('Error loading categories:', error);
+            // Get current user from localStorage
+            const user = authService.loadUserFromStorage();
+            
+            console.log('📋 Current user from localStorage:', user);
+            
+            // Get accountId from either userID or accountId field
+            const accountId = user?.accountId || user?.userID;
+            
+            if (!user || !accountId) {
+                console.error('❌ User not found or missing accountId/userID');
+                console.log('💡 User object:', user);
+                console.log('💡 Please login first');
+                console.log('💡 To check: JSON.parse(localStorage.getItem("user"))');
+                
+                // For development/testing: Use a default restaurant ID
+                const defaultRestaurantId = '1';
+                setRestaurantId(defaultRestaurantId);
+                setFormData(prev => ({ ...prev, restaurantId: defaultRestaurantId }));
+                console.log('⚠️ Using default restaurant ID for testing:', defaultRestaurantId);
+                
+                toast.warning('Không tìm thấy thông tin đăng nhập. Đang sử dụng nhà hàng mặc định để test.', {
+                    duration: 5000,
+                });
+                return;
+            }
 
-            // Fallback: Use mock categories when API is not available
-            const mockCategories = [
-                { categoryId: '1', categoryName: 'Tiểu thuyết', status: 1 },
-                { categoryId: '2', categoryName: 'Khoa học', status: 1 },
-                { categoryId: '3', categoryName: 'Lịch sử', status: 1 },
-                { categoryId: '4', categoryName: 'Văn học', status: 1 },
-                { categoryId: '5', categoryName: 'Kinh tế', status: 1 },
-            ];
+            console.log('🔍 Fetching restaurants for owner ID:', accountId);
+            console.log('👤 User info:');
+            console.log('   - Account ID:', accountId);
+            console.log('   - Name:', user.accountName || user.fullname);
+            console.log('   - Phone:', user.accountPhone || user.phone);
+            console.log('   - Roles:', user.roles?.map(r => r.roleName).join(', '));
 
-            setCategories(mockCategories);
-
-            toast.warning('Không thể kết nối server. Sử dụng danh mục mẫu.');
+            // Get restaurants by owner ID
+            const response = await restaurantService.getRestaurantsByOwner(accountId);
+            
+            console.log('📦 Restaurant API response:', response);
+            
+            if (response.success && response.data && response.data.length > 0) {
+                // Use the first restaurant
+                const firstRestaurantId = response.data[0].restaurantId;
+                const restaurantName = response.data[0].restaurantName;
+                
+                setRestaurantId(firstRestaurantId);
+                setFormData(prev => ({ ...prev, restaurantId: firstRestaurantId }));
+                
+                console.log('✅ Successfully loaded restaurant:');
+                console.log('   - Restaurant ID:', firstRestaurantId);
+                console.log('   - Restaurant Name:', restaurantName);
+                console.log('   - Owner ID:', accountId);
+                
+                toast.success(`Đã tải thông tin nhà hàng: ${restaurantName}`, {
+                    duration: 2000,
+                });
+            } else {
+                console.warn('⚠️ No restaurants found for owner:', accountId);
+                console.log('💡 Please create a restaurant first in Restaurant Management');
+                console.log('💡 Response data:', response.data);
+                
+                // For development/testing: Use a default restaurant ID
+                const defaultRestaurantId = '1';
+                setRestaurantId(defaultRestaurantId);
+                setFormData(prev => ({ ...prev, restaurantId: defaultRestaurantId }));
+                console.log('⚠️ Using default restaurant ID:', defaultRestaurantId);
+                
+                toast.warning('Bạn chưa có nhà hàng. Đang sử dụng nhà hàng mặc định để test.', {
+                    duration: 5000,
+                });
+            }
+        } catch (error: any) {
+            console.error('❌ Error loading restaurant ID:', error);
+            console.error('📋 Error details:', error.response?.data);
+            console.error('📋 Error message:', error.message);
+            
+            // For development: Use fallback ID
+            const fallbackRestaurantId = '1';
+            setRestaurantId(fallbackRestaurantId);
+            setFormData(prev => ({ ...prev, restaurantId: fallbackRestaurantId }));
+            console.log('⚠️ Using fallback restaurant ID:', fallbackRestaurantId);
+            
+            toast.warning('Không thể kết nối API nhà hàng. Đang sử dụng nhà hàng mặc định.', {
+                duration: 5000,
+            });
         }
     };
 
-    const handleInputChange = (field: keyof ProductFormData, value: string | number | string[]) => {
+    const handleInputChange = (field: keyof MenuItemFormData, value: string | number) => {
         setFormData((prev) => ({
             ...prev,
             [field]: value,
         }));
     };
 
-    const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
 
-        const file = files[0]; // Only take the first file for single upload
+        const file = files[0];
 
         // Validate file using imageService
         const validation = imageService.validateImage(file);
@@ -87,87 +171,56 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
             return;
         }
 
-        // Save image to assets and create preview URL
         try {
             // Create preview URL
             const previewUrl = imageService.createPreviewUrl(file);
+            setImagePreviewUrl(previewUrl);
+            setImageFile(file);
 
-            // Update the specific index
-            setFormData((prev) => ({
-                ...prev,
-                images: prev.images.map((_, i) => (i === index ? file : prev.images[i])),
-            }));
-
-            setImagePreviewUrls((prev) => {
-                const newUrls = [...prev];
-                newUrls[index] = previewUrl;
-                return newUrls;
-            });
-
-            toast.success(`Đã thêm hình ảnh ${index + 1}. Sẽ upload lên Cloudinary khi tạo sản phẩm.`);
+            toast.success('Đã chọn hình ảnh. Sẽ upload lên Cloudinary khi tạo món ăn.');
         } catch (error) {
-            console.error('Error saving image:', error);
-            toast.error('Không thể lưu hình ảnh');
+            console.error('Error processing image:', error);
+            toast.error('Không thể xử lý hình ảnh');
         }
     };
 
-    const removeImage = (index: number) => {
+    const removeImage = () => {
         // Revoke the object URL to free memory
-        if (imagePreviewUrls[index]) {
-            imageService.revokePreviewUrl(imagePreviewUrls[index]);
+        if (imagePreviewUrl) {
+            imageService.revokePreviewUrl(imagePreviewUrl);
         }
-
-        // Clear the specific index
-        setImagePreviewUrls((prev) => {
-            const newUrls = [...prev];
-            newUrls[index] = '';
-            return newUrls;
-        });
-
-        setFormData((prev) => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index),
-        }));
-    };
-
-    const handleCategoryToggle = (categoryId: string) => {
-        setFormData((prev) => ({
-            ...prev,
-            selectedCategories: prev.selectedCategories.includes(categoryId)
-                ? prev.selectedCategories.filter((id) => id !== categoryId)
-                : [...prev.selectedCategories, categoryId],
-        }));
+        setImagePreviewUrl('');
+        setImageFile(null);
     };
 
     const validateForm = (): boolean => {
-        if (!formData.productName.trim()) {
-            toast.error('Vui lòng nhập tên sản phẩm');
+        if (!formData.restaurantId) {
+            toast.error('Không tìm thấy thông tin nhà hàng');
             return false;
         }
 
-        if (formData.productName.length < VALIDATION_RULES.PRODUCT_NAME.MIN_LENGTH) {
+        if (!formData.name.trim()) {
+            toast.error('Vui lòng nhập tên món ăn');
+            return false;
+        }
+
+        if (formData.name.length < VALIDATION_RULES.PRODUCT_NAME.MIN_LENGTH) {
             toast.error(VALIDATION_RULES.PRODUCT_NAME.MESSAGE);
             return false;
         }
-
 
         if (!formData.price || parseFloat(formData.price) <= 0) {
             toast.error(VALIDATION_RULES.PRICE.MESSAGE);
             return false;
         }
 
-        if (!formData.stock || parseInt(formData.stock) < 0) {
-            toast.error(VALIDATION_RULES.QUANTITY.MESSAGE);
-            return false;
-        }
-
         if (!formData.description.trim()) {
-            toast.error('Vui lòng nhập mô tả sản phẩm');
+            toast.error('Vui lòng nhập mô tả món ăn');
             return false;
         }
 
-        if (formData.selectedCategories.length === 0) {
-            toast.error('Vui lòng chọn ít nhất một danh mục');
+        if (!formData.categoryName) {
+            toast.error('Vui lòng chọn danh mục');
             return false;
         }
 
@@ -182,131 +235,86 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
         setIsLoading(true);
 
         try {
-            // ========== STEP 1: Upload images to Cloudinary ==========
-            console.log('=== STARTING FILE UPLOADS ===');
-            let uploadedImageUrls: string[] = [];
+            let uploadedImageUrl = '';
 
-            // Upload all images to Cloudinary
-            if (formData.images.length > 0) {
-                console.log('Uploading', formData.images.length, 'images to Cloudinary...');
+            // ========== STEP 1: Upload image to Cloudinary (if selected) ==========
+            if (imageFile) {
+                console.log('=== UPLOADING IMAGE TO CLOUDINARY ===');
+                console.log('Image file:', imageFile.name, 'Size:', imageFile.size, 'Type:', imageFile.type);
                 
-                for (let i = 0; i < formData.images.length; i++) {
-                    const image = formData.images[i];
-                    console.log(`Uploading image ${i + 1}/${formData.images.length}:`, image.name, 'Size:', image.size, 'Type:', image.type);
+                try {
+                    const result = await cloudinaryService.uploadImage(imageFile, {
+                        folder: 'menuitems/images'
+                    });
                     
-                    try {
-                        const result = await cloudinaryService.uploadImage(image, {
-                            folder: 'products/images'
-                        });
+                    console.log('Image upload result:', result);
+                    
+                    if (result.success && result.data) {
+                        uploadedImageUrl = result.data.url;
+                        console.log('✅ Image uploaded successfully:', uploadedImageUrl);
                         
-                        console.log(`Image ${i + 1} upload result:`, result);
-                        if (result.success && result.data) {
-                            uploadedImageUrls.push(result.data.url);
-                            console.log(`✅ Image ${i + 1} uploaded successfully:`, result.data.url);
-                            
-                            toast.success(`Đã tải lên hình ảnh ${i + 1}/${formData.images.length}`, {
-                                duration: 2000,
-                                position: 'top-right',
-                            });
-                        } else {
-                            console.error(`❌ Image ${i + 1} upload failed:`, result.message);
-                            toast.error(`Không thể tải lên hình ảnh ${i + 1}: ${result.message}`, {
-                                duration: 4000,
-                                position: 'top-right',
-                                style: {
-                                    background: '#ef4444',
-                                    color: '#fff',
-                                    borderRadius: '8px',
-                                    padding: '12px 16px',
-                                },
-                            });
-                            throw new Error(`Failed to upload image ${i + 1}: ${result.message}`);
-                        }
-                    } catch (error) {
-                        console.error(`❌ Error uploading image ${i + 1}:`, error);
-                        toast.error(`Lỗi khi tải lên hình ảnh ${i + 1}`, {
-                            duration: 4000,
+                        toast.success('Đã tải lên hình ảnh thành công', {
+                            duration: 2000,
                             position: 'top-right',
-                            style: {
-                                background: '#ef4444',
-                                color: '#fff',
-                                borderRadius: '8px',
-                                padding: '12px 16px',
-                            },
                         });
-                        throw error;
+                    } else {
+                        console.error('❌ Image upload failed:', result.message);
+                        toast.error(`Không thể tải lên hình ảnh: ${result.message}`);
+                        throw new Error(`Failed to upload image: ${result.message}`);
                     }
+                } catch (error) {
+                    console.error('❌ Error uploading image:', error);
+                    toast.error('Lỗi khi tải lên hình ảnh');
+                    throw error;
                 }
-                
-                console.log('✅ All images uploaded successfully:', uploadedImageUrls);
             } else {
-                console.log('No images to upload');
+                console.log('No image selected, creating menu item without image');
             }
 
-            // ========== STEP 2: Create product with Cloudinary URLs ==========
-            console.log('=== CREATING PRODUCT IN DATABASE ===');
+            // ========== STEP 2: Create menu item with Cloudinary URL ==========
+            console.log('=== CREATING MENU ITEM IN DATABASE ===');
             
-            const productData: CreateProductRequest = {
-                productName: formData.productName.trim(),
-                categoryIds: formData.selectedCategories,
-                price: parseFloat(formData.price),
-                stock: parseInt(formData.stock),
+            const menuItemData: CreateMenuItemRequest = {
+                restaurantId: formData.restaurantId,
+                name: formData.name.trim(),
                 description: formData.description.trim(),
-                status: formData.status,
-                // Use Cloudinary URLs instead of local file names
-                imageNames: uploadedImageUrls.length > 0 ? uploadedImageUrls : undefined,
+                categoryName: formData.categoryName,
+                price: parseFloat(formData.price),
+                imageUrl: uploadedImageUrl, // Use uploaded URL or empty string
             };
 
-            console.log('📦 Creating product with data:', {
-                productName: productData.productName,
-                price: productData.price,
-                stock: productData.stock,
-                categories: productData.categoryIds,
-                imageCount: uploadedImageUrls.length,
-                imageUrls: uploadedImageUrls,
+            console.log('📦 Creating menu item with data:', menuItemData);
+
+            await menuItemService.createMenuItem(menuItemData);
+
+            toast.success('Đã tạo món ăn thành công!', {
+                duration: 3000,
+                position: 'top-right',
             });
-
-            await productService.createProduct(productData);
-
-            toast.success(
-                `${SUCCESS_MESSAGES.PRODUCT_CREATED} ${
-                    uploadedImageUrls.length > 0 ? `với ${uploadedImageUrls.length} hình ảnh` : ''
-                }`,
-                {
-                    duration: 3000,
-                    position: 'top-right',
-                    style: {
-                        background: '#10b981',
-                        color: '#fff',
-                        borderRadius: '8px',
-                        padding: '12px 16px',
-                    },
-                }
-            );
 
             // Reset form
             setFormData({
-                productName: '',
-                selectedCategories: [],
+                name: '',
+                categoryName: '',
                 price: '',
-                stock: '',
                 description: '',
-                status: 1,
-                images: [],
+                restaurantId: restaurantId, // Keep current restaurant ID
+                imageUrl: '',
             });
 
-            // Clear image previews and names
-            imagePreviewUrls.forEach((url) => {
-                if (url) imageService.revokePreviewUrl(url);
-            });
-            setImagePreviewUrls(new Array(5).fill(''));
+            // Clear image preview
+            if (imagePreviewUrl) {
+                imageService.revokePreviewUrl(imagePreviewUrl);
+            }
+            setImagePreviewUrl('');
+            setImageFile(null);
 
             onSuccess();
             onClose();
         } catch (error: any) {
-            console.error('Error creating product:', error);
+            console.error('Error creating menu item:', error);
 
-            const errorMessage = error.response?.data?.message || error.message || ERROR_MESSAGES.PRODUCT_CREATE_FAILED;
+            const errorMessage = error.response?.data?.message || error.message || 'Không thể tạo món ăn';
 
             toast.error(errorMessage);
         } finally {
@@ -315,19 +323,21 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
     };
 
     const handleClose = () => {
-        // Clean up image preview URLs
-        imagePreviewUrls.forEach((url) => imageService.revokePreviewUrl(url));
-        setImagePreviewUrls([]);
+        // Clean up image preview URL
+        if (imagePreviewUrl) {
+            imageService.revokePreviewUrl(imagePreviewUrl);
+        }
+        setImagePreviewUrl('');
+        setImageFile(null);
 
         // Reset form
         setFormData({
-            productName: '',
-            selectedCategories: [],
+            name: '',
+            categoryName: '',
             price: '',
-            stock: '',
             description: '',
-            status: 1,
-            images: [],
+            restaurantId: restaurantId, // Keep current restaurant ID
+            imageUrl: '',
         });
 
         onClose();
@@ -339,32 +349,54 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <BookOpen className="w-5 h-5 text-amber-500" />
-                        Thêm sản phẩm mới
+                        Thêm món ăn mới
                     </DialogTitle>
-                    <DialogDescription>Điền thông tin chi tiết để tạo sản phẩm mới trong hệ thống</DialogDescription>
+                    <DialogDescription>
+                        Điền thông tin chi tiết để tạo món ăn mới trong hệ thống
+                        {formData.restaurantId && (
+                            <span className="text-xs text-gray-500 ml-2">
+                                (Restaurant ID: {formData.restaurantId})
+                            </span>
+                        )}
+                    </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Basic Information */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="productName">Tên sản phẩm *</Label>
+                            <Label htmlFor="name">Tên món ăn *</Label>
                             <Input
-                                id="productName"
-                                value={formData.productName}
-                                onChange={(e) => handleInputChange('productName', e.target.value)}
-                                placeholder="Nhập tên sản phẩm..."
+                                id="name"
+                                value={formData.name}
+                                onChange={(e) => handleInputChange('name', e.target.value)}
+                                placeholder="Nhập tên món ăn..."
                                 className="w-full"
                                 maxLength={VALIDATION_RULES.PRODUCT_NAME.MAX_LENGTH}
                             />
                         </div>
 
-                        {/* author field removed */}
+                        <div className="space-y-2">
+                            <Label htmlFor="categoryName">Danh mục *</Label>
+                            <Select
+                                value={formData.categoryName}
+                                onValueChange={(value) => handleInputChange('categoryName', value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn danh mục" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {FIXED_CATEGORIES.map((category) => (
+                                        <SelectItem key={category} value={category}>
+                                            {category}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* cover field removed */}
-
+                    <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="price">Giá bán (VNĐ) *</Label>
                             <Input
@@ -378,60 +410,16 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
                                 className="w-full"
                             />
                         </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="stock">Tồn kho *</Label>
-                            <Input
-                                id="stock"
-                                type="number"
-                                value={formData.stock}
-                                onChange={(e) => handleInputChange('stock', e.target.value)}
-                                placeholder="0"
-                                min="0"
-                                className="w-full"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Categories */}
-                    <div className="space-y-2">
-                        <Label>Danh mục *</Label>
-                        <div className="border border-gray-200 rounded-md p-3 max-h-32 overflow-y-auto">
-                            {categories.length === 0 ? (
-                                <p className="text-gray-500 text-sm">Đang tải danh mục...</p>
-                            ) : (
-                                <div className="flex flex-wrap gap-2">
-                                    {categories.map((category) => (
-                                        <Badge
-                                            key={category.categoryId}
-                                            variant={
-                                                formData.selectedCategories.includes(category.categoryId)
-                                                    ? 'default'
-                                                    : 'outline'
-                                            }
-                                            className={`cursor-pointer transition-all ${
-                                                formData.selectedCategories.includes(category.categoryId)
-                                                    ? 'bg-amber-600 text-white border-amber-600'
-                                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                            }`}
-                                            onClick={() => handleCategoryToggle(category.categoryId)}
-                                        >
-                                            {category.categoryName}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
                     </div>
 
                     {/* Description */}
                     <div className="space-y-2">
-                        <Label htmlFor="description">Mô tả sản phẩm *</Label>
+                        <Label htmlFor="description">Mô tả món ăn *</Label>
                         <Textarea
                             id="description"
                             value={formData.description}
                             onChange={(e) => handleInputChange('description', e.target.value)}
-                            placeholder="Nhập mô tả chi tiết về sản phẩm..."
+                            placeholder="Nhập mô tả chi tiết về món ăn..."
                             rows={4}
                             className="w-full"
                         />
@@ -439,66 +427,46 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
 
                     {/* Image Upload */}
                     <div className="space-y-2">
-                        <Label>Hình ảnh sản phẩm</Label>
-                        <div className="grid grid-cols-5 gap-3">
-                            {Array.from({ length: 5 }).map((_, index) => (
-                                <div key={index} className="relative">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => handleImageChange(e, index)}
-                                        className="hidden"
-                                        id={`image-upload-${index}`}
-                                    />
-                                    <label
-                                        htmlFor={`image-upload-${index}`}
-                                        className="block w-full h-24 border-2 border-dashed border-gray-300 rounded-lg p-2 text-center cursor-pointer hover:border-amber-400 hover:bg-amber-50 transition-colors"
-                                    >
-                                        {imagePreviewUrls[index] ? (
-                                            <div className="relative w-full h-full">
-                                                <img
-                                                    src={imagePreviewUrls[index]}
-                                                    alt={`Preview ${index + 1}`}
-                                                    className="w-full h-full object-cover rounded-md"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        removeImage(index);
-                                                    }}
-                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
-                                                >
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center h-full">
-                                                <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                                                <span className="text-xs text-gray-500">Hình {index + 1}</span>
-                                            </div>
-                                        )}
-                                    </label>
-                                </div>
-                            ))}
+                        <Label>Hình ảnh món ăn</Label>
+                        <div className="max-w-xs">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                className="hidden"
+                                id="image-upload"
+                            />
+                            <label
+                                htmlFor="image-upload"
+                                className="block w-full h-48 border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-amber-400 hover:bg-amber-50 transition-colors"
+                            >
+                                {imagePreviewUrl ? (
+                                    <div className="relative w-full h-full">
+                                        <img
+                                            src={imagePreviewUrl}
+                                            alt="Preview"
+                                            className="w-full h-full object-cover rounded-md"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                removeImage();
+                                            }}
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full">
+                                        <Upload className="w-12 h-12 text-gray-400 mb-2" />
+                                        <span className="text-sm text-gray-600 font-medium">Chọn hình ảnh</span>
+                                        <span className="text-xs text-gray-400 mt-1">PNG, JPG, GIF tối đa 5MB</span>
+                                    </div>
+                                )}
+                            </label>
                         </div>
-                    </div>
-
-                    {/* Status */}
-                    <div className="space-y-2">
-                        <Label htmlFor="status">Trạng thái</Label>
-                        <Select
-                            value={formData.status.toString()}
-                            onValueChange={(value) => handleInputChange('status', parseInt(value))}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Chọn trạng thái" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="1">Đang hoạt động</SelectItem>
-                                <SelectItem value="0">Ngừng hoạt động</SelectItem>
-                            </SelectContent>
-                        </Select>
                     </div>
 
                     {/* Form Actions */}
@@ -511,7 +479,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
                             disabled={isLoading}
                             className="bg-amber-600 hover:bg-amber-700 text-white"
                         >
-                            {isLoading ? 'Đang tạo...' : 'Tạo sản phẩm'}
+                            {isLoading ? 'Đang tạo...' : 'Tạo món ăn'}
                         </Button>
                     </div>
                 </form>

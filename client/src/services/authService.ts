@@ -26,13 +26,30 @@ export const authService = {
       
       // Check if login was successful
       if (response.data.success && response.data.user) {
-        // Save user data to localStorage
-        localStorage.setItem('user', JSON.stringify(response.data.user))
+        const userData = response.data.user;
+        
+        // Normalize user data: ensure accountId exists
+        // Backend trả về userID, frontend cần accountId
+        const normalizedUser: Account = {
+          ...userData,
+          accountId: userData.userID || userData.accountId, // Use userID as accountId
+          accountName: userData.fullname || userData.accountName, // Use fullname as accountName
+          accountPhone: userData.phone || userData.accountPhone, // Use phone as accountPhone
+        };
+        
+        console.log('✅ Login successful, normalized user data:', normalizedUser);
+        console.log('   - User ID (accountId):', normalizedUser.accountId);
+        console.log('   - User Name:', normalizedUser.accountName);
+        console.log('   - Phone:', normalizedUser.accountPhone);
+        console.log('   - Roles:', normalizedUser.roles);
+        
+        // Save normalized user data to localStorage
+        localStorage.setItem('user', JSON.stringify(normalizedUser))
         localStorage.setItem('isAuthenticated', 'true')
         
         return {
           success: true,
-          user: response.data.user,
+          user: normalizedUser,
           message: response.data.message
         };
       } else {
@@ -43,6 +60,7 @@ export const authService = {
       }
       
     } catch (error: any) {
+      console.error('❌ Login error:', error);
       const errorMessage = error.response?.data?.message || 
                           error.message || 
                           'Đăng nhập thất bại';
