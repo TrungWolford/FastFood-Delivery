@@ -88,12 +88,26 @@ export const API = {
   GET_CART_ITEMS: (accountId: string) => `/cart/account/${accountId}/items`, // GET /api/cart/account/{accountId}/items
   CLEAR_CART: (accountId: string) => `/cart/account/${accountId}/clear`, // DELETE /api/cart/account/{accountId}/clear
 
+  // Users - Theo UserController.java
+  GET_ALL_USERS: '/users', // GET /api/users?page=0&size=10
+  GET_USER_BY_ID: (userId: string) => `/users/${userId}`, // GET /api/users/{userId}
+  CREATE_USER: '/users', // POST /api/users
+  UPDATE_USER: (userId: string) => `/users/${userId}`, // PUT /api/users/{userId}
+  CHANGE_USER_STATUS: (userId: string) => `/users/${userId}`, // PATCH /api/users/{userId}
+  FILTER_USERS_BY_ROLE: (roleId: string) => `/users/filter-role/${roleId}`, // GET /api/users/filter-role/{roleId}?page=0&size=10
+
   // Roles - Theo RoleController.java
-  GET_ALL_ROLES: '/role', // GET /api/role
-  GET_ROLE_BY_ID: (roleId: string) => `/role/${roleId}`, // GET /api/role/{roleId}
-  CREATE_ROLE: '/role', // POST /api/role
-  UPDATE_ROLE: (roleId: string) => `/role/${roleId}`, // PUT /api/role/{roleId}
-  DELETE_ROLE: (roleId: string) => `/role/${roleId}`, // DELETE /api/role/{roleId}
+  GET_ALL_ROLES: '/roles', // GET /api/roles (FIXED: added 's')
+  GET_ROLE_BY_ID: (roleId: string) => `/roles/${roleId}`, // GET /api/roles/{roleId}
+  CREATE_ROLE: '/roles', // POST /api/roles
+
+  // Restaurants - Theo RestaurantController.java
+  GET_ALL_RESTAURANTS: '/restaurants', // GET /api/restaurants?page=0&size=10
+  GET_RESTAURANT_BY_ID: (restaurantId: string) => `/restaurants/${restaurantId}`, // GET /api/restaurants/{restaurantId}
+  GET_RESTAURANTS_BY_OWNER: (ownerId: string) => `/restaurants/owner/${ownerId}`, // GET /api/restaurants/owner/{ownerId}
+  CREATE_RESTAURANT: '/restaurants', // POST /api/restaurants
+  UPDATE_RESTAURANT: (restaurantId: string) => `/restaurants/${restaurantId}`, // PUT /api/restaurants/{restaurantId}
+  DELETE_RESTAURANT: (restaurantId: string) => `/restaurants/${restaurantId}`, // DELETE /api/restaurants/{restaurantId}
 
   // Shipping - Theo ShippingController.java
   GET_ALL_SHIPPING: '/shipping', // GET /api/shipping

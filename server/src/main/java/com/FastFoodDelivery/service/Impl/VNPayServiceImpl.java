@@ -1,21 +1,25 @@
 package com.FastFoodDelivery.service.Impl;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.TreeMap;
+
+import org.springframework.stereotype.Service;
+
 import com.FastFoodDelivery.config.VNPayConfig;
 import com.FastFoodDelivery.entity.Payment;
 import com.FastFoodDelivery.service.VNPayService;
 import com.FastFoodDelivery.util.VNPayUtil;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.stereotype.Service;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class VNPayServiceImpl implements VNPayService {
-    private VNPayConfig vnPayConfig;
-
     private static final String SUCCESS_CODE = "00";
 
     /**
@@ -41,14 +45,7 @@ public class VNPayServiceImpl implements VNPayService {
         now.add(Calendar.MINUTE, 15);
         vnpParams.put("vnp_ExpireDate", new SimpleDateFormat("yyyyMMddHHmmss").format(now.getTime()));
 
-        // 🔍 DEBUG: In ra params trước khi tạo URL
-        System.out.println("=== CREATE PAYMENT URL PARAMS ===");
-        vnpParams.forEach((key, value) -> System.out.println(key + " = " + value));
-
         String paymentUrl = VNPayUtil.createPaymentUrl(vnpParams, VNPayConfig.vnp_PayUrl, VNPayConfig.vnp_HashSecret);
-
-        System.out.println("=== PAYMENT URL ===");
-        System.out.println(paymentUrl);
 
         return paymentUrl;
     }

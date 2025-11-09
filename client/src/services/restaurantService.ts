@@ -1,156 +1,154 @@
 import axiosInstance from '../libs/axios';
-import type { AxiosResponse } from 'axios';
 import { API } from '../config/constants';
-import type { 
-  Restaurant, 
-  CreateRestaurantRequest, 
-  UpdateRestaurantRequest,
-  PaginatedResponse 
-} from '../types/fastfood';
+
+// Types
+export interface RestaurantResponse {
+  restaurantId: string;
+  name: string;
+  address: string;
+  phoneNumber?: string;
+  ownerId: string;
+  description?: string;
+  rating?: number;
+  imageUrl?: string;
+  status?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateRestaurantRequest {
+  name: string;
+  address: string;
+  phoneNumber?: string;
+  ownerId: string;
+  description?: string;
+  imageUrl?: string;
+}
+
+export interface UpdateRestaurantRequest {
+  name?: string;
+  address?: string;
+  phoneNumber?: string;
+  description?: string;
+  imageUrl?: string;
+}
 
 // Restaurant Service
 export const restaurantService = {
   // Get all restaurants with pagination
-  getAllRestaurants: async (page = 0, size = 10): Promise<PaginatedResponse<Restaurant>> => {
+  getAllRestaurants: async (page: number = 0, size: number = 10): Promise<{ success: boolean; data?: { content: RestaurantResponse[]; totalPages: number; totalElements: number }; message?: string }> => {
     try {
-      const response: AxiosResponse<PaginatedResponse<Restaurant>> = await axiosInstance.get(
-        `${API.GET_ALL_RESTAURANTS}?page=${page}&size=${size}`
-      );
-      return response.data;
-    } catch (error) {
-      console.warn('⚠️ Backend API not available, using mock data for restaurants');
-      // Mock data for development
+      const response = await axiosInstance.get(API.GET_ALL_RESTAURANTS, {
+        params: { page, size }
+      });
+      
       return {
-        content: [
-          {
-            restaurantId: '1',
-            restaurantName: 'FastFood Chi nhánh 1',
-            address: '123 Nguyễn Huệ, Q.1',
-            city: 'TP.HCM',
-            phone: '0123456789',
-            email: 'chinhanh1@fastfood.com',
-            status: 1,
-            createdAt: new Date().toISOString(),
-          },
-          {
-            restaurantId: '2',
-            restaurantName: 'FastFood Chi nhánh 2',
-            address: '456 Lê Lợi, Q.3',
-            city: 'TP.HCM',
-            phone: '0987654321',
-            email: 'chinhanh2@fastfood.com',
-            status: 1,
-            createdAt: new Date().toISOString(),
-          },
-          {
-            restaurantId: '3',
-            restaurantName: 'FastFood Chi nhánh 3',
-            address: '789 Trần Hưng Đạo, Q.5',
-            city: 'TP.HCM',
-            phone: '0912345678',
-            email: 'chinhanh3@fastfood.com',
-            status: 0,
-            createdAt: new Date().toISOString(),
-          },
-        ],
-        totalElements: 3,
-        totalPages: 1,
-        size: 10,
-        number: 0,
-        first: true,
-        last: true,
-        empty: false,
+        success: true,
+        data: response.data
+      };
+    } catch (error: any) {
+      console.error('Error getting all restaurants:', error);
+      
+      if (error.response?.status === 500) {
+        return {
+          success: true,
+          data: { content: [], totalPages: 0, totalElements: 0 },
+          message: 'Không có dữ liệu nhà hàng'
+        };
+      }
+      
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể tải danh sách nhà hàng'
       };
     }
   },
 
   // Get restaurant by ID
-  getRestaurantById: async (restaurantId: string): Promise<Restaurant> => {
+  getRestaurantById: async (restaurantId: string): Promise<{ success: boolean; data?: RestaurantResponse; message?: string }> => {
     try {
-      const response: AxiosResponse<Restaurant> = await axiosInstance.get(
-        API.GET_RESTAURANT_BY_ID(restaurantId)
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching restaurant:', error);
-      throw error;
+      const response = await axiosInstance.get(API.GET_RESTAURANT_BY_ID(restaurantId));
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error: any) {
+      console.error('Error getting restaurant:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể tải thông tin nhà hàng'
+      };
+    }
+  },
+
+  // Get restaurants by owner
+  getRestaurantsByOwner: async (ownerId: string): Promise<{ success: boolean; data?: RestaurantResponse[]; message?: string }> => {
+    try {
+      const response = await axiosInstance.get(API.GET_RESTAURANTS_BY_OWNER(ownerId));
+      return {
+        success: true,
+        data: response.data || []
+      };
+    } catch (error: any) {
+      console.error('Error getting restaurants by owner:', error);
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Không thể tải danh sách nhà hàng'
+      };
     }
   },
 
   // Create new restaurant
-  createRestaurant: async (restaurantData: CreateRestaurantRequest): Promise<Restaurant> => {
+  createRestaurant: async (request: CreateRestaurantRequest): Promise<{ success: boolean; data?: RestaurantResponse; message?: string }> => {
     try {
-      const response: AxiosResponse<Restaurant> = await axiosInstance.post(
-        API.CREATE_RESTAURANT,
-        restaurantData
-      );
-      return response.data;
-    } catch (error) {
+      const response = await axiosInstance.post(API.CREATE_RESTAURANT, request);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Tạo nhà hàng thành công'
+      };
+    } catch (error: any) {
       console.error('Error creating restaurant:', error);
-      throw error;
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể tạo nhà hàng'
+      };
     }
   },
 
   // Update restaurant
-  updateRestaurant: async (
-    restaurantId: string,
-    restaurantData: UpdateRestaurantRequest
-  ): Promise<Restaurant> => {
+  updateRestaurant: async (restaurantId: string, request: UpdateRestaurantRequest): Promise<{ success: boolean; data?: RestaurantResponse; message?: string }> => {
     try {
-      const response: AxiosResponse<Restaurant> = await axiosInstance.put(
-        API.UPDATE_RESTAURANT(restaurantId),
-        restaurantData
-      );
-      return response.data;
-    } catch (error) {
+      const response = await axiosInstance.put(API.UPDATE_RESTAURANT(restaurantId), request);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Cập nhật nhà hàng thành công'
+      };
+    } catch (error: any) {
       console.error('Error updating restaurant:', error);
-      throw error;
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể cập nhật nhà hàng'
+      };
     }
   },
 
   // Delete restaurant
-  deleteRestaurant: async (restaurantId: string): Promise<void> => {
+  deleteRestaurant: async (restaurantId: string): Promise<{ success: boolean; message?: string }> => {
     try {
       await axiosInstance.delete(API.DELETE_RESTAURANT(restaurantId));
-    } catch (error) {
+      return {
+        success: true,
+        message: 'Xóa nhà hàng thành công'
+      };
+    } catch (error: any) {
       console.error('Error deleting restaurant:', error);
-      throw error;
-    }
-  },
-
-  // Get restaurants by status
-  getRestaurantsByStatus: async (
-    status: number,
-    page = 0,
-    size = 10
-  ): Promise<PaginatedResponse<Restaurant>> => {
-    try {
-      const response: AxiosResponse<PaginatedResponse<Restaurant>> = await axiosInstance.get(
-        `${API.GET_RESTAURANTS_BY_STATUS(status)}?page=${page}&size=${size}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching restaurants by status:', error);
-      throw error;
-    }
-  },
-
-  // Search restaurants
-  searchRestaurants: async (
-    keyword: string,
-    page = 0,
-    size = 10
-  ): Promise<PaginatedResponse<Restaurant>> => {
-    try {
-      const response: AxiosResponse<PaginatedResponse<Restaurant>> = await axiosInstance.get(
-        `${API.SEARCH_RESTAURANTS}?keyword=${keyword}&page=${page}&size=${size}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error searching restaurants:', error);
-      throw error;
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể xóa nhà hàng'
+      };
     }
   },
 };
-
-export default restaurantService;

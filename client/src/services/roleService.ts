@@ -16,11 +16,6 @@ export interface CreateRoleRequest {
   permissions?: string[];
 }
 
-export interface UpdateRoleRequest {
-  roleName: string;
-  description?: string;
-}
-
 // Role Service
 export const roleService = {
   // Get all roles (no pagination - returns List)
@@ -74,41 +69,6 @@ export const roleService = {
       return {
         success: false,
         message: error.response?.data?.message || 'Không thể tạo vai trò'
-      };
-    }
-  },
-
-  // Update role
-  updateRole: async (roleId: string, request: UpdateRoleRequest): Promise<{ success: boolean; data?: RoleResponse; message?: string }> => {
-    try {
-      const response = await axiosInstance.put(API.UPDATE_ROLE(roleId), request);
-      return {
-        success: true,
-        data: response.data,
-        message: 'Cập nhật vai trò thành công'
-      };
-    } catch (error: any) {
-      console.error('Error updating role:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể cập nhật vai trò'
-      };
-    }
-  },
-
-  // Delete role
-  deleteRole: async (roleId: string): Promise<{ success: boolean; message?: string }> => {
-    try {
-      await axiosInstance.delete(API.DELETE_ROLE(roleId));
-      return {
-        success: true,
-        message: 'Xóa vai trò thành công'
-      };
-    } catch (error: any) {
-      console.error('Error deleting role:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể xóa vai trò'
       };
     }
   },
