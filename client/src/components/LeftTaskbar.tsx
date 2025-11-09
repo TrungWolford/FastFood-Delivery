@@ -7,7 +7,6 @@ import {
   Package, 
   Tags, 
   Users, 
-  Shield, 
   LogOut,
   User,
   Home,
@@ -62,11 +61,6 @@ const LeftTaskbar: React.FC = () => {
       icon: Users,
       label: 'Tài khoản',
       path: '/admin/accounts'
-    },
-    {
-      icon: Shield,
-      label: 'Vai trò',
-      path: '/admin/roles'
     }
   ]
 
