@@ -52,7 +52,7 @@ const LoginFastFood: React.FC = () => {
         if (isAdmin) {
           toast.success('Đăng nhập thành công! Chào mừng Admin.')
           setTimeout(() => {
-            navigate('/fastfood/dashboard')
+            navigate('/fastfood/accounts')
           }, 500)
         } else {
           toast.error('Bạn không có quyền truy cập trang quản trị!')
