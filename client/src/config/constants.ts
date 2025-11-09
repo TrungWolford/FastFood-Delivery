@@ -107,6 +107,7 @@ export const API = {
   GET_RESTAURANTS_BY_OWNER: (ownerId: string) => `/restaurants/owner/${ownerId}`, // GET /api/restaurants/owner/{ownerId}
   CREATE_RESTAURANT: '/restaurants', // POST /api/restaurants
   UPDATE_RESTAURANT: (restaurantId: string) => `/restaurants/${restaurantId}`, // PUT /api/restaurants/{restaurantId}
+  CHANGE_RESTAURANT_STATUS: (restaurantId: string) => `/restaurants/${restaurantId}/status`, // PATCH /api/restaurants/{restaurantId}/status?status=0
   DELETE_RESTAURANT: (restaurantId: string) => `/restaurants/${restaurantId}`, // DELETE /api/restaurants/{restaurantId}
 
   // Shipping - Theo ShippingController.java

@@ -4,33 +4,33 @@ import { API } from '../config/constants';
 // Types
 export interface RestaurantResponse {
   restaurantId: string;
-  name: string;
-  address: string;
-  phoneNumber?: string;
   ownerId: string;
-  description?: string;
+  restaurantName: string; // Backend uses restaurantName, not name
+  address: string;
+  phone?: string; // Backend uses phone, not phoneNumber
+  openingHours?: string;
   rating?: number;
-  imageUrl?: string;
-  status?: boolean;
+  status?: number; // Backend uses int status (0/1), not boolean
+  description?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface CreateRestaurantRequest {
-  name: string;
+  ownerId: string; // Backend expects ObjectId but we send string
+  restaurantName: string; // Backend uses restaurantName, not name
   address: string;
-  phoneNumber?: string;
-  ownerId: string;
+  phone?: string; // Backend uses phone, not phoneNumber
+  openingHours?: string;
   description?: string;
-  imageUrl?: string;
 }
 
 export interface UpdateRestaurantRequest {
-  name?: string;
+  restaurantName?: string; // Backend uses restaurantName, not name
   address?: string;
-  phoneNumber?: string;
+  phone?: string; // Backend uses phone, not phoneNumber
+  openingHours?: string;
   description?: string;
-  imageUrl?: string;
 }
 
 // Restaurant Service
