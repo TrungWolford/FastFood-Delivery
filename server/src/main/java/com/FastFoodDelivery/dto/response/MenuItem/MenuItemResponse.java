@@ -12,6 +12,7 @@ public class MenuItemResponse {
     private String restaurantId;
     private String name;
     private String description;
+    private String categoryName;
     private long price;
     private String imageUrl;
     private boolean isAvailable;
@@ -24,6 +25,7 @@ public class MenuItemResponse {
         response.setRestaurantId(menuItem.getRestaurantId().toString());
         response.setName(menuItem.getName());
         response.setDescription(menuItem.getDescription());
+        response.setCategoryName(menuItem.getCategoryName());
         response.setPrice(menuItem.getPrice());
         response.setImageUrl(menuItem.getImageUrl());
         response.setAvailable(menuItem.isAvailable());

@@ -57,6 +57,7 @@ public class MenuItemServiceImpl implements MenuItemService {
         menuItem.setRestaurantId(request.getRestaurantId());
         menuItem.setName(request.getName());
         menuItem.setDescription(request.getDescription());
+        menuItem.setCategoryName(request.getCategoryName());
         menuItem.setImageUrl(request.getImageUrl());
         menuItem.setPrice(request.getPrice());
         menuItem.setAvailable(true);
@@ -73,6 +74,7 @@ public class MenuItemServiceImpl implements MenuItemService {
 
         if (request.getName() != null) menuItem.setName(request.getName());
         if (request.getDescription() != null) menuItem.setDescription(request.getDescription());
+        if (request.getCategoryName() != null) menuItem.setCategoryName(request.getCategoryName());
         if (request.getImageUrl() != null) menuItem.setImageUrl(request.getImageUrl());
         if (request.getPrice() > 0) menuItem.setPrice(request.getPrice());
 

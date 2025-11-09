@@ -11,11 +11,12 @@ import java.util.Date;
 @Document(collection = "menuitems")
 @Data
 public class MenuItem {
-    @Id
-    private ObjectId itemId;
+        @Id
+        private ObjectId itemId;
     private ObjectId restaurantId;
     private String name;
     private String description;
+    private String categoryName;
     private long price;
     private String imageUrl;
     private boolean isAvailable;
