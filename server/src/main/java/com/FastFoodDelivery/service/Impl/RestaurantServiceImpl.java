@@ -59,14 +59,17 @@ public class RestaurantServiceImpl implements RestaurantService {
 
     @Override
     public RestaurantResponse createRestaurant(CreateRestaurantRequest request) {
+        // Convert String ownerId to ObjectId
+        ObjectId ownerObjectId = new ObjectId(request.getOwnerId());
+        
         // Validate ownerId có tồn tại không
-        validationUtil.validateUser(request.getOwnerId());
+        validationUtil.validateUser(ownerObjectId);
 
         // Validate trùng số điện thoại
         validationUtil.validateUniquePhone(request.getPhone());
 
         Restaurant restaurant = new Restaurant();
-        restaurant.setOwnerId(request.getOwnerId());
+        restaurant.setOwnerId(ownerObjectId);
         restaurant.setRestaurantName(request.getRestaurantName());
         restaurant.setAddress(request.getAddress());
         restaurant.setPhone(request.getPhone());
@@ -74,6 +77,7 @@ public class RestaurantServiceImpl implements RestaurantService {
         restaurant.setDescription(request.getDescription());
         restaurant.setCreatedAt(new Date());
         restaurant.setUpdatedAt(new Date());
+        restaurant.setStatus(1);
 
         restaurantRepository.save(restaurant);
         return RestaurantResponse.fromEntity(restaurant);
@@ -105,6 +109,19 @@ public class RestaurantServiceImpl implements RestaurantService {
             restaurant.setDescription(request.getDescription());
         }
 
+        restaurant.setUpdatedAt(new Date());
+        restaurantRepository.save(restaurant);
+
+        return RestaurantResponse.fromEntity(restaurant);
+    }
+
+    @Override
+    public RestaurantResponse changeStatus(ObjectId restaurantId, int status) {
+        Restaurant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Restaurant", "id", restaurantId.toString()));
+
+        restaurant.setStatus(status);
         restaurant.setUpdatedAt(new Date());
         restaurantRepository.save(restaurant);
 

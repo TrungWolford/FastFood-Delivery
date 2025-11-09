@@ -18,5 +18,6 @@ public interface RestaurantService {
     List<RestaurantResponse> getRestaurantsByOwnerId(ObjectId ownerId);
     RestaurantResponse createRestaurant(CreateRestaurantRequest request);
     RestaurantResponse updateRestaurant(UpdateRestaurantRequest request, ObjectId restaurantId);
+    RestaurantResponse changeStatus(ObjectId restaurantId, int status);
     void deleteRestaurant(ObjectId restaurantId);
 }

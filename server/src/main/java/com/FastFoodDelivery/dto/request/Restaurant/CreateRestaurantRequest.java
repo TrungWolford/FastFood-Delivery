@@ -1,11 +1,10 @@
 package com.FastFoodDelivery.dto.request.Restaurant;
 
 import lombok.Data;
-import org.bson.types.ObjectId;
 
 @Data
 public class CreateRestaurantRequest {
-    private ObjectId ownerId;
+    private String ownerId;  // Change from ObjectId to String, will convert in service
     private String restaurantName;
     private String address;
     private String phone;
