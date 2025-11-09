@@ -135,19 +135,22 @@ export const restaurantService = {
     }
   },
 
-  // Delete restaurant
-  deleteRestaurant: async (restaurantId: string): Promise<{ success: boolean; message?: string }> => {
+  // Change status restaurant
+  changeRestaurantStatus: async (restaurantId: string, status: number): Promise<{ success: boolean; data?: RestaurantResponse; message?: string }> => {
     try {
-      await axiosInstance.delete(API.DELETE_RESTAURANT(restaurantId));
+      const response = await axiosInstance.patch(API.CHANGE_RESTAURANT_STATUS(restaurantId), null, {
+        params: { status }
+      });
       return {
         success: true,
-        message: 'Xóa nhà hàng thành công'
+        data: response.data,
+        message: 'Cập nhật trạng thái nhà hàng thành công'
       };
     } catch (error: any) {
-      console.error('Error deleting restaurant:', error);
+      console.error('Error updating restaurant status:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Không thể xóa nhà hàng'
+        message: error.response?.data?.message || 'Không thể cập nhật trạng thái nhà hàng'
       };
     }
   },

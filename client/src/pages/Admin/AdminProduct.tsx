@@ -135,7 +135,7 @@ const AdminProduct: React.FC = () => {
         // Load products on component mount
         loadProducts(currentPage - 1); // Convert to 0-based index
 
-        // Check if user is authenticated and has ADMIN role
+        // Check if user is authenticated and has ADMIN or RESTAURANT role
         if (!isAuthenticated || !user) {
             navigate('/');
             return;
@@ -143,8 +143,9 @@ const AdminProduct: React.FC = () => {
 
         const userRoles = user.roles || [];
         const isAdmin = userRoles.some((role) => role.roleName === 'ADMIN');
+        const isRestaurant = userRoles.some((role) => role.roleName === 'RESTAURANT');
 
-        if (!isAdmin) {
+        if (!isAdmin && !isRestaurant) {
             navigate('/');
         }
     }, [isAuthenticated, user, navigate]);

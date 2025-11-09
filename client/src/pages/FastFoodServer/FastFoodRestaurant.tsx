@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../hooks/redux'
 import LeftTaskBarFastFood from '../../components/LeftTaskBarFastFood'
-import { Store, Plus, Search, Edit, Trash2, MapPin, Phone, X, RefreshCw } from 'lucide-react'
+import { Store, Plus, Search, Edit, MapPin, Phone, X, RefreshCw, Clock, Star, Power } from 'lucide-react'
 import { restaurantService } from '../../services/restaurantService'
 import type { RestaurantResponse, CreateRestaurantRequest, UpdateRestaurantRequest } from '../../services/restaurantService'
 import { toast } from 'sonner'
@@ -10,6 +10,19 @@ import { toast } from 'sonner'
 const FastFoodRestaurant: React.FC = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAppSelector((state) => state.auth)
+  
+  // Gradient colors for restaurant cards
+  const gradients = [
+    'from-orange-400 to-red-500',
+    'from-green-400 to-teal-500',
+    'from-blue-400 to-purple-500',
+    'from-pink-400 to-rose-500',
+    'from-yellow-400 to-orange-500',
+    'from-indigo-400 to-blue-500',
+    'from-violet-400 to-purple-500',
+    'from-cyan-400 to-blue-500',
+    'from-emerald-400 to-green-500',
+  ]
   
   // States
   const [restaurants, setRestaurants] = useState<RestaurantResponse[]>([])
@@ -195,22 +208,30 @@ const FastFoodRestaurant: React.FC = () => {
     }
   }
 
-  // Delete restaurant
+  // Delete restaurant (actually toggle status)
   const handleDelete = async () => {
     if (!currentRestaurant) return
 
     setIsLoading(true)
     try {
-      const response = await restaurantService.deleteRestaurant(currentRestaurant.restaurantId)
+      // Toggle status: if active (1) -> inactive (0), if inactive (0) -> active (1)
+      const newStatus = currentRestaurant.status === 1 ? 0 : 1
+      
+      const response = await restaurantService.changeRestaurantStatus(
+        currentRestaurant.restaurantId, 
+        newStatus
+      )
+      
       if (response.success) {
-        toast.success(response.message || 'Xóa nhà hàng thành công')
+        const statusText = newStatus === 1 ? 'kích hoạt' : 'vô hiệu hóa'
+        toast.success(`Đã ${statusText} nhà hàng thành công`)
         setShowDeleteDialog(false)
         fetchRestaurants()
       } else {
-        toast.error(response.message || 'Không thể xóa nhà hàng')
+        toast.error(response.message || 'Không thể cập nhật trạng thái nhà hàng')
       }
     } catch (error) {
-      toast.error('Có lỗi xảy ra khi xóa nhà hàng')
+      toast.error('Có lỗi xảy ra khi cập nhật trạng thái nhà hàng')
     } finally {
       setIsLoading(false)
     }
@@ -279,54 +300,107 @@ const FastFoodRestaurant: React.FC = () => {
                 {searchQuery ? 'Không tìm thấy nhà hàng nào' : 'Chưa có nhà hàng nào'}
               </div>
             ) : (
-              filteredRestaurants.map((restaurant) => (
-                <div key={restaurant.restaurantId} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-                  <div className="h-48 bg-gradient-to-br from-orange-400 to-red-500"></div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-2">{restaurant.restaurantName}</h3>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-2 text-gray-600 text-sm">
-                        <MapPin className="w-4 h-4" />
-                        <span>{restaurant.address}</span>
+              filteredRestaurants.map((restaurant, index) => {
+                const gradientClass = gradients[index % gradients.length]
+                
+                return (
+                  <div 
+                    key={restaurant.restaurantId} 
+                    className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
+                  >
+                    {/* Header with gradient and store icon */}
+                    <div className={`relative h-32 bg-gradient-to-br ${gradientClass} flex items-center justify-center`}>
+                      <div className="absolute inset-0 bg-black opacity-10"></div>
+                      <Store className="w-16 h-16 text-white relative z-10" strokeWidth={1.5} />
+                      
+                      {/* Status badge on top right */}
+                      <div className="absolute top-3 right-3 z-10">
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full backdrop-blur-sm ${
+                          restaurant.status === 1
+                            ? 'bg-white/90 text-green-600' 
+                            : 'bg-white/90 text-red-600'
+                        }`}>
+                          {restaurant.status === 1 ? '● Hoạt động' : '● Đóng cửa'}
+                        </span>
                       </div>
-                      {restaurant.phone && (
-                        <div className="flex items-center gap-2 text-gray-600 text-sm">
-                          <Phone className="w-4 h-4" />
-                          <span>{restaurant.phone}</span>
-                        </div>
-                      )}
                     </div>
-                    {restaurant.description && (
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">{restaurant.description}</p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                        restaurant.status === 1
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {restaurant.status === 1 ? 'Hoạt động' : 'Ngừng hoạt động'}
-                      </span>
-                      <div className="flex gap-2">
+
+                    {/* Content */}
+                    <div className="p-5">
+                      {/* Restaurant name */}
+                      <h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-1">
+                        {restaurant.restaurantName}
+                      </h3>
+
+                      {/* Info items */}
+                      <div className="space-y-2.5 mb-4">
+                        {/* Address */}
+                        <div className="flex items-start gap-2.5">
+                          <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-gray-600 line-clamp-2">{restaurant.address}</span>
+                        </div>
+
+                        {/* Phone */}
+                        {restaurant.phone && (
+                          <div className="flex items-center gap-2.5">
+                            <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-600">{restaurant.phone}</span>
+                          </div>
+                        )}
+
+                        {/* Opening hours */}
+                        {restaurant.openingHours && (
+                          <div className="flex items-center gap-2.5">
+                            <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-600">{restaurant.openingHours}</span>
+                          </div>
+                        )}
+
+                        {/* Rating */}
+                        {restaurant.rating !== undefined && restaurant.rating > 0 && (
+                          <div className="flex items-center gap-2.5">
+                            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 flex-shrink-0" />
+                            <span className="text-sm font-medium text-gray-700">
+                              {restaurant.rating.toFixed(1)} / 5.0
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Description */}
+                      {restaurant.description && (
+                        <p className="text-sm text-gray-500 mb-4 line-clamp-2 leading-relaxed">
+                          {restaurant.description}
+                        </p>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
                         <button
                           onClick={() => handleEdit(restaurant)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
                           title="Chỉnh sửa"
                         >
                           <Edit className="w-4 h-4" />
+                          Sửa
                         </button>
                         <button
                           onClick={() => handleDeleteClick(restaurant)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Xóa"
+                          className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg transition-colors font-medium ${
+                            restaurant.status === 1
+                              ? 'text-orange-600 hover:bg-orange-50'
+                              : 'text-green-600 hover:bg-green-50'
+                          }`}
+                          title={restaurant.status === 1 ? 'Vô hiệu hóa' : 'Kích hoạt'}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Power className="w-4 h-4" />
+                          {restaurant.status === 1 ? 'Tắt' : 'Bật'}
                         </button>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         )}
@@ -452,12 +526,14 @@ const FastFoodRestaurant: React.FC = () => {
           </div>
         )}
 
-        {/* Delete Confirmation Dialog */}
+        {/* Status Toggle Confirmation Dialog */}
         {showDeleteDialog && currentRestaurant && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Xác nhận xóa</h2>
+                <h2 className="text-xl font-bold text-gray-800">
+                  {currentRestaurant.status === 1 ? 'Vô hiệu hóa nhà hàng' : 'Kích hoạt nhà hàng'}
+                </h2>
                 <button
                   onClick={() => setShowDeleteDialog(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -466,9 +542,19 @@ const FastFoodRestaurant: React.FC = () => {
                 </button>
               </div>
               <p className="text-gray-600 mb-6">
-                Bạn có chắc chắn muốn xóa nhà hàng <strong>{currentRestaurant.restaurantName}</strong>?
+                Bạn có chắc chắn muốn <strong>
+                  {currentRestaurant.status === 1 ? 'vô hiệu hóa' : 'kích hoạt'}
+                </strong> nhà hàng <strong>{currentRestaurant.restaurantName}</strong>?
                 <br />
-                Hành động này không thể hoàn tác!
+                {currentRestaurant.status === 1 ? (
+                  <span className="text-sm text-orange-600 mt-2 block">
+                    Nhà hàng sẽ không hiển thị cho khách hàng khi bị vô hiệu hóa.
+                  </span>
+                ) : (
+                  <span className="text-sm text-green-600 mt-2 block">
+                    Nhà hàng sẽ hiển thị trở lại cho khách hàng.
+                  </span>
+                )}
               </p>
               <div className="flex justify-end gap-3">
                 <button
@@ -480,9 +566,18 @@ const FastFoodRestaurant: React.FC = () => {
                 <button
                   onClick={handleDelete}
                   disabled={isLoading}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                  className={`px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 ${
+                    currentRestaurant.status === 1
+                      ? 'bg-orange-500 hover:bg-orange-600'
+                      : 'bg-green-500 hover:bg-green-600'
+                  }`}
                 >
-                  {isLoading ? 'Đang xóa...' : 'Xóa'}
+                  {isLoading 
+                    ? 'Đang xử lý...' 
+                    : currentRestaurant.status === 1 
+                      ? 'Vô hiệu hóa' 
+                      : 'Kích hoạt'
+                  }
                 </button>
               </div>
             </div>
