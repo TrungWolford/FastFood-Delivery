@@ -9,4 +9,5 @@ public class UpdateMenuItemRequest {
     private String categoryName;
     private long price;
     private String imageUrl;
+    private Boolean isAvailable; // Use Boolean (not boolean) to allow null
 }
