@@ -6,9 +6,9 @@ import ProfileCustomer from './pages/Customer/ProfileCustomer';
 import HistoryReceipt from './pages/Customer/HistoryOrder';
 import ProductPage from './pages/Customer/Product';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+import AdminRegister from './pages/Admin/AdminRegister';
 import AdminProduct from './pages/Admin/AdminProduct';
 import AdminAccounts from './pages/Admin/AdminAccounts';
-import AdminRoles from './pages/Admin/AdminRoles';
 import AdminCategory from './pages/Admin/AdminCategory';
 import AdminOrder from './pages/Admin/AdminOrder';
 import AdminShipping from './pages/Admin/AdminShipping';
@@ -79,13 +79,14 @@ const App: React.FC = () => {
       
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/admin/register" element={<AdminRegister />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route path="/admin/product" element={<AdminProduct />} />
       <Route path="/admin/products" element={<AdminProduct />} />
       <Route path="/admin/orders" element={<AdminOrder />} />
       <Route path="/admin/shippings" element={<AdminShipping />} />
       <Route path="/admin/ratings" element={<AdminRating />} />
       <Route path="/admin/accounts" element={<AdminAccounts />} />
-      <Route path="/admin/roles" element={<AdminRoles />} />
       <Route path="/admin/categories" element={<AdminCategory />} />
 
       {/* FastFood Server Routes */}

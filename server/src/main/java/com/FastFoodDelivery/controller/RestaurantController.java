@@ -60,6 +60,15 @@ public class RestaurantController {
         return ResponseEntity.ok(updatedRestaurant);
     }
 
+    @PatchMapping("/{restaurantId}/status")
+    public ResponseEntity<RestaurantResponse> changeRestaurantStatus(
+            @PathVariable String restaurantId,
+            @RequestParam int status) {
+        ObjectId objectId = new ObjectId(restaurantId);
+        RestaurantResponse restaurant = restaurantService.changeStatus(objectId, status);
+        return ResponseEntity.ok(restaurant);
+    }
+
     @DeleteMapping("/{restaurantId}")
     public ResponseEntity<String> deleteRestaurant(@PathVariable String restaurantId) {
         ObjectId objectId = new ObjectId(restaurantId);

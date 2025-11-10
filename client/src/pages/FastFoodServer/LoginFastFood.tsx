@@ -47,12 +47,23 @@ const LoginFastFood: React.FC = () => {
         
         // Check user roles
         const userRoles = response.user.roles || []
+        console.log('LoginFastFood - User roles:', userRoles) // Debug log
+        console.log('LoginFastFood - User data:', response.user) // Debug log
+        
         const isAdmin = userRoles.some(role => role.roleName === 'ADMIN')
+        const isRestaurant = userRoles.some(role => role.roleName === 'RESTAURANT')
+        
+        console.log('LoginFastFood - isAdmin:', isAdmin, 'isRestaurant:', isRestaurant) // Debug log
         
         if (isAdmin) {
           toast.success('Đăng nhập thành công! Chào mừng Admin.')
           setTimeout(() => {
-            navigate('/fastfood/dashboard')
+            navigate('/fastfood/accounts')
+          }, 500)
+        } else if (isRestaurant) {
+          toast.success('Đăng nhập thành công! Chào mừng chủ nhà hàng.')
+          setTimeout(() => {
+            navigate('/admin/product')
           }, 500)
         } else {
           toast.error('Bạn không có quyền truy cập trang quản trị!')
