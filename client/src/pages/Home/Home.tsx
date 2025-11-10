@@ -8,15 +8,6 @@ import Footer from '../../components/ui/Footer/Footer';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const handleAddToCart = (productId: string) => {
-    console.log('Add to cart:', productId);
-    // TODO: Implement add to cart logic
-  };
-
-  const handleAddToWishlist = (productId: string) => {
-    console.log('Add to wishlist:', productId);
-    // TODO: Implement wishlist logic
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -26,22 +17,21 @@ const Home: React.FC = () => {
         <MainBanner />
       </section>
       
-      {/* Featured Products */}
+      {/* Featured Menu Items */}
       <section className="container mx-auto px-36 py-8">
         <ProductGrid 
-          title="Sản phẩm nổi bật"
-          limit={10}
-          onAddToCart={handleAddToCart}
-          onAddToWishlist={handleAddToWishlist}
+          title="Món ăn nổi bật"
+          limit={6}
+          showViewAll={false}
         />
         
-        {/* Button Xem tất cả sản phẩm */}
+        {/* Button Xem tất cả món ăn */}
         <div className="flex justify-center mt-8">
           <button
-            onClick={() => navigate('/product')}
-            className="px-8 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+            onClick={() => navigate('/menu')}
+            className="px-8 py-3 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors duration-200 shadow-md hover:shadow-lg"
           >
-            Xem tất cả sản phẩm
+            Xem tất cả món ăn
           </button>
         </div>
       </section>

@@ -281,6 +281,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
                 categoryName: formData.categoryName,
                 price: parseFloat(formData.price),
                 imageUrl: uploadedImageUrl, // Use uploaded URL or empty string
+                isAvailable: true, // Default to available when creating new item
             };
 
             console.log('📦 Creating menu item with data:', menuItemData);

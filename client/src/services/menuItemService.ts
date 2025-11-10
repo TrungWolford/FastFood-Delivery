@@ -5,6 +5,7 @@ import { API, CONFIG } from '../config/constants';
 export interface MenuItemResponse {
   itemId: string;
   restaurantId: string;
+  restaurantAddress: string;
   name: string;
   description: string;
   categoryName: string;
@@ -22,6 +23,7 @@ export interface CreateMenuItemRequest {
   categoryName: string;
   price: number;
   imageUrl: string;
+  isAvailable?: boolean; // Optional, defaults to true in backend if not provided
 }
 
 export interface UpdateMenuItemRequest {
@@ -30,6 +32,7 @@ export interface UpdateMenuItemRequest {
   categoryName?: string;
   price?: number;
   imageUrl?: string;
+  isAvailable?: boolean; // Add isAvailable to update request
 }
 
 export interface PaginatedMenuItemResponse {

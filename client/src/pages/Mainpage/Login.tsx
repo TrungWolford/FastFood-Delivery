@@ -60,18 +60,11 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose }) => {
         console.log('User roles:', userRoles) // Debug log
         console.log('User data:', response.user) // Debug log
         
-        const isAdmin = userRoles.some(role => role.roleName === 'ADMIN')
         const isRestaurant = userRoles.some(role => role.roleName === 'RESTAURANT')
         const isCustomer = userRoles.some(role => role.roleName === 'CUSTOMER')
-        
-        console.log('isAdmin:', isAdmin, 'isRestaurant:', isRestaurant, 'isCustomer:', isCustomer) // Debug log
-        
+                
         // Navigate BEFORE closing dialog to prevent navigation issues
-        if (isAdmin) {
-          toast.success('Đăng nhập thành công! Chào mừng Admin.')
-          navigate('/fastfood/accounts')
-          onClose()
-        } else if (isRestaurant) {
+        if (isRestaurant) {
           toast.success('Đăng nhập thành công! Chào mừng chủ nhà hàng.')
           navigate('/admin/dashboard')
           onClose()
