@@ -12,4 +12,6 @@ public class Role {
     private ObjectId roleID;
 
     private String roleName; // Customer, Admin, RestaurantOwner, Shipper
+    
+    private String description; // Mô tả vai trò
 }

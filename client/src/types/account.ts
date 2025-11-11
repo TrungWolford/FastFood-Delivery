@@ -1,11 +1,20 @@
 // Account interfaces theo backend AccountController
 export interface Account {
-  accountId: string;
-  accountName: string;
-  accountPhone: string;
+  userID?: string; // Backend trả về userID
+  accountId?: string; // Alias cho userID để tương thích
+  accountName?: string; // Frontend naming
+  fullname?: string; // Backend naming
+  accountPhone?: string; // Frontend naming
+  phone?: string; // Backend naming
+  email?: string;
+  address?: string;
   password?: string;
+  roleId?: string; // Backend trả về roleId
+  roleText?: string; // Backend trả về roleText
   status: number; // 0 = INACTIVE, 1 = ACTIVE
-  roles: Role[]; // Backend trả về Set<RoleResponse>
+  statusText?: string; // Backend trả về statusText
+  roles: Role[]; // Backend trả về roles array
+  createdAt?: string;
 }
 
 export interface CreateAccountRequest {

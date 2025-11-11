@@ -45,16 +45,16 @@ const AdminCategory: React.FC = () => {
     useEffect(() => {
         document.title = 'BookCity - Quản lý thể loại';
 
-        // Check if user is authenticated and has ADMIN role
+        // Check if user is authenticated and has RESTAURANT role
         if (!isAuthenticated || !user) {
             navigate('/');
             return;
         }
 
         const userRoles = user.roles || [];
-        const isAdmin = userRoles.some((role) => role.roleName === 'ADMIN');
+        const isRestaurant = userRoles.some((role) => role.roleName === 'RESTAURANT');
 
-        if (!isAdmin) {
+        if (!isRestaurant) {
             navigate('/');
             return;
         }

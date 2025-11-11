@@ -34,6 +34,7 @@ public interface RestaurantService {
     // Create/Update/Delete
     RestaurantResponse createRestaurant(CreateRestaurantRequest request);
     RestaurantResponse updateRestaurant(UpdateRestaurantRequest request, ObjectId restaurantId);
+    RestaurantResponse changeStatus(ObjectId restaurantId, int status);
     void deleteRestaurant(ObjectId restaurantId);
     
     // Check exists

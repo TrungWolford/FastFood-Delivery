@@ -35,7 +35,15 @@ export const API = {
   SEARCH_ACCOUNTS: '/account/search', // GET /api/account/search?accountName=xxx&page=0&size=10
   ACCOUNT_LOGIN: '/account/login', // POST /api/account/login
 
-  // Products - Theo ProductController.java
+  // Menu Items - Theo MenuItemController.java
+  GET_ALL_MENU_ITEMS: '/menu-items', // GET /api/menu-items?page=0&size=10
+  GET_MENU_ITEM_BY_ID: (menuItemId: string) => `/menu-items/${menuItemId}`, // GET /api/menu-items/{menuItemId}
+  GET_MENU_ITEMS_BY_RESTAURANT: (restaurantId: string) => `/menu-items/restaurant/${restaurantId}`, // GET /api/menu-items/restaurant/{restaurantId}
+  CREATE_MENU_ITEM: '/menu-items', // POST /api/menu-items
+  UPDATE_MENU_ITEM: (menuItemId: string) => `/menu-items/${menuItemId}`, // PUT /api/menu-items/{menuItemId}
+  CHANGE_MENU_ITEM_STATUS: (menuItemId: string) => `/menu-items/${menuItemId}/status`, // PATCH /api/menu-items/{menuItemId}/status
+
+  // Products - DEPRECATED - Use Menu Items instead
   GET_ALL_PRODUCTS: '/product', // GET /api/product?page=0&size=10
   GET_PRODUCT_BY_ID: (productId: string) => `/product/${productId}`, // GET /api/product/{productId}
   CREATE_PRODUCT: '/product', // POST /api/product (Admin only)
@@ -88,12 +96,27 @@ export const API = {
   GET_CART_ITEMS: (accountId: string) => `/cart/account/${accountId}/items`, // GET /api/cart/account/{accountId}/items
   CLEAR_CART: (accountId: string) => `/cart/account/${accountId}/clear`, // DELETE /api/cart/account/{accountId}/clear
 
+  // Users - Theo UserController.java
+  GET_ALL_USERS: '/users', // GET /api/users?page=0&size=10
+  GET_USER_BY_ID: (userId: string) => `/users/${userId}`, // GET /api/users/{userId}
+  CREATE_USER: '/users', // POST /api/users
+  UPDATE_USER: (userId: string) => `/users/${userId}`, // PUT /api/users/{userId}
+  CHANGE_USER_STATUS: (userId: string) => `/users/${userId}`, // PATCH /api/users/{userId}
+  FILTER_USERS_BY_ROLE: (roleId: string) => `/users/filter-role/${roleId}`, // GET /api/users/filter-role/{roleId}?page=0&size=10
+
   // Roles - Theo RoleController.java
-  GET_ALL_ROLES: '/role', // GET /api/role
-  GET_ROLE_BY_ID: (roleId: string) => `/role/${roleId}`, // GET /api/role/{roleId}
-  CREATE_ROLE: '/role', // POST /api/role
-  UPDATE_ROLE: (roleId: string) => `/role/${roleId}`, // PUT /api/role/{roleId}
-  DELETE_ROLE: (roleId: string) => `/role/${roleId}`, // DELETE /api/role/{roleId}
+  GET_ALL_ROLES: '/roles', // GET /api/roles (FIXED: added 's')
+  GET_ROLE_BY_ID: (roleId: string) => `/roles/${roleId}`, // GET /api/roles/{roleId}
+  CREATE_ROLE: '/roles', // POST /api/roles
+
+  // Restaurants - Theo RestaurantController.java
+  GET_ALL_RESTAURANTS: '/restaurants', // GET /api/restaurants?page=0&size=10
+  GET_RESTAURANT_BY_ID: (restaurantId: string) => `/restaurants/${restaurantId}`, // GET /api/restaurants/{restaurantId}
+  GET_RESTAURANTS_BY_OWNER: (ownerId: string) => `/restaurants/owner/${ownerId}`, // GET /api/restaurants/owner/{ownerId}
+  CREATE_RESTAURANT: '/restaurants', // POST /api/restaurants
+  UPDATE_RESTAURANT: (restaurantId: string) => `/restaurants/${restaurantId}`, // PUT /api/restaurants/{restaurantId}
+  CHANGE_RESTAURANT_STATUS: (restaurantId: string) => `/restaurants/${restaurantId}/status`, // PATCH /api/restaurants/{restaurantId}/status?status=0
+  DELETE_RESTAURANT: (restaurantId: string) => `/restaurants/${restaurantId}`, // DELETE /api/restaurants/{restaurantId}
 
   // Shipping - Theo ShippingController.java
   GET_ALL_SHIPPING: '/shipping', // GET /api/shipping
@@ -180,6 +203,12 @@ export const APP_CONFIG = {
     ACTIVE: 1,     // Đang hoạt động
   },
   
+  // Menu Item status constants (same as Product)
+  MENU_ITEM_STATUS: {
+    INACTIVE: 0,   // Không hoạt động
+    ACTIVE: 1,     // Đang hoạt động
+  },
+  
   // Order status constants
   ORDER_STATUS: {
     PENDING: 0,      // Chờ xử lý
@@ -218,6 +247,12 @@ export const ERROR_MESSAGES = {
   PRODUCT_CREATE_FAILED: 'Tạo sản phẩm thất bại.',
   PRODUCT_UPDATE_FAILED: 'Cập nhật sản phẩm thất bại.',
   
+  // Menu Item specific errors
+  MENU_ITEM_NOT_FOUND: 'Không tìm thấy món ăn.',
+  MENU_ITEM_CREATE_FAILED: 'Tạo món ăn thất bại.',
+  MENU_ITEM_UPDATE_FAILED: 'Cập nhật món ăn thất bại.',
+  MENU_ITEM_STATUS_CHANGE_FAILED: 'Thay đổi trạng thái món ăn thất bại.',
+  
   // Category specific errors
   CATEGORY_NOT_FOUND: 'Không tìm thấy danh mục.',
   CATEGORY_CREATE_FAILED: 'Tạo danh mục thất bại.',
@@ -253,6 +288,11 @@ export const SUCCESS_MESSAGES = {
   PRODUCT_CREATED: 'Tạo sản phẩm thành công!',
   PRODUCT_UPDATED: 'Cập nhật sản phẩm thành công!',
   PRODUCT_STATUS_CHANGED: 'Thay đổi trạng thái sản phẩm thành công!',
+  
+  // Menu Item specific success
+  MENU_ITEM_CREATED: 'Tạo món ăn thành công!',
+  MENU_ITEM_UPDATED: 'Cập nhật món ăn thành công!',
+  MENU_ITEM_STATUS_CHANGED: 'Thay đổi trạng thái món ăn thành công!',
   
   // Category specific success
   CATEGORY_CREATED: 'Tạo danh mục thành công!',

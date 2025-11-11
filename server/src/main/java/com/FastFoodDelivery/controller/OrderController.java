@@ -21,6 +21,12 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
+    // Lấy tất cả orders (Admin only - phân trang)
+    @GetMapping
+    public ResponseEntity<Page<OrderResponse>> getAllOrders(Pageable pageable) {
+        return ResponseEntity.ok(orderService.getAllOrders(pageable));
+    }
+
     // Lấy order theo id
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderResponse> getOrderById(@PathVariable String orderId) {

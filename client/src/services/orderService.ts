@@ -51,15 +51,25 @@ export interface CreateOrderRequest {
 
 // Helper: map backend Order DTO (server) to frontend OrderResponse shape used in components
 export function mapBackendOrderToFrontend(o: any): OrderResponse {
-  const paymentMethodFromBackend = (() => {
-    // backend returns payment.paymentMethod as string like "COD" or "BANK_TRANSFER"
-    const pm = o?.payment?.paymentMethod || o?.paymentMethod;
-    if (!pm) return 0; // default to COD if missing
-    const lower = String(pm).toLowerCase();
-    if (lower.includes('cod') || lower.includes('cash')) return 0;
-    if (lower.includes('bank') || lower.includes('transfer') || lower.includes('ck')) return 1;
-    return 0;
-  })();
+  // Map status from string to number
+  const mapStatus = (status: string): number => {
+    const statusUpper = String(status || 'PENDING').toUpperCase();
+    switch (statusUpper) {
+      case 'CANCELLED':
+        return 0;
+      case 'PENDING':
+      case 'CONFIRMED':
+      case 'DELIVERING':
+        return 1; // Đang xử lý/vận chuyển
+      case 'COMPLETED':
+        return 2;
+      default:
+        return 1;
+    }
+  };
+
+  // Payment method - default to COD for now (MongoDB backend doesn't have payment info yet)
+  const paymentMethodFromBackend = 0; // Default to COD
 
   // Safely parse date - handle null/undefined/invalid dates
   const parseDate = (dateValue: any): string => {
@@ -67,15 +77,15 @@ export function mapBackendOrderToFrontend(o: any): OrderResponse {
       return new Date().toISOString();
     }
     try {
-      // Check if it's in dd/MM/yyyy HH:mm:ss format (Vietnamese format)
-      const vnDatePattern = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/;
+      // Check if it's in dd/MM/yyyy format (Backend format)
+      const vnDatePattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
       const match = String(dateValue).match(vnDatePattern);
       
       if (match) {
-        // Parse Vietnamese format: dd/MM/yyyy HH:mm:ss
-        const [, day, month, year, hours, minutes, seconds] = match;
-        // Create date in ISO format: yyyy-MM-ddTHH:mm:ss
-        const isoDate = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        // Parse Vietnamese format: dd/MM/yyyy
+        const [, day, month, year] = match;
+        // Create date in ISO format: yyyy-MM-dd
+        const isoDate = `${year}-${month}-${day}T00:00:00`;
         const date = new Date(isoDate);
         if (!isNaN(date.getTime())) {
           return date.toISOString();
@@ -95,39 +105,36 @@ export function mapBackendOrderToFrontend(o: any): OrderResponse {
     }
   };
 
-  const orderDetails: OrderDetailResponse[] = (o?.orderItems || o?.orderDetails || []).map((it: any) => ({
-    orderDetailId: it.orderDetailId || it.orderItemId,
-    productId: it.productId,
-    productName: it.productName,
-    quantity: it.quantity,
-    unitPrice: it.unitPrice ?? it.price ?? 0,
-    totalPrice: it.totalPrice ?? (it.unitPrice ? it.unitPrice * (it.quantity || 0) : 0),
-    productImages: it.productImages || []
+  // Map orderItems from MongoDB format
+  const orderDetails: OrderDetailResponse[] = (o?.orderItems || []).map((it: any) => ({
+    orderDetailId: it.orderItemId?.toString() || it.orderItemId,
+    productId: it.itemId?.toString() || it.itemId,
+    productName: it.name || 'Unknown Product', // MongoDB backend doesn't return name yet
+    quantity: it.quantity || 0,
+    unitPrice: it.price ?? 0,
+    totalPrice: it.subTotal ?? (it.price * it.quantity),
+    productImages: []
   }));
 
   return {
-    orderId: o.orderId,
-    accountId: o.accountId,
-    accountName: o.accountName,
+    orderId: o.orderId?.toString() || o.orderId,
+    accountId: o.customerId?.toString() || o.customerId,
+    accountName: 'Customer', // MongoDB backend doesn't return customer name yet
     orderDate: parseDate(o.createdAt),
-    status: o.status ?? 0,
+    status: mapStatus(o.status),
     paymentMethod: paymentMethodFromBackend,
-    totalAmount: o.totalAmount ?? 0,
+    totalAmount: o.totalPrice ?? 0,
     orderDetails,
-    totalItems: o.totalItems ?? orderDetails.length,
-    shipping: o.shipping ? {
-      shippingId: o.shipping.shippingId,
-      accountId: o.shipping.accountId,
-      accountName: o.shipping.accountName,
-      receiverName: o.shipping.receiverName,
-      receiverPhone: o.shipping.receiverPhone,
-      receiverAddress: o.shipping.receiverAddress,
-      city: o.shipping.city,
-      shipperName: o.shipping.shipperName,
-      shippingFee: o.shipping.shippingFee,
-      shippedAt: o.shipping.shippedAt ? parseDate(o.shipping.shippedAt) : undefined,
-      status: o.shipping.status,
-    } : undefined,
+    totalItems: orderDetails.length,
+    shipping: {
+      shippingId: '',
+      accountId: o.customerId?.toString() || o.customerId,
+      receiverName: 'Customer',
+      receiverPhone: '',
+      receiverAddress: o.deliveryAddress || '',
+      city: '',
+      status: mapStatus(o.status),
+    },
   };
 }
 

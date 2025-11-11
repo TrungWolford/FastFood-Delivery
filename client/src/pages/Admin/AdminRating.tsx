@@ -108,9 +108,9 @@ const AdminRating: React.FC = () => {
         }
 
         const userRoles = user.roles || [];
-        const isAdmin = userRoles.some((role) => role.roleName === 'ADMIN');
+        const isRestaurant = userRoles.some((role) => role.roleName === 'RESTAURANT');
 
-        if (!isAdmin) {
+        if (!isRestaurant) {
             navigate('/');
             return;
         }
