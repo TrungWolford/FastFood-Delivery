@@ -1,11 +1,12 @@
 package com.FastFoodDelivery.entity;
 
-import lombok.Data;
+import java.util.Date;
+
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.bson.types.ObjectId;
 
-import java.util.Date;
+import lombok.Data;
 
 @Document(collection = "restaurants")
 @Data
@@ -15,11 +16,14 @@ public class Restaurant {
     private ObjectId ownerId;
     private String restaurantName;
     private String address;
+    private String city;
+    private String district;
     private String phone;
-    private String openingHours;
+    private double latitude;
+    private double longitude;
+    private String avatarImage;
     private double rating;
-    private Date createdAt;
     private int status;
+    private Date createdAt;
     private Date updatedAt;
-    private String description;
 }

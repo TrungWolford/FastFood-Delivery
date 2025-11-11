@@ -1,5 +1,15 @@
 package com.FastFoodDelivery.service.Impl;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
 import com.FastFoodDelivery.dto.request.Restaurant.CreateRestaurantRequest;
 import com.FastFoodDelivery.dto.request.Restaurant.UpdateRestaurantRequest;
 import com.FastFoodDelivery.dto.response.Restaurant.RestaurantResponse;
@@ -8,14 +18,6 @@ import com.FastFoodDelivery.exception.ResourceNotFoundException;
 import com.FastFoodDelivery.repository.RestaurantRepository;
 import com.FastFoodDelivery.service.RestaurantService;
 import com.FastFoodDelivery.util.ValidationUtil;
-import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
-import java.util.Date;
-import java.util.List;
 
 @Service
 public class RestaurantServiceImpl implements RestaurantService {
@@ -50,8 +52,37 @@ public class RestaurantServiceImpl implements RestaurantService {
     }
 
     @Override
+    public Optional<Restaurant> getRestaurantEntityById(ObjectId restaurantId) {
+        return restaurantRepository.findById(restaurantId);
+    }
+
+    @Override
     public List<RestaurantResponse> getRestaurantsByOwnerId(ObjectId ownerId) {
         return restaurantRepository.findByOwnerId(ownerId)
+                .stream()
+                .map(RestaurantResponse::fromEntity)
+                .toList();
+    }
+
+    @Override
+    public List<RestaurantResponse> getRestaurantsByCity(String city) {
+        return restaurantRepository.findByCity(city)
+                .stream()
+                .map(RestaurantResponse::fromEntity)
+                .toList();
+    }
+
+    @Override
+    public List<RestaurantResponse> getRestaurantsByCityAndDistrict(String city, String district) {
+        return restaurantRepository.findByCityAndDistrict(city, district)
+                .stream()
+                .map(RestaurantResponse::fromEntity)
+                .toList();
+    }
+
+    @Override
+    public List<RestaurantResponse> getRestaurantsByStatus(int status) {
+        return restaurantRepository.findByStatus(status)
                 .stream()
                 .map(RestaurantResponse::fromEntity)
                 .toList();
@@ -69,9 +100,14 @@ public class RestaurantServiceImpl implements RestaurantService {
         restaurant.setOwnerId(request.getOwnerId());
         restaurant.setRestaurantName(request.getRestaurantName());
         restaurant.setAddress(request.getAddress());
+        restaurant.setCity(request.getCity());
+        restaurant.setDistrict(request.getDistrict());
         restaurant.setPhone(request.getPhone());
-        restaurant.setOpeningHours(request.getOpeningHours());
-        restaurant.setDescription(request.getDescription());
+        restaurant.setLatitude(request.getLatitude());
+        restaurant.setLongitude(request.getLongitude());
+        restaurant.setAvatarImage(request.getAvatarImage());
+        restaurant.setRating(0.0);
+        restaurant.setStatus(1);  // Active by default
         restaurant.setCreatedAt(new Date());
         restaurant.setUpdatedAt(new Date());
 
@@ -98,17 +134,37 @@ public class RestaurantServiceImpl implements RestaurantService {
             }
             restaurant.setPhone(request.getPhone());
         }
-        if (request.getOpeningHours() != null) {
-            restaurant.setOpeningHours(request.getOpeningHours());
+        if (request.getRestaurantName() != null) {
+            restaurant.setRestaurantName(request.getRestaurantName());
         }
-        if (request.getDescription() != null) {
-            restaurant.setDescription(request.getDescription());
+        if (request.getAddress() != null) {
+            restaurant.setAddress(request.getAddress());
+        }
+        if (request.getCity() != null) {
+            restaurant.setCity(request.getCity());
+        }
+        if (request.getDistrict() != null) {
+            restaurant.setDistrict(request.getDistrict());
+        }
+        if (request.getLatitude() > 0) {
+            restaurant.setLatitude(request.getLatitude());
+        }
+        if (request.getLongitude() > 0) {
+            restaurant.setLongitude(request.getLongitude());
+        }
+        if (request.getAvatarImage() != null) {
+            restaurant.setAvatarImage(request.getAvatarImage());
         }
 
         restaurant.setUpdatedAt(new Date());
         restaurantRepository.save(restaurant);
 
         return RestaurantResponse.fromEntity(restaurant);
+    }
+
+    @Override
+    public boolean existsByPhone(String phone) {
+        return restaurantRepository.existsByPhone(phone);
     }
 
     @Override

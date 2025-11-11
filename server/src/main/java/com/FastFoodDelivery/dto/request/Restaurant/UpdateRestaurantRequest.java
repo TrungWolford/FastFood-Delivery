@@ -6,7 +6,10 @@ import lombok.Data;
 public class UpdateRestaurantRequest {
     private String restaurantName;
     private String address;
+    private String city;
+    private String district;
     private String phone;
-    private String openingHours;
-    private String description;
+    private double latitude;
+    private double longitude;
+    private String avatarImage;
 }
