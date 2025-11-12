@@ -1,6 +1,7 @@
 package com.FastFoodDelivery.controller;
 
 import com.FastFoodDelivery.dto.request.Role.CreateRoleRequest;
+import com.FastFoodDelivery.dto.request.Role.UpdateRoleRequest;
 import com.FastFoodDelivery.dto.response.Role.RoleResponse;
 import com.FastFoodDelivery.service.RoleService;
 import jakarta.validation.Valid;
@@ -31,5 +32,19 @@ public class RoleController {
     @PostMapping()
     public ResponseEntity<RoleResponse> createRole(@RequestBody @Valid CreateRoleRequest request){
         return ResponseEntity.ok(roleService.createRole(request));
+    }
+
+    @PutMapping("/{roleId}")
+    public ResponseEntity<RoleResponse> updateRole(
+            @PathVariable String roleId,
+            @RequestBody @Valid UpdateRoleRequest request) {
+        ObjectId objectId = new ObjectId(roleId);
+        return ResponseEntity.ok(roleService.updateRole(objectId, request));
+    }
+
+    @DeleteMapping("/{roleId}")
+    public ResponseEntity<String> deleteRole(@PathVariable ObjectId roleId){
+        roleService.deleteRole(roleId);
+        return ResponseEntity.ok("Delete successfully");
     }
 }

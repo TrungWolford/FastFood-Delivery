@@ -1,6 +1,7 @@
 package com.FastFoodDelivery.service.Impl;
 
 import com.FastFoodDelivery.dto.request.Role.CreateRoleRequest;
+import com.FastFoodDelivery.dto.request.Role.UpdateRoleRequest;
 import com.FastFoodDelivery.dto.response.Role.RoleResponse;
 import com.FastFoodDelivery.entity.Role;
 import com.FastFoodDelivery.exception.ResourceNotFoundException;
@@ -36,9 +37,39 @@ public class RoleServiceImpl implements RoleService {
     public RoleResponse createRole(CreateRoleRequest request) {
         Role role = new Role();
         role.setRoleName(request.getRoleName());
+        
+        if (request.getDescription() != null) {
+            role.setDescription(request.getDescription());
+        }
 
         roleRepository.save(role);
 
         return RoleResponse.fromEntity(role);
+    }
+
+    @Override
+    public RoleResponse updateRole(ObjectId roleId, UpdateRoleRequest request) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Role", "id", roleId));
+
+        if (request.getRoleName() != null && !request.getRoleName().isEmpty()) {
+            role.setRoleName(request.getRoleName());
+        }
+
+        if (request.getDescription() != null) {
+            role.setDescription(request.getDescription());
+        }
+
+        roleRepository.save(role);
+
+        return RoleResponse.fromEntity(role);
+    }
+
+    @Override
+    public void deleteRole(ObjectId roleId) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Role", "id", roleId));
+
+        roleRepository.delete(role);
     }
 }

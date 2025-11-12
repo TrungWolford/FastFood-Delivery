@@ -41,6 +41,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public Page<OrderResponse> getAllOrders(Pageable pageable) {
+        Page<Order> orders = orderRepository.findAll(pageable);
+        return orders.map(OrderResponse::fromEntity);
+    }
+
+    @Override
     public Page<OrderResponse> getOrdersByCustomerId(ObjectId customerId, Pageable pageable) {
         Page<Order> orders = orderRepository.findByCustomerId(customerId, pageable);
 

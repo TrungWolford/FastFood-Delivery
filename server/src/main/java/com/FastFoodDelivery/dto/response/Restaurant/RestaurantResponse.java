@@ -31,7 +31,7 @@ public class RestaurantResponse {
     public static RestaurantResponse fromEntity(Restaurant restaurant){
         RestaurantResponse response = new RestaurantResponse();
         response.setRestaurantId(restaurant.getRestaurantId().toString());
-        response.setOwnerId(restaurant.getOwnerId().toString());
+        response.setOwnerId(restaurant.getOwnerId() != null ? restaurant.getOwnerId().toString() : null);
         response.setRestaurantName(restaurant.getRestaurantName());
         response.setAddress(restaurant.getAddress());
         response.setCity(restaurant.getCity());
