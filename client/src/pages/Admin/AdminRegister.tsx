@@ -15,6 +15,8 @@ import {
   Upload,
   X
 } from 'lucide-react';
+import TopNavigation from '../../components/ui/Header/Header';
+import Footer from '../../components/ui/Footer/Footer';
 
 // Types
 interface RestaurantFormData {
@@ -393,17 +395,19 @@ const AdminRegister: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Đăng ký nhà hàng
-          </h1>
-          <p className="text-gray-600">
-            Hoàn thành các bước để trở thành đối tác của chúng tôi
-          </p>
-        </div>
+    <>
+      <TopNavigation />
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Đăng ký nhà hàng
+            </h1>
+            <p className="text-gray-600">
+              Hoàn thành các bước để trở thành đối tác của chúng tôi
+            </p>
+          </div>
 
         {/* Progress Steps */}
         <div className="mb-12">
@@ -1093,6 +1097,8 @@ const AdminRegister: React.FC = () => {
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   );
 };
 
