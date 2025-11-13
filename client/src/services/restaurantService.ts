@@ -5,32 +5,76 @@ import { API } from '../config/constants';
 export interface RestaurantResponse {
   restaurantId: string;
   ownerId: string;
-  restaurantName: string; // Backend uses restaurantName, not name
+  restaurantName: string;
   address: string;
-  phone?: string; // Backend uses phone, not phoneNumber
-  openingHours?: string;
-  rating?: number;
-  status?: number; // Backend uses int status (0/1), not boolean
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  city: string;
+  district: string;
+  phone: string;
+  latitude: number;
+  longitude: number;
+  avatarImage?: string;
+  rating: number;
+  status: number; // 0 = Chờ duyệt, 1 = Đã duyệt
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateRestaurantRequest {
   ownerId: string; // Backend expects ObjectId but we send string
-  restaurantName: string; // Backend uses restaurantName, not name
+  restaurantName: string;
   address: string;
-  phone?: string; // Backend uses phone, not phoneNumber
-  openingHours?: string;
-  description?: string;
+  city: string;
+  district: string;
+  phone: string;
+  latitude: number;
+  longitude: number;
+  avatarImage?: string;
 }
 
 export interface UpdateRestaurantRequest {
-  restaurantName?: string; // Backend uses restaurantName, not name
+  restaurantName?: string;
   address?: string;
-  phone?: string; // Backend uses phone, not phoneNumber
+  city?: string;
+  district?: string;
+  phone?: string;
+  latitude?: number;
+  longitude?: number;
+  avatarImage?: string;
+}
+
+// Restaurant Detail Types
+export interface RestaurantDetailResponse {
+  restaurantDetailId: string;
+  restaurantId: string;
+  openingHours: string;
+  restaurantTypes: string[]; // Max 2
+  cuisines: string[];
+  specialties: string[]; // Max 3
+  description: string;
+  coverImage?: string;
+  menuImages?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateRestaurantDetailRequest {
+  openingHours: string;
+  restaurantTypes: string[];
+  cuisines: string[];
+  specialties: string[];
+  description: string;
+  coverImage?: string;
+  menuImages?: string[];
+}
+
+export interface UpdateRestaurantDetailRequest {
   openingHours?: string;
+  restaurantTypes?: string[];
+  cuisines?: string[];
+  specialties?: string[];
   description?: string;
+  coverImage?: string;
+  menuImages?: string[];
 }
 
 // Restaurant Service
@@ -99,6 +143,60 @@ export const restaurantService = {
     }
   },
 
+  // Get restaurants by city
+  getRestaurantsByCity: async (city: string): Promise<{ success: boolean; data?: RestaurantResponse[]; message?: string }> => {
+    try {
+      const response = await axiosInstance.get(API.GET_RESTAURANTS_BY_CITY(city));
+      return {
+        success: true,
+        data: response.data || []
+      };
+    } catch (error: any) {
+      console.error('Error getting restaurants by city:', error);
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Không thể tải danh sách nhà hàng'
+      };
+    }
+  },
+
+  // Get restaurants by city and district
+  getRestaurantsByCityAndDistrict: async (city: string, district: string): Promise<{ success: boolean; data?: RestaurantResponse[]; message?: string }> => {
+    try {
+      const response = await axiosInstance.get(API.GET_RESTAURANTS_BY_CITY_DISTRICT(city, district));
+      return {
+        success: true,
+        data: response.data || []
+      };
+    } catch (error: any) {
+      console.error('Error getting restaurants by city and district:', error);
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Không thể tải danh sách nhà hàng'
+      };
+    }
+  },
+
+  // Get restaurants by status
+  getRestaurantsByStatus: async (status: number): Promise<{ success: boolean; data?: RestaurantResponse[]; message?: string }> => {
+    try {
+      const response = await axiosInstance.get(API.GET_RESTAURANTS_BY_STATUS(status));
+      return {
+        success: true,
+        data: response.data || []
+      };
+    } catch (error: any) {
+      console.error('Error getting restaurants by status:', error);
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Không thể tải danh sách nhà hàng'
+      };
+    }
+  },
+
   // Create new restaurant
   createRestaurant: async (request: CreateRestaurantRequest): Promise<{ success: boolean; data?: RestaurantResponse; message?: string }> => {
     try {
@@ -154,4 +252,85 @@ export const restaurantService = {
       };
     }
   },
+};
+
+// Restaurant Detail Service
+export const restaurantDetailService = {
+  // Create restaurant detail
+  createRestaurantDetail: async (restaurantId: string, request: CreateRestaurantDetailRequest): Promise<{ success: boolean; data?: RestaurantDetailResponse; message?: string }> => {
+    try {
+      const response = await axiosInstance.post(API.CREATE_RESTAURANT_DETAIL(restaurantId), request);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Tạo thông tin chi tiết nhà hàng thành công'
+      };
+    } catch (error: any) {
+      console.error('Error creating restaurant detail:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể tạo thông tin chi tiết nhà hàng'
+      };
+    }
+  },
+
+  // Get restaurant detail by restaurant ID
+  getRestaurantDetailByRestaurant: async (restaurantId: string): Promise<{ success: boolean; data?: RestaurantDetailResponse; message?: string }> => {
+    try {
+      const response = await axiosInstance.get(API.GET_RESTAURANT_DETAIL_BY_RESTAURANT(restaurantId));
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error: any) {
+      console.error('Error getting restaurant detail:', error);
+      
+      if (error.response?.status === 404) {
+        return {
+          success: false,
+          message: 'Chưa có thông tin chi tiết'
+        };
+      }
+      
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể tải thông tin chi tiết nhà hàng'
+      };
+    }
+  },
+
+  // Update restaurant detail
+  updateRestaurantDetail: async (restaurantDetailId: string, request: UpdateRestaurantDetailRequest): Promise<{ success: boolean; data?: RestaurantDetailResponse; message?: string }> => {
+    try {
+      const response = await axiosInstance.put(API.UPDATE_RESTAURANT_DETAIL(restaurantDetailId), request);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Cập nhật thông tin chi tiết thành công'
+      };
+    } catch (error: any) {
+      console.error('Error updating restaurant detail:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể cập nhật thông tin chi tiết'
+      };
+    }
+  },
+
+  // Delete restaurant detail
+  deleteRestaurantDetail: async (restaurantId: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      await axiosInstance.delete(API.DELETE_RESTAURANT_DETAIL(restaurantId));
+      return {
+        success: true,
+        message: 'Xóa thông tin chi tiết thành công'
+      };
+    } catch (error: any) {
+      console.error('Error deleting restaurant detail:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể xóa thông tin chi tiết'
+      };
+    }
+  }
 };

@@ -113,10 +113,19 @@ export const API = {
   GET_ALL_RESTAURANTS: '/restaurants', // GET /api/restaurants?page=0&size=10
   GET_RESTAURANT_BY_ID: (restaurantId: string) => `/restaurants/${restaurantId}`, // GET /api/restaurants/{restaurantId}
   GET_RESTAURANTS_BY_OWNER: (ownerId: string) => `/restaurants/owner/${ownerId}`, // GET /api/restaurants/owner/{ownerId}
+  GET_RESTAURANTS_BY_CITY: (city: string) => `/restaurants/city/${city}`, // GET /api/restaurants/city/{city}
+  GET_RESTAURANTS_BY_CITY_DISTRICT: (city: string, district: string) => `/restaurants/city/${city}/district/${district}`, // GET /api/restaurants/city/{city}/district/{district}
+  GET_RESTAURANTS_BY_STATUS: (status: number) => `/restaurants/status/${status}`, // GET /api/restaurants/status/{status}
   CREATE_RESTAURANT: '/restaurants', // POST /api/restaurants
   UPDATE_RESTAURANT: (restaurantId: string) => `/restaurants/${restaurantId}`, // PUT /api/restaurants/{restaurantId}
   CHANGE_RESTAURANT_STATUS: (restaurantId: string) => `/restaurants/${restaurantId}/status`, // PATCH /api/restaurants/{restaurantId}/status?status=0
   DELETE_RESTAURANT: (restaurantId: string) => `/restaurants/${restaurantId}`, // DELETE /api/restaurants/{restaurantId}
+
+  // Restaurant Details - Theo RestaurantDetailController.java
+  CREATE_RESTAURANT_DETAIL: (restaurantId: string) => `/restaurant-details/${restaurantId}`, // POST /api/restaurant-details/{restaurantId}
+  GET_RESTAURANT_DETAIL_BY_RESTAURANT: (restaurantId: string) => `/restaurant-details/${restaurantId}`, // GET /api/restaurant-details/{restaurantId}
+  UPDATE_RESTAURANT_DETAIL: (restaurantDetailId: string) => `/restaurant-details/${restaurantDetailId}`, // PUT /api/restaurant-details/{restaurantDetailId}
+  DELETE_RESTAURANT_DETAIL: (restaurantId: string) => `/restaurant-details/${restaurantId}`, // DELETE /api/restaurant-details/{restaurantId}
 
   // Shipping - Theo ShippingController.java
   GET_ALL_SHIPPING: '/shipping', // GET /api/shipping

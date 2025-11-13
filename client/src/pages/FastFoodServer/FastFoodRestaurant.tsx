@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../hooks/redux'
 import LeftTaskBarFastFood from '../../components/LeftTaskBarFastFood'
-import { Store, Plus, Search, Edit, MapPin, Phone, X, RefreshCw, Clock, Star, Power } from 'lucide-react'
-import { restaurantService } from '../../services/restaurantService'
-import type { RestaurantResponse, CreateRestaurantRequest, UpdateRestaurantRequest } from '../../services/restaurantService'
+import { Store, Plus, Search, Edit, MapPin, Phone, X, RefreshCw, Clock, Star, Power, Eye } from 'lucide-react'
+import { restaurantService, restaurantDetailService } from '../../services/restaurantService'
+import type { RestaurantResponse, RestaurantDetailResponse, CreateRestaurantRequest, UpdateRestaurantRequest } from '../../services/restaurantService'
 import { toast } from 'sonner'
 
 const FastFoodRestaurant: React.FC = () => {
@@ -31,7 +31,9 @@ const FastFoodRestaurant: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showDialog, setShowDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showDetailDialog, setShowDetailDialog] = useState(false)
   const [currentRestaurant, setCurrentRestaurant] = useState<RestaurantResponse | null>(null)
+  const [restaurantDetail, setRestaurantDetail] = useState<RestaurantDetailResponse | null>(null)
   
   // Form state with all possible fields
   interface RestaurantFormData extends UpdateRestaurantRequest {
@@ -41,9 +43,12 @@ const FastFoodRestaurant: React.FC = () => {
   const [formData, setFormData] = useState<RestaurantFormData>({
     restaurantName: '',
     address: '',
+    city: '',
+    district: '',
     phone: '',
-    openingHours: '',
-    description: '',
+    latitude: 0,
+    longitude: 0,
+    avatarImage: '',
     ownerId: user?.accountId || ''
   })
 
@@ -103,9 +108,12 @@ const FastFoodRestaurant: React.FC = () => {
     setFormData({
       restaurantName: '',
       address: '',
+      city: '',
+      district: '',
       phone: '',
-      openingHours: '',
-      description: '',
+      latitude: 0,
+      longitude: 0,
+      avatarImage: '',
       ownerId: user?.accountId || ''
     })
     setShowDialog(true)
@@ -117,9 +125,12 @@ const FastFoodRestaurant: React.FC = () => {
     setFormData({
       restaurantName: restaurant.restaurantName,
       address: restaurant.address,
-      phone: restaurant.phone || '',
-      openingHours: restaurant.openingHours || '',
-      description: restaurant.description || ''
+      city: restaurant.city,
+      district: restaurant.district,
+      phone: restaurant.phone,
+      latitude: restaurant.latitude,
+      longitude: restaurant.longitude,
+      avatarImage: restaurant.avatarImage
     })
     setShowDialog(true)
   }
@@ -166,9 +177,12 @@ const FastFoodRestaurant: React.FC = () => {
         const updateData: UpdateRestaurantRequest = {
           restaurantName: formData.restaurantName,
           address: formData.address,
+          city: formData.city,
+          district: formData.district,
           phone: formData.phone,
-          openingHours: formData.openingHours,
-          description: formData.description
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          avatarImage: formData.avatarImage
         }
         const response = await restaurantService.updateRestaurant(currentRestaurant.restaurantId, updateData)
         if (response.success) {
@@ -181,12 +195,15 @@ const FastFoodRestaurant: React.FC = () => {
       } else {
         // Create
         const createData: CreateRestaurantRequest = {
+          ownerId: formData.ownerId!, // Use ownerId from form
           restaurantName: formData.restaurantName!,
           address: formData.address!,
-          phone: formData.phone,
-          openingHours: formData.openingHours,
-          description: formData.description,
-          ownerId: formData.ownerId! // Use ownerId from form
+          city: formData.city!,
+          district: formData.district!,
+          phone: formData.phone!,
+          latitude: formData.latitude || 0,
+          longitude: formData.longitude || 0,
+          avatarImage: formData.avatarImage
         }
         
         console.log('Creating restaurant with data:', createData)
@@ -237,6 +254,64 @@ const FastFoodRestaurant: React.FC = () => {
     }
   }
 
+  // Handle view detail
+  const handleViewDetail = async (restaurant: RestaurantResponse) => {
+    setCurrentRestaurant(restaurant)
+    setShowDetailDialog(true)
+    
+    // Fetch restaurant detail
+    setIsLoading(true)
+    try {
+      const detailResponse = await restaurantDetailService.getRestaurantDetailByRestaurant(restaurant.restaurantId)
+      if (detailResponse.success && detailResponse.data) {
+        setRestaurantDetail(detailResponse.data)
+      } else {
+        setRestaurantDetail(null)
+      }
+    } catch (error) {
+      console.error('Error fetching restaurant detail:', error)
+      setRestaurantDetail(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Approve restaurant (change status from 0 to 1)
+  const handleApproveRestaurant = async (restaurant: RestaurantResponse) => {
+    setIsLoading(true)
+    try {
+      const response = await restaurantService.changeRestaurantStatus(
+        restaurant.restaurantId,
+        1 // Approved status
+      )
+
+      if (response.success) {
+        toast.success('Đã duyệt nhà hàng thành công')
+        fetchRestaurants()
+        if (showDetailDialog) {
+          setShowDetailDialog(false)
+        }
+      } else {
+        toast.error(response.message || 'Không thể duyệt nhà hàng')
+      }
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi duyệt nhà hàng')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Get status display
+  const getStatusDisplay = (status: number) => {
+    switch (status) {
+      case 0:
+        return { text: 'Chờ duyệt', color: 'bg-yellow-100 text-yellow-700', badge: 'bg-white/90 text-yellow-600' }
+      case 1:
+        return { text: 'Đã duyệt', color: 'bg-green-100 text-green-700', badge: 'bg-white/90 text-green-600' }
+      default:
+        return { text: 'Không xác định', color: 'bg-gray-100 text-gray-700', badge: 'bg-white/90 text-gray-600' }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -316,11 +391,9 @@ const FastFoodRestaurant: React.FC = () => {
                       {/* Status badge on top right */}
                       <div className="absolute top-3 right-3 z-10">
                         <span className={`px-3 py-1 text-xs font-semibold rounded-full backdrop-blur-sm ${
-                          restaurant.status === 1
-                            ? 'bg-white/90 text-green-600' 
-                            : 'bg-white/90 text-red-600'
+                          getStatusDisplay(restaurant.status || 0).badge
                         }`}>
-                          {restaurant.status === 1 ? '● Hoạt động' : '● Đóng cửa'}
+                          ● {getStatusDisplay(restaurant.status || 0).text}
                         </span>
                       </div>
                     </div>
@@ -340,19 +413,19 @@ const FastFoodRestaurant: React.FC = () => {
                           <span className="text-sm text-gray-600 line-clamp-2">{restaurant.address}</span>
                         </div>
 
+                        {/* City & District */}
+                        {restaurant.city && restaurant.district && (
+                          <div className="flex items-center gap-2.5">
+                            <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="text-sm text-gray-600">{restaurant.district}, {restaurant.city}</span>
+                          </div>
+                        )}
+
                         {/* Phone */}
                         {restaurant.phone && (
                           <div className="flex items-center gap-2.5">
                             <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
                             <span className="text-sm text-gray-600">{restaurant.phone}</span>
-                          </div>
-                        )}
-
-                        {/* Opening hours */}
-                        {restaurant.openingHours && (
-                          <div className="flex items-center gap-2.5">
-                            <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <span className="text-sm text-gray-600">{restaurant.openingHours}</span>
                           </div>
                         )}
 
@@ -366,13 +439,6 @@ const FastFoodRestaurant: React.FC = () => {
                           </div>
                         )}
                       </div>
-
-                      {/* Description */}
-                      {restaurant.description && (
-                        <p className="text-sm text-gray-500 mb-4 line-clamp-2 leading-relaxed">
-                          {restaurant.description}
-                        </p>
-                      )}
 
                       {/* Action buttons */}
                       <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
@@ -395,6 +461,14 @@ const FastFoodRestaurant: React.FC = () => {
                         >
                           <Power className="w-4 h-4" />
                           {restaurant.status === 1 ? 'Tắt' : 'Bật'}
+                        </button>
+                        <button
+                          onClick={() => handleViewDetail(restaurant)}
+                          className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors font-medium"
+                          title="Xem chi tiết"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Xem
                         </button>
                       </div>
                     </div>
@@ -464,14 +538,42 @@ const FastFoodRestaurant: React.FC = () => {
                     type="text"
                     value={formData.address || ''}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="VD: 123 Nguyễn Huệ, Q.1, TP.HCM"
+                    placeholder="VD: 123 Nguyễn Huệ"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Thành phố <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.city || ''}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      placeholder="VD: TP.HCM"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Quận/Huyện <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.district || ''}
+                      onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                      placeholder="VD: Quận 1"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      required
+                    />
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Số điện thoại
+                    Số điện thoại <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -479,31 +581,51 @@ const FastFoodRestaurant: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="VD: 0123 456 789"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Vĩ độ
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.latitude || 0}
+                      onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) || 0 })}
+                      placeholder="VD: 10.762622"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Kinh độ
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.longitude || 0}
+                      onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) || 0 })}
+                      placeholder="VD: 106.660172"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Giờ mở cửa
+                    URL Ảnh đại diện
                   </label>
                   <input
                     type="text"
-                    value={formData.openingHours || ''}
-                    onChange={(e) => setFormData({ ...formData, openingHours: e.target.value })}
-                    placeholder="VD: 8:00 - 22:00"
+                    value={formData.avatarImage || ''}
+                    onChange={(e) => setFormData({ ...formData, avatarImage: e.target.value })}
+                    placeholder="VD: https://..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mô tả
-                  </label>
-                  <textarea
-                    value={formData.description || ''}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Nhập mô tả nhà hàng..."
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Thông tin chi tiết (giờ mở cửa, mô tả, menu) được quản lý riêng
+                  </p>
                 </div>
                 <div className="flex justify-end gap-3 mt-6">
                   <button
@@ -578,6 +700,222 @@ const FastFoodRestaurant: React.FC = () => {
                       ? 'Vô hiệu hóa' 
                       : 'Kích hoạt'
                   }
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Restaurant Detail Dialog */}
+        {showDetailDialog && currentRestaurant && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Chi tiết nhà hàng
+                </h2>
+                <button
+                  onClick={() => setShowDetailDialog(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Restaurant Basic Info */}
+              <div className="space-y-4 mb-6 bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-start gap-4">
+                  {currentRestaurant.avatarImage && (
+                    <img
+                      src={currentRestaurant.avatarImage}
+                      alt={currentRestaurant.restaurantName}
+                      className="w-24 h-24 rounded-lg object-cover border border-gray-200"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-gray-800">
+                      {currentRestaurant.restaurantName}
+                    </h3>
+                    <div className="mt-2">
+                      <span className={`text-xs font-semibold rounded-full px-3 py-1 ${getStatusDisplay(currentRestaurant.status).color}`}>
+                        {getStatusDisplay(currentRestaurant.status).text}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact & Location Info */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Địa chỉ</p>
+                    <p className="text-sm text-gray-800">{currentRestaurant.address}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Khu vực</p>
+                    <p className="text-sm text-gray-800">{currentRestaurant.district}, {currentRestaurant.city}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Số điện thoại</p>
+                    <p className="text-sm text-gray-800">{currentRestaurant.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Đánh giá</p>
+                    <p className="text-sm text-gray-800 flex items-center gap-1">
+                      <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                      {currentRestaurant.rating.toFixed(1)} / 5.0
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Tọa độ</p>
+                    <p className="text-sm text-gray-800">
+                      {currentRestaurant.latitude.toFixed(6)}, {currentRestaurant.longitude.toFixed(6)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Người sở hữu</p>
+                    <p className="text-sm text-gray-800 font-mono">{currentRestaurant.ownerId}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-200">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Ngày tạo</p>
+                    <p className="text-sm text-gray-800">
+                      {currentRestaurant.createdAt 
+                        ? new Date(currentRestaurant.createdAt).toLocaleString('vi-VN')
+                        : 'N/A'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Cập nhật lần cuối</p>
+                    <p className="text-sm text-gray-800">
+                      {currentRestaurant.updatedAt 
+                        ? new Date(currentRestaurant.updatedAt).toLocaleString('vi-VN')
+                        : 'N/A'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Restaurant Detail Info */}
+              {restaurantDetail ? (
+                <div className="space-y-4 border-t pt-4">
+                  <h3 className="text-lg font-bold text-gray-800 mb-3">Thông tin chi tiết</h3>
+                  
+                  {/* Opening Hours */}
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      Giờ mở cửa
+                    </p>
+                    <p className="text-sm text-gray-800">{restaurantDetail.openingHours || 'Chưa cập nhật'}</p>
+                  </div>
+
+                  {/* Restaurant Types */}
+                  {restaurantDetail.restaurantTypes && restaurantDetail.restaurantTypes.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-1">Loại hình</p>
+                      <div className="flex flex-wrap gap-2">
+                        {restaurantDetail.restaurantTypes.map((type, index) => (
+                          <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                            {type}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cuisines */}
+                  {restaurantDetail.cuisines && restaurantDetail.cuisines.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-1">Ẩm thực</p>
+                      <div className="flex flex-wrap gap-2">
+                        {restaurantDetail.cuisines.map((cuisine, index) => (
+                          <span key={index} className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                            {cuisine}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Specialties */}
+                  {restaurantDetail.specialties && restaurantDetail.specialties.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-1">Món đặc trưng</p>
+                      <div className="flex flex-wrap gap-2">
+                        {restaurantDetail.specialties.map((specialty, index) => (
+                          <span key={index} className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
+                            {specialty}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Mô tả</p>
+                    <p className="text-sm text-gray-800 leading-relaxed">
+                      {restaurantDetail.description || 'Chưa có mô tả'}
+                    </p>
+                  </div>
+
+                  {/* Cover Image */}
+                  {restaurantDetail.coverImage && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-2">Ảnh bìa</p>
+                      <img
+                        src={restaurantDetail.coverImage}
+                        alt="Cover"
+                        className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                      />
+                    </div>
+                  )}
+
+                  {/* Menu Images */}
+                  {restaurantDetail.menuImages && restaurantDetail.menuImages.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-2">Ảnh menu</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {restaurantDetail.menuImages.map((image, index) => (
+                          <img
+                            key={index}
+                            src={image}
+                            alt={`Menu ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="border-t pt-4">
+                  <p className="text-center text-gray-500 py-4">
+                    Chưa có thông tin chi tiết cho nhà hàng này
+                  </p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="mt-6 flex justify-end gap-3 border-t pt-4">
+                {currentRestaurant.status === 0 && (
+                  <button
+                    onClick={() => handleApproveRestaurant(currentRestaurant)}
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {isLoading ? 'Đang xử lý...' : 'Duyệt nhà hàng'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowDetailDialog(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Đóng
                 </button>
               </div>
             </div>
