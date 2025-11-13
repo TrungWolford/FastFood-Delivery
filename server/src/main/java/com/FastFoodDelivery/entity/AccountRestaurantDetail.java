@@ -18,34 +18,35 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AccountRestaurantDetail {
     @Id
-    private ObjectId accountDetailId;   // Primary Key - Account verification detail ID
+    private ObjectId id;
+
     @Indexed(unique = true)
-    private ObjectId userId;            // FK → User._id (One-to-one relationship with User)
-    private ObjectId restaurantId;      // FK → Restaurant._id
-    
-    // Representative Information (from official documents)
-    private String representativeName;
-    private String representativeEmail;
-    private String representativePhone;
-    private String alternatePhone;
-    
-    // Documents (Images)
-    private List<CCCDDocument> cccdImages;              // Front & Back
-    private List<String> businessLicenseImages;         // Max 10 images
-    
-    // Verification Status
-    private String verificationStatus;  // pending, approved, rejected
+    private ObjectId userId; // FK → User._id (tài khoản chủ nhà hàng)
+
+    private ObjectId restaurantId; // FK → Restaurant._id
+
+    // Tài liệu xác minh (giấy tờ pháp lý)
+    private List<CCCDDocument> cccdImages; // CMND/CCCD: mặt trước & mặt sau
+    private List<String> businessLicenseImages; // Giấy phép kinh doanh (tối đa 10 ảnh)
+
+    // Trạng thái xác minh
+    private VerificationStatus verificationStatus = VerificationStatus.PENDING;
     private Date approvedAt;
-    
-    private Date createdAt;
-    private Date updatedAt;
-    
-    // Inner class for CCCD document
+
+    private Date createdAt = new Date();
+    private Date updatedAt = new Date();
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     public static class CCCDDocument {
-        private String side;    // "front" or "back"
-        private String url;     // Image URL
+        private String side; // "front" hoặc "back"
+        private String url;  // Link ảnh
+    }
+
+    public enum VerificationStatus {
+        PENDING,
+        APPROVED,
+        REJECTED
     }
 }
