@@ -10,10 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdateAccountRestaurantDetailRequest {
-    private String representativeName;
-    private String representativeEmail;
-    private String representativePhone;
-    private String alternatePhone;
+    // Không cần update thông tin người đại diện vì đã có trong User entity
+    // Chỉ update các tài liệu xác minh
     private List<CCCDDocumentRequest> cccdImages;
     private List<String> businessLicenseImages;
     

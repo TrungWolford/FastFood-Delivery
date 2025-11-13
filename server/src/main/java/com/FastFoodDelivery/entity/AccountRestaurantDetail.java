@@ -21,7 +21,7 @@ public class AccountRestaurantDetail {
     private ObjectId id;
 
     @Indexed(unique = true)
-    private ObjectId userId; // FK → User._id (tài khoản chủ nhà hàng)
+    private ObjectId userId; // FK → User._id (tài khoản chủ nhà hàng - chứa thông tin người đại diện)
 
     private ObjectId restaurantId; // FK → Restaurant._id
 
@@ -30,7 +30,7 @@ public class AccountRestaurantDetail {
     private List<String> businessLicenseImages; // Giấy phép kinh doanh (tối đa 10 ảnh)
 
     // Trạng thái xác minh
-    private VerificationStatus verificationStatus = VerificationStatus.PENDING;
+    private String verificationStatus = "pending"; // "pending", "approved", "rejected"
     private Date approvedAt;
 
     private Date createdAt = new Date();
@@ -42,11 +42,5 @@ public class AccountRestaurantDetail {
     public static class CCCDDocument {
         private String side; // "front" hoặc "back"
         private String url;  // Link ảnh
-    }
-
-    public enum VerificationStatus {
-        PENDING,
-        APPROVED,
-        REJECTED
     }
 }

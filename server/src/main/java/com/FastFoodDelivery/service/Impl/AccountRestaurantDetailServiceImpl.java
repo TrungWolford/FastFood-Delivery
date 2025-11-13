@@ -25,12 +25,8 @@ public class AccountRestaurantDetailServiceImpl implements AccountRestaurantDeta
         Optional<AccountRestaurantDetail> existing = repository.findByUserId(userId);
         
         if (existing.isPresent()) {
-            // Update existing
+            // Update existing (chỉ update tài liệu xác minh)
             AccountRestaurantDetail current = existing.get();
-            current.setRepresentativeName(detail.getRepresentativeName());
-            current.setRepresentativeEmail(detail.getRepresentativeEmail());
-            current.setRepresentativePhone(detail.getRepresentativePhone());
-            current.setAlternatePhone(detail.getAlternatePhone());
             current.setCccdImages(detail.getCccdImages());
             current.setBusinessLicenseImages(detail.getBusinessLicenseImages());
             current.setUpdatedAt(new Date());

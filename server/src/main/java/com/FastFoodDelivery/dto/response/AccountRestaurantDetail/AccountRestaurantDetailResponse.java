@@ -18,10 +18,7 @@ public class AccountRestaurantDetailResponse {
     private String accountDetailId;
     private String userId;
     private String restaurantId;
-    private String representativeName;
-    private String representativeEmail;
-    private String representativePhone;
-    private String alternatePhone;
+    // Thông tin người đại diện sẽ được lấy từ User entity thông qua userId
     private List<CCCDDocumentResponse> cccdImages;
     private List<String> businessLicenseImages;
     private String verificationStatus;
@@ -37,13 +34,9 @@ public class AccountRestaurantDetailResponse {
     
     public static AccountRestaurantDetailResponse fromEntity(AccountRestaurantDetail entity) {
         AccountRestaurantDetailResponse response = new AccountRestaurantDetailResponse();
-        response.setAccountDetailId(entity.getAccountDetailId().toString());
+        response.setAccountDetailId(entity.getId().toString());
         response.setUserId(entity.getUserId().toString());
         response.setRestaurantId(entity.getRestaurantId().toString());
-        response.setRepresentativeName(entity.getRepresentativeName());
-        response.setRepresentativeEmail(entity.getRepresentativeEmail());
-        response.setRepresentativePhone(entity.getRepresentativePhone());
-        response.setAlternatePhone(entity.getAlternatePhone());
         
         // Convert CCCD images
         if (entity.getCccdImages() != null) {

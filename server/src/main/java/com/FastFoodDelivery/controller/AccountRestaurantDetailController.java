@@ -39,10 +39,6 @@ public class AccountRestaurantDetailController {
             AccountRestaurantDetail entity = new AccountRestaurantDetail();
             entity.setUserId(request.getUserId());
             entity.setRestaurantId(request.getRestaurantId());
-            entity.setRepresentativeName(request.getRepresentativeName());
-            entity.setRepresentativeEmail(request.getRepresentativeEmail());
-            entity.setRepresentativePhone(request.getRepresentativePhone());
-            entity.setAlternatePhone(request.getAlternatePhone());
             
             // Convert CCCD images
             if (request.getCccdImages() != null) {
@@ -73,10 +69,8 @@ public class AccountRestaurantDetailController {
             AccountRestaurantDetail existing = service.getById(new ObjectId(accountDetailId))
                     .orElseThrow(() -> new IllegalArgumentException("Account detail not found"));
             
-            existing.setRepresentativeName(request.getRepresentativeName());
-            existing.setRepresentativeEmail(request.getRepresentativeEmail());
-            existing.setRepresentativePhone(request.getRepresentativePhone());
-            existing.setAlternatePhone(request.getAlternatePhone());
+            // Chỉ update tài liệu xác minh, không update thông tin người đại diện
+            // (thông tin người đại diện nằm trong User entity)
             
             // Convert CCCD images
             if (request.getCccdImages() != null) {

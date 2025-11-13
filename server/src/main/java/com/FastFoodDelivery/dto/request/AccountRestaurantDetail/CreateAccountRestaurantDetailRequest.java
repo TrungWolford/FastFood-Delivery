@@ -12,12 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateAccountRestaurantDetailRequest {
-    private ObjectId userId;
+    private ObjectId userId; // Thông tin người đại diện lấy từ User entity
     private ObjectId restaurantId;
-    private String representativeName;
-    private String representativeEmail;
-    private String representativePhone;
-    private String alternatePhone;
     private List<CCCDDocumentRequest> cccdImages;
     private List<String> businessLicenseImages;
     
