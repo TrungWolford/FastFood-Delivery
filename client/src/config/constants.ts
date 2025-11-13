@@ -127,6 +127,17 @@ export const API = {
   UPDATE_RESTAURANT_DETAIL: (restaurantDetailId: string) => `/restaurant-details/${restaurantDetailId}`, // PUT /api/restaurant-details/{restaurantDetailId}
   DELETE_RESTAURANT_DETAIL: (restaurantId: string) => `/restaurant-details/${restaurantId}`, // DELETE /api/restaurant-details/{restaurantId}
 
+  // Account Restaurant Details - Theo AccountRestaurantDetailController.java
+  CREATE_ACCOUNT_RESTAURANT_DETAIL: '/account-restaurant-details', // POST /api/account-restaurant-details
+  UPDATE_ACCOUNT_RESTAURANT_DETAIL: (accountDetailId: string) => `/account-restaurant-details/${accountDetailId}`, // PUT /api/account-restaurant-details/{accountDetailId}
+  GET_ACCOUNT_RESTAURANT_DETAIL_BY_USER: (userId: string) => `/account-restaurant-details/user/${userId}`, // GET /api/account-restaurant-details/user/{userId}
+  GET_ACCOUNT_RESTAURANT_DETAIL_BY_RESTAURANT: (restaurantId: string) => `/account-restaurant-details/restaurant/${restaurantId}`, // GET /api/account-restaurant-details/restaurant/{restaurantId}
+  GET_PENDING_VERIFICATIONS: '/account-restaurant-details/verification/pending', // GET /api/account-restaurant-details/verification/pending
+  GET_APPROVED_VERIFICATIONS: '/account-restaurant-details/verification/approved', // GET /api/account-restaurant-details/verification/approved
+  GET_REJECTED_VERIFICATIONS: '/account-restaurant-details/verification/rejected', // GET /api/account-restaurant-details/verification/rejected
+  APPROVE_VERIFICATION: (accountDetailId: string) => `/account-restaurant-details/${accountDetailId}/verify/approve`, // POST /api/account-restaurant-details/{accountDetailId}/verify/approve
+  REJECT_VERIFICATION: (accountDetailId: string) => `/account-restaurant-details/${accountDetailId}/verify/reject`, // POST /api/account-restaurant-details/{accountDetailId}/verify/reject
+
   // Shipping - Theo ShippingController.java
   GET_ALL_SHIPPING: '/shipping', // GET /api/shipping
   GET_SHIPPING_BY_ID: (shippingId: string) => `/shipping/${shippingId}`, // GET /api/shipping/{shippingId}

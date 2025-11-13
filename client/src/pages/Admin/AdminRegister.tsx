@@ -13,10 +13,14 @@ import {
   Clock,
   Image as ImageIcon,
   Upload,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import TopNavigation from '../../components/ui/Header/Header';
 import Footer from '../../components/ui/Footer/Footer';
+import { restaurantService, restaurantDetailService } from '../../services/restaurantService';
+import { accountRestaurantDetailService } from '../../services/accountRestaurantDetailService';
+import { uploadService } from '../../services/uploadService';
 
 // Types
 interface RestaurantFormData {
@@ -136,6 +140,7 @@ const AdminRegister: React.FC = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<RestaurantFormData>({
     restaurantName: '',
     address: '',
@@ -344,14 +349,163 @@ const AdminRegister: React.FC = () => {
       return;
     }
     
+    setIsSubmitting(true);
+    
     try {
-      console.log('Submitting form data:', formData);
-      // TODO: Submit to API
-      alert('Đăng ký thành công! Chờ phê duyệt.');
+      // Step 1: Upload CCCD images with folder="cccd"
+      console.log('Uploading CCCD images...');
+      
+      // Convert base64 to File objects
+      const cccdFrontFile = uploadService.dataUrlToFile(formData.cccdFront, 'cccd-front.jpg');
+      const cccdBackFile = uploadService.dataUrlToFile(formData.cccdBack, 'cccd-back.jpg');
+      
+      // Upload CCCD images
+      const cccdFrontResult = await uploadService.uploadImage(cccdFrontFile, 'cccd');
+      if (!cccdFrontResult.success || !cccdFrontResult.data) {
+        throw new Error('Không thể upload ảnh CCCD mặt trước');
+      }
+      
+      const cccdBackResult = await uploadService.uploadImage(cccdBackFile, 'cccd');
+      if (!cccdBackResult.success || !cccdBackResult.data) {
+        throw new Error('Không thể upload ảnh CCCD mặt sau');
+      }
+      
+      console.log('CCCD images uploaded successfully');
+      
+      // Step 2: Upload business license images with folder="business-license"
+      console.log('Uploading business license images...');
+      const businessLicenseFiles = formData.businessLicenses.map((dataUrl, index) =>
+        uploadService.dataUrlToFile(dataUrl, `business-license-${index + 1}.jpg`)
+      );
+      
+      const businessLicenseResult = await uploadService.uploadMultipleImages(
+        businessLicenseFiles,
+        'business-license'
+      );
+      
+      if (!businessLicenseResult.success || !businessLicenseResult.data) {
+        throw new Error('Không thể upload ảnh giấy phép kinh doanh');
+      }
+      
+      console.log('Business license images uploaded successfully');
+      
+      // Step 3: Upload restaurant images (avatar, cover, menu)
+      console.log('Uploading restaurant images...');
+      
+      const avatarFile = uploadService.dataUrlToFile(formData.avatarImage, 'avatar.jpg');
+      const avatarResult = await uploadService.uploadImage(avatarFile, 'restaurant');
+      if (!avatarResult.success || !avatarResult.data) {
+        throw new Error('Không thể upload ảnh đại diện nhà hàng');
+      }
+      
+      const coverFile = uploadService.dataUrlToFile(formData.coverImage, 'cover.jpg');
+      const coverResult = await uploadService.uploadImage(coverFile, 'restaurant');
+      if (!coverResult.success || !coverResult.data) {
+        throw new Error('Không thể upload ảnh bìa nhà hàng');
+      }
+      
+      const menuFile = uploadService.dataUrlToFile(formData.menuImage, 'menu.jpg');
+      const menuResult = await uploadService.uploadImage(menuFile, 'restaurant/menu');
+      if (!menuResult.success || !menuResult.data) {
+        throw new Error('Không thể upload ảnh menu');
+      }
+      
+      console.log('Restaurant images uploaded successfully');
+      
+      // Step 4: Create Restaurant
+      console.log('Creating restaurant...');
+      
+      // For now, we'll use a dummy ownerId. In production, this should come from logged-in user
+      // TODO: Get actual userId from authentication context
+      const dummyOwnerId = '507f1f77bcf86cd799439011'; // This should be replaced with actual userId
+      
+      const restaurantData = {
+        ownerId: dummyOwnerId,
+        restaurantName: formData.restaurantName,
+        address: formData.address,
+        city: formData.city,
+        district: formData.district,
+        phone: formData.phone,
+        latitude: formData.mapLocation?.lat || 0,
+        longitude: formData.mapLocation?.lng || 0,
+        avatarImage: avatarResult.data.url
+      };
+      
+      const restaurantResult = await restaurantService.createRestaurant(restaurantData);
+      
+      if (!restaurantResult.success || !restaurantResult.data) {
+        throw new Error(restaurantResult.message || 'Không thể tạo nhà hàng');
+      }
+      
+      const restaurantId = restaurantResult.data.restaurantId;
+      console.log('Restaurant created successfully:', restaurantId);
+      
+      // Step 5: Create Restaurant Detail
+      console.log('Creating restaurant detail...');
+      
+      const restaurantDetailData = {
+        openingHours: formData.openingHours,
+        restaurantTypes: formData.restaurantTypes,
+        cuisines: formData.cuisineTypes,
+        specialties: formData.specialtyDishes,
+        description: formData.description,
+        coverImage: coverResult.data.url,
+        menuImages: [menuResult.data.url]
+      };
+      
+      const restaurantDetailResult = await restaurantDetailService.createRestaurantDetail(
+        restaurantId,
+        restaurantDetailData
+      );
+      
+      if (!restaurantDetailResult.success) {
+        console.warn('Failed to create restaurant detail:', restaurantDetailResult.message);
+        // We don't throw here because the restaurant is already created
+      } else {
+        console.log('Restaurant detail created successfully');
+      }
+      
+      // Step 6: Create Account Restaurant Detail
+      console.log('Creating account restaurant detail...');
+      
+      // Lưu ý: Thông tin người đại diện (name, email, phone) đã được lưu trong User entity
+      // Ở đây chỉ cần lưu userId và các tài liệu xác minh
+      const accountRestaurantDetailData = {
+        userId: dummyOwnerId, // Should be actual userId from authenticated user
+        restaurantId: restaurantId,
+        cccdImages: [
+          {
+            side: 'front',
+            url: cccdFrontResult.data.url
+          },
+          {
+            side: 'back',
+            url: cccdBackResult.data.url
+          }
+        ],
+        businessLicenseImages: businessLicenseResult.data.map(img => img.url)
+      };
+      
+      const accountDetailResult = await accountRestaurantDetailService.createAccountRestaurantDetail(
+        accountRestaurantDetailData
+      );
+      
+      if (!accountDetailResult.success) {
+        console.warn('Failed to create account detail:', accountDetailResult.message);
+        // We don't throw here because the restaurant is already created
+      } else {
+        console.log('Account restaurant detail created successfully');
+      }
+      
+      // Success!
+      alert('Đăng ký thành công! Chờ phê duyệt từ quản trị viên.');
       navigate('/');
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error('Error submitting form:', error);
-      alert('Có lỗi xảy ra. Vui lòng thử lại!');
+      alert(error.message || 'Có lỗi xảy ra. Vui lòng thử lại!');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1080,17 +1234,26 @@ const AdminRegister: React.FC = () => {
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={!isStep3Complete()}
+                disabled={!isStep3Complete() || isSubmitting}
                 className={`
                   flex items-center gap-2 px-8 py-3 rounded-lg font-semibold transition-all shadow-lg
-                  ${!isStep3Complete()
+                  ${!isStep3Complete() || isSubmitting
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 hover:shadow-xl'
                   }
                 `}
               >
-                <Check className="w-5 h-5" />
-                Hoàn tất đăng ký
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-5 h-5" />
+                    Hoàn tất đăng ký
+                  </>
+                )}
               </button>
             )}
           </div>
