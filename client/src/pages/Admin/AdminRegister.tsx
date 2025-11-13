@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Store, 
@@ -21,6 +21,7 @@ import Footer from '../../components/ui/Footer/Footer';
 import { restaurantService, restaurantDetailService } from '../../services/restaurantService';
 import { accountRestaurantDetailService } from '../../services/accountRestaurantDetailService';
 import { uploadService } from '../../services/uploadService';
+import { roleService } from '../../services/roleService';
 
 // Types
 interface RestaurantFormData {
@@ -32,11 +33,13 @@ interface RestaurantFormData {
   district: string;
   mapLocation: { lat: number; lng: number } | null;
   
-  // Step 2: Owner Info
+  // Step 2: Owner Info (thông tin để tạo User account + AccountRestaurantDetail)
   ownerName: string;
   ownerEmail: string;
   ownerPhone: string;
-  ownerPhoneAlt: string;
+  ownerPassword: string;        // Mật khẩu cho tài khoản
+  ownerPasswordConfirm: string; // Xác nhận mật khẩu
+  ownerAddress: string;         // Địa chỉ cá nhân (có thể khác địa chỉ nhà hàng)
   cccdFront: string;
   cccdBack: string;
   businessLicenses: string[];
@@ -136,11 +139,31 @@ const DISTRICTS_HCM = [
   'Thủ Đức'
 ];
 
+// Time options for opening hours (06:00 to 23:30, 30 minutes interval)
+const TIME_OPTIONS = [
+  '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
+  '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+  '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30',
+  '22:00', '22:30', '23:00', '23:30'
+];
+
 const AdminRegister: React.FC = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [restaurantRoleId, setRestaurantRoleId] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState<{
+    email: string;
+    restaurantName: string;
+  } | null>(null);
+  
+  // State for opening hours (separate open and close time)
+  const [openTime, setOpenTime] = useState('08:00');
+  const [closeTime, setCloseTime] = useState('22:00');
+  
   const [formData, setFormData] = useState<RestaurantFormData>({
     restaurantName: '',
     address: '',
@@ -151,7 +174,9 @@ const AdminRegister: React.FC = () => {
     ownerName: '',
     ownerEmail: '',
     ownerPhone: '',
-    ownerPhoneAlt: '',
+    ownerPassword: '',
+    ownerPasswordConfirm: '',
+    ownerAddress: '',
     cccdFront: '',
     cccdBack: '',
     businessLicenses: [],
@@ -166,12 +191,56 @@ const AdminRegister: React.FC = () => {
     menuImage: '',
   });
 
+  // Load roles on component mount to get RESTAURANT role ID
+  useEffect(() => {
+    const loadRoles = async () => {
+      try {
+        const response = await roleService.getAllRoles();
+        if (response.success && response.data) {
+          // Tìm role có tên "RESTAURANT" hoặc "RestaurantOwner"
+          const restaurantRole = response.data.find(
+            role => role.roleName === 'RESTAURANT' || 
+                   role.roleName === 'RestaurantOwner' ||
+                   role.roleName.toLowerCase().includes('restaurant')
+          );
+          
+          if (restaurantRole) {
+            setRestaurantRoleId(restaurantRole.roleId);
+            console.log('Found restaurant role:', restaurantRole);
+          } else {
+            console.warn('Restaurant role not found in roles list');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading roles:', error);
+      }
+    };
+
+    loadRoles();
+    
+    // Initialize openingHours with default value
+    handleInputChange('openingHours', `${openTime}-${closeTime}`);
+  }, []);
+
   const handleInputChange = (field: keyof RestaurantFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
+  };
+
+  // Handle opening hours change
+  const handleOpenTimeChange = (time: string) => {
+    setOpenTime(time);
+    const newOpeningHours = `${time}-${closeTime}`;
+    handleInputChange('openingHours', newOpeningHours);
+  };
+
+  const handleCloseTimeChange = (time: string) => {
+    setCloseTime(time);
+    const newOpeningHours = `${openTime}-${time}`;
+    handleInputChange('openingHours', newOpeningHours);
   };
 
   const handleMultiSelect = (field: keyof RestaurantFormData, value: string, maxSelect: number) => {
@@ -270,7 +339,25 @@ const AdminRegister: React.FC = () => {
       const phoneRegex = /^[0-9]{10,11}$/;
       if (!phoneRegex.test(formData.ownerPhone.trim())) {
         newErrors.ownerPhone = 'Số điện thoại không hợp lệ (10-11 chữ số)';
+      } else if (formData.ownerPhone.trim() === formData.phone.trim()) {
+        newErrors.ownerPhone = '⚠️ Số điện thoại chủ nhà hàng trùng với số điện thoại nhà hàng. Vui lòng sử dụng số khác.';
       }
+    }
+    // Validate password
+    if (!formData.ownerPassword.trim()) {
+      newErrors.ownerPassword = 'Vui lòng nhập mật khẩu';
+    } else if (formData.ownerPassword.length < 6) {
+      newErrors.ownerPassword = 'Mật khẩu phải có ít nhất 6 ký tự';
+    }
+    // Validate password confirmation
+    if (!formData.ownerPasswordConfirm.trim()) {
+      newErrors.ownerPasswordConfirm = 'Vui lòng xác nhận mật khẩu';
+    } else if (formData.ownerPassword !== formData.ownerPasswordConfirm) {
+      newErrors.ownerPasswordConfirm = 'Mật khẩu xác nhận không khớp';
+    }
+    // Validate owner address
+    if (!formData.ownerAddress.trim()) {
+      newErrors.ownerAddress = 'Vui lòng nhập địa chỉ cá nhân';
     }
     if (!formData.cccdFront) {
       newErrors.cccdFront = 'Vui lòng tải ảnh CCCD mặt trước';
@@ -349,9 +436,58 @@ const AdminRegister: React.FC = () => {
       return;
     }
     
+    // Check if restaurant role ID is loaded
+    if (!restaurantRoleId) {
+      alert('Lỗi: Không tìm thấy role RESTAURANT. Vui lòng thử lại!');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
+      // Step 0: Create User Account with RESTAURANT role
+      console.log('Creating user account with RESTAURANT role...');
+      
+      // Call API directly with correct backend structure
+      const createUserResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullname: formData.ownerName,
+          password: formData.ownerPassword, // Sử dụng mật khẩu người dùng nhập
+          email: formData.ownerEmail,
+          phone: formData.ownerPhone,
+          address: formData.ownerAddress, // Sử dụng địa chỉ cá nhân
+          role: restaurantRoleId // roleId của RESTAURANT
+        })
+      });
+      
+      if (!createUserResponse.ok) {
+        const errorData = await createUserResponse.json().catch(() => ({}));
+        const errorMessage = errorData.message || 'Không thể tạo tài khoản người dùng';
+        
+        // Hiển thị lỗi cụ thể cho người dùng
+        if (errorMessage.toLowerCase().includes('phone') && errorMessage.toLowerCase().includes('exist')) {
+          alert(`❌ Số điện thoại "${formData.ownerPhone}" đã được sử dụng.\n\nVui lòng sử dụng số điện thoại khác cho tài khoản chủ nhà hàng.`);
+        } else if (errorMessage.toLowerCase().includes('email') && errorMessage.toLowerCase().includes('exist')) {
+          alert(`❌ Email "${formData.ownerEmail}" đã được sử dụng.\n\nVui lòng sử dụng email khác cho tài khoản chủ nhà hàng.`);
+        } else {
+          alert(`❌ Lỗi tạo tài khoản: ${errorMessage}`);
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const userData = await createUserResponse.json();
+      const userId = userData.userID || userData.userId;
+      
+      if (!userId) {
+        throw new Error('Không nhận được userId từ server');
+      }
+      
+      console.log('User account created successfully:', userId);
+      
       // Step 1: Upload CCCD images with folder="cccd"
       console.log('Uploading CCCD images...');
       
@@ -412,15 +548,11 @@ const AdminRegister: React.FC = () => {
       
       console.log('Restaurant images uploaded successfully');
       
-      // Step 4: Create Restaurant
+      // Step 4: Create Restaurant (với userId mới tạo làm ownerId)
       console.log('Creating restaurant...');
       
-      // For now, we'll use a dummy ownerId. In production, this should come from logged-in user
-      // TODO: Get actual userId from authentication context
-      const dummyOwnerId = '507f1f77bcf86cd799439011'; // This should be replaced with actual userId
-      
       const restaurantData = {
-        ownerId: dummyOwnerId,
+        ownerId: userId, // Sử dụng userId vừa tạo
         restaurantName: formData.restaurantName,
         address: formData.address,
         city: formData.city,
@@ -434,7 +566,15 @@ const AdminRegister: React.FC = () => {
       const restaurantResult = await restaurantService.createRestaurant(restaurantData);
       
       if (!restaurantResult.success || !restaurantResult.data) {
-        throw new Error(restaurantResult.message || 'Không thể tạo nhà hàng');
+        const errorMessage = restaurantResult.message || 'Không thể tạo nhà hàng';
+        
+        // Hiển thị lỗi cụ thể
+        if (errorMessage.toLowerCase().includes('phone') && errorMessage.toLowerCase().includes('exist')) {
+          alert(`❌ Số điện thoại nhà hàng "${formData.phone}" đã được sử dụng.\n\nVui lòng sử dụng số điện thoại khác cho nhà hàng.\n\nLưu ý: Số điện thoại nhà hàng phải khác số điện thoại chủ nhà hàng.`);
+        } else {
+          alert(`❌ Lỗi tạo nhà hàng: ${errorMessage}`);
+        }
+        throw new Error(errorMessage);
       }
       
       const restaurantId = restaurantResult.data.restaurantId;
@@ -471,7 +611,7 @@ const AdminRegister: React.FC = () => {
       // Lưu ý: Thông tin người đại diện (name, email, phone) đã được lưu trong User entity
       // Ở đây chỉ cần lưu userId và các tài liệu xác minh
       const accountRestaurantDetailData = {
-        userId: dummyOwnerId, // Should be actual userId from authenticated user
+        userId: userId, // Sử dụng userId vừa tạo
         restaurantId: restaurantId,
         cccdImages: [
           {
@@ -498,8 +638,11 @@ const AdminRegister: React.FC = () => {
       }
       
       // Success!
-      alert('Đăng ký thành công! Chờ phê duyệt từ quản trị viên.');
-      navigate('/');
+      setSuccessData({
+        email: formData.ownerEmail,
+        restaurantName: formData.restaurantName
+      });
+      setShowSuccessModal(true);
       
     } catch (error: any) {
       console.error('Error submitting form:', error);
@@ -507,45 +650,6 @@ const AdminRegister: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Helper functions to check if step is complete (for button state)
-  const isStep1Complete = (): boolean => {
-    return !!(
-      formData.restaurantName.trim() &&
-      formData.address.trim() &&
-      formData.city &&
-      formData.district &&
-      formData.phone.trim() &&
-      /^[0-9]{10,11}$/.test(formData.phone.trim())
-    );
-  };
-
-  const isStep2Complete = (): boolean => {
-    return !!(
-      formData.ownerName.trim() &&
-      formData.ownerEmail.trim() &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.ownerEmail.trim()) &&
-      formData.ownerPhone.trim() &&
-      /^[0-9]{10,11}$/.test(formData.ownerPhone.trim()) &&
-      formData.cccdFront &&
-      formData.cccdBack &&
-      formData.businessLicenses.length > 0
-    );
-  };
-
-  const isStep3Complete = (): boolean => {
-    return !!(
-      formData.openingHours.trim() &&
-      formData.restaurantTypes.length > 0 &&
-      formData.cuisineTypes.length > 0 &&
-      formData.specialtyDishes.length > 0 &&
-      formData.timeSlots.length > 0 &&
-      formData.description.trim().length >= 50 &&
-      formData.avatarImage &&
-      formData.coverImage &&
-      formData.menuImage
-    );
   };
 
   return (
@@ -801,6 +905,7 @@ const AdminRegister: React.FC = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Số điện thoại <span className="text-red-500">*</span>
+                    <span className="text-xs text-gray-500 ml-2">(Phải khác số điện thoại nhà hàng)</span>
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
@@ -819,21 +924,64 @@ const AdminRegister: React.FC = () => {
                   )}
                 </div>
 
-                {/* Owner Phone Alt */}
+                {/* Password */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Mật khẩu <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.ownerPassword}
+                    onChange={(e) => handleInputChange('ownerPassword', e.target.value)}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition ${
+                      errors.ownerPassword ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Ít nhất 6 ký tự"
+                  />
+                  {errors.ownerPassword && (
+                    <p className="text-sm text-red-500 mt-1">{errors.ownerPassword}</p>
+                  )}
+                </div>
+
+                {/* Password Confirmation */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Xác nhận mật khẩu <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.ownerPasswordConfirm}
+                    onChange={(e) => handleInputChange('ownerPasswordConfirm', e.target.value)}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition ${
+                      errors.ownerPasswordConfirm ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Nhập lại mật khẩu"
+                  />
+                  {errors.ownerPasswordConfirm && (
+                    <p className="text-sm text-red-500 mt-1">{errors.ownerPasswordConfirm}</p>
+                  )}
+                </div>
+
+                {/* Owner Address */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Số điện thoại khác
+                    Địa chỉ cá nhân <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                    <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                     <input
-                      type="tel"
-                      value={formData.ownerPhoneAlt}
-                      onChange={(e) => handleInputChange('ownerPhoneAlt', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
-                      placeholder="0xxx xxx xxx (tùy chọn)"
+                      type="text"
+                      value={formData.ownerAddress}
+                      onChange={(e) => handleInputChange('ownerAddress', e.target.value)}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition ${
+                        errors.ownerAddress ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Địa chỉ thường trú"
                     />
                   </div>
+                  {errors.ownerAddress && (
+                    <p className="text-sm text-red-500 mt-1">{errors.ownerAddress}</p>
+                  )}
                 </div>
 
                 {/* CCCD */}
@@ -961,18 +1109,48 @@ const AdminRegister: React.FC = () => {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Thời gian mở cửa <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      value={formData.openingHours}
-                      onChange={(e) => handleInputChange('openingHours', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition ${
-                        errors.openingHours ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="VD: 8:00 - 22:00"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Open Time */}
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Giờ mở cửa</label>
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                        <select
+                          value={openTime}
+                          onChange={(e) => handleOpenTimeChange(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition border-gray-300 bg-white"
+                        >
+                          {TIME_OPTIONS.map((time) => (
+                            <option key={`open-${time}`} value={time}>
+                              {time}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    {/* Close Time */}
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Giờ đóng cửa</label>
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                        <select
+                          value={closeTime}
+                          onChange={(e) => handleCloseTimeChange(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition border-gray-300 bg-white"
+                        >
+                          {TIME_OPTIONS.map((time) => (
+                            <option key={`close-${time}`} value={time}>
+                              {time}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Giờ hoạt động: {openTime} - {closeTime}
+                  </p>
                   {errors.openingHours && (
                     <p className="text-sm text-red-500 mt-1">{errors.openingHours}</p>
                   )}
@@ -1092,7 +1270,30 @@ const AdminRegister: React.FC = () => {
                   )}
                 </div>
 
-                {/* Description - already has error handling */}
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Miêu tả về quán <span className="text-red-500">*</span>
+                    <span className="text-xs text-gray-500 ml-2">(Tối thiểu 50 ký tự)</span>
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    rows={4}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition resize-none ${
+                      errors.description ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Nhập miêu tả chi tiết về quán của bạn (món ăn đặc trưng, không gian, dịch vụ...)"
+                  />
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs text-gray-500">
+                      {formData.description.length}/50 ký tự
+                    </p>
+                    {errors.description && (
+                      <p className="text-sm text-red-500">{errors.description}</p>
+                    )}
+                  </div>
+                </div>
                 
                 {/* Images */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1216,17 +1417,7 @@ const AdminRegister: React.FC = () => {
             {currentStep < STEPS.length ? (
               <button
                 onClick={nextStep}
-                disabled={
-                  (currentStep === 1 && !isStep1Complete()) ||
-                  (currentStep === 2 && !isStep2Complete())
-                }
-                className={`
-                  flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all shadow-lg
-                  ${(currentStep === 1 && !isStep1Complete()) || (currentStep === 2 && !isStep2Complete())
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 hover:shadow-xl'
-                  }
-                `}
+                className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all shadow-lg bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 hover:shadow-xl"
               >
                 Tiếp theo
                 <ChevronRight className="w-5 h-5" />
@@ -1234,10 +1425,10 @@ const AdminRegister: React.FC = () => {
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={!isStep3Complete() || isSubmitting}
+                disabled={isSubmitting}
                 className={`
                   flex items-center gap-2 px-8 py-3 rounded-lg font-semibold transition-all shadow-lg
-                  ${!isStep3Complete() || isSubmitting
+                  ${isSubmitting
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 hover:shadow-xl'
                   }
@@ -1261,6 +1452,74 @@ const AdminRegister: React.FC = () => {
       </div>
     </div>
     <Footer />
+    
+    {/* Success Modal */}
+    {showSuccessModal && successData && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in">
+          {/* Header with gradient */}
+          <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 text-center">
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+              <Check className="w-12 h-12 text-green-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-white">
+              Đăng ký thành công!
+            </h2>
+          </div>
+          
+          {/* Body */}
+          <div className="p-6 space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-start gap-3 mb-3">
+                <Mail className="w-5 h-5 text-green-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Email đăng nhập</p>
+                  <p className="text-base text-gray-900 font-medium">{successData.email}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 mb-3">
+                <Store className="w-5 h-5 text-green-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Nhà hàng</p>
+                  <p className="text-base text-gray-900 font-medium">{successData.restaurantName}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-green-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Trạng thái</p>
+                  <p className="text-base text-gray-900 font-medium">Mật khẩu đã được thiết lập</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-sm text-amber-800 mb-2">
+                <span className="font-semibold">⏳ Đang chờ phê duyệt</span>
+              </p>
+              <p className="text-sm text-amber-700">
+                Tài khoản của bạn đang chờ phê duyệt từ quản trị viên. 
+                Bạn sẽ nhận được thông báo qua email khi tài khoản được kích hoạt.
+              </p>
+            </div>
+            
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  navigate('/');
+                }}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all shadow-lg hover:shadow-xl"
+              >
+                Về trang chủ
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 };
