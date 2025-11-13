@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../../hooks/redux'
 import { loginStart, loginSuccess, loginFailure } from '../../store/slices/authSlice'
 import { authService } from '../../services/authService'
+import { restaurantService } from '../../services/restaurantService'
 import { 
   Dialog, 
   DialogContent, 
@@ -65,9 +66,46 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose }) => {
                 
         // Navigate BEFORE closing dialog to prevent navigation issues
         if (isRestaurant) {
-          toast.success('Đăng nhập thành công! Chào mừng chủ nhà hàng.')
-          navigate('/admin/dashboard')
-          onClose()
+          // Check restaurant approval status
+          try {
+            const userId = response.user.userID
+            if (!userId) {
+              toast.error('Không tìm thấy thông tin người dùng')
+              onClose()
+              return
+            }
+            
+            const restaurantResult = await restaurantService.getRestaurantsByOwner(userId)
+            
+            if (restaurantResult.success && restaurantResult.data && restaurantResult.data.length > 0) {
+              const restaurant = restaurantResult.data[0]
+              
+              // Check status: 0 = Pending, 1 = Approved
+              if (restaurant.status === 0) {
+                // Restaurant is pending approval
+                toast.info('Tài khoản của bạn đang chờ phê duyệt')
+                navigate('/restaurant/pending-approval')
+                onClose()
+              } else if (restaurant.status === 1) {
+                // Restaurant is approved
+                toast.success('Đăng nhập thành công! Chào mừng chủ nhà hàng.')
+                navigate('/admin/dashboard')
+                onClose()
+              } else {
+                // Other status (rejected, etc.)
+                toast.warning('Tài khoản của bạn chưa được kích hoạt. Vui lòng liên hệ quản trị viên.')
+                onClose()
+              }
+            } else {
+              // No restaurant found for this owner
+              toast.error('Không tìm thấy thông tin nhà hàng. Vui lòng liên hệ quản trị viên.')
+              onClose()
+            }
+          } catch (error) {
+            console.error('Error checking restaurant status:', error)
+            toast.error('Có lỗi xảy ra khi kiểm tra trạng thái nhà hàng')
+            onClose()
+          }
         } else if (isCustomer) {
           toast.success('Đăng nhập thành công! Chào mừng bạn trở lại.')
           onClose()

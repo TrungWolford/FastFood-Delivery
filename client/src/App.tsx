@@ -25,6 +25,7 @@ import FastFoodRole from './pages/FastFoodServer/FastFoodRole';
 import FastFoodOrder from './pages/FastFoodServer/FastFoodOrder';
 import FastFoodRestaurant from './pages/FastFoodServer/FastFoodRestaurant';
 import FastFoodDrone from './pages/FastFoodServer/FastFoodDrone';
+import PendingApproval from './pages/Restaurant/PendingApproval';
 
 const App: React.FC = () => {
   return (
@@ -88,6 +89,9 @@ const App: React.FC = () => {
       <Route path="/admin/ratings" element={<AdminRating />} />
       <Route path="/admin/accounts" element={<AdminAccounts />} />
       <Route path="/admin/categories" element={<AdminCategory />} />
+
+      {/* Restaurant Routes */}
+      <Route path="/restaurant/pending-approval" element={<PendingApproval />} />
 
       {/* FastFood Server Routes */}
       <Route path="/fastfood/login" element={<LoginFastFood />} />
