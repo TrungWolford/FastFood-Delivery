@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../hooks/redux'
 import LeftTaskBarFastFood from '../../components/LeftTaskBarFastFood'
-import { Store, Plus, Search, Edit, MapPin, Phone, X, RefreshCw, Clock, Star, Power } from 'lucide-react'
+import { Store, Plus, Search, Edit, MapPin, Phone, X, RefreshCw, Clock, Star, Power, Eye } from 'lucide-react'
 import { restaurantService } from '../../services/restaurantService'
 import type { RestaurantResponse, CreateRestaurantRequest, UpdateRestaurantRequest } from '../../services/restaurantService'
 import { toast } from 'sonner'
@@ -31,6 +31,7 @@ const FastFoodRestaurant: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showDialog, setShowDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showDetailDialog, setShowDetailDialog] = useState(false)
   const [currentRestaurant, setCurrentRestaurant] = useState<RestaurantResponse | null>(null)
   
   // Form state with all possible fields
@@ -237,6 +238,48 @@ const FastFoodRestaurant: React.FC = () => {
     }
   }
 
+  // Handle view detail
+  const handleViewDetail = (restaurant: RestaurantResponse) => {
+    setCurrentRestaurant(restaurant)
+    setShowDetailDialog(true)
+  }
+
+  // Approve restaurant (change status from 0 to 1)
+  const handleApproveRestaurant = async (restaurant: RestaurantResponse) => {
+    setIsLoading(true)
+    try {
+      const response = await restaurantService.changeRestaurantStatus(
+        restaurant.restaurantId,
+        1 // Approved status
+      )
+
+      if (response.success) {
+        toast.success('Đã duyệt nhà hàng thành công')
+        fetchRestaurants()
+        if (showDetailDialog) {
+          setShowDetailDialog(false)
+        }
+      } else {
+        toast.error(response.message || 'Không thể duyệt nhà hàng')
+      }
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi duyệt nhà hàng')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Get status display
+  const getStatusDisplay = (status: number) => {
+    switch (status) {
+      case 0:
+        return { text: 'Chờ duyệt', color: 'bg-yellow-100 text-yellow-700', badge: 'bg-white/90 text-yellow-600' }
+      case 1:
+        return { text: 'Đã duyệt', color: 'bg-green-100 text-green-700', badge: 'bg-white/90 text-green-600' }
+      default:
+        return { text: 'Không xác định', color: 'bg-gray-100 text-gray-700', badge: 'bg-white/90 text-gray-600' }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -316,11 +359,9 @@ const FastFoodRestaurant: React.FC = () => {
                       {/* Status badge on top right */}
                       <div className="absolute top-3 right-3 z-10">
                         <span className={`px-3 py-1 text-xs font-semibold rounded-full backdrop-blur-sm ${
-                          restaurant.status === 1
-                            ? 'bg-white/90 text-green-600' 
-                            : 'bg-white/90 text-red-600'
+                          getStatusDisplay(restaurant.status || 0).badge
                         }`}>
-                          {restaurant.status === 1 ? '● Hoạt động' : '● Đóng cửa'}
+                          ● {getStatusDisplay(restaurant.status || 0).text}
                         </span>
                       </div>
                     </div>
@@ -395,6 +436,14 @@ const FastFoodRestaurant: React.FC = () => {
                         >
                           <Power className="w-4 h-4" />
                           {restaurant.status === 1 ? 'Tắt' : 'Bật'}
+                        </button>
+                        <button
+                          onClick={() => handleViewDetail(restaurant)}
+                          className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors font-medium"
+                          title="Xem chi tiết"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Xem
                         </button>
                       </div>
                     </div>
@@ -578,6 +627,111 @@ const FastFoodRestaurant: React.FC = () => {
                       ? 'Vô hiệu hóa' 
                       : 'Kích hoạt'
                   }
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Detail Dialog */}
+        {showDetailDialog && currentRestaurant && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-800">
+                  Chi tiết nhà hàng
+                </h2>
+                <button
+                  onClick={() => setShowDetailDialog(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Restaurant details */}
+              <div className="space-y-4">
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Tên nhà hàng:</span>
+                  <p className="text-lg font-semibold text-gray-800">{currentRestaurant.restaurantName}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Địa chỉ:</span>
+                  <p className="text-gray-800">{currentRestaurant.address}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Số điện thoại:</span>
+                  <p className="text-gray-800">{currentRestaurant.phone || 'Chưa có thông tin'}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Giờ mở cửa:</span>
+                  <p className="text-gray-800">{currentRestaurant.openingHours || 'Chưa có thông tin'}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Mô tả:</span>
+                  <p className="text-gray-800">{currentRestaurant.description || 'Chưa có thông tin'}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Trạng thái:</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-3 h-3 rounded-full ${currentRestaurant.status === 1 ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                    <p className="text-gray-800">
+                      {currentRestaurant.status === 1 ? 'Đang hoạt động' : 'Đã vô hiệu hóa'}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Người tạo:</span>
+                  <p className="text-gray-800">{currentRestaurant.ownerId}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Ngày tạo:</span>
+                  <p className="text-gray-800">
+                    {currentRestaurant.createdAt 
+                      ? new Date(currentRestaurant.createdAt).toLocaleString('vi-VN', {
+                          day: 'numeric',
+                          month: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : 'Chưa có thông tin'
+                    }
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Ngày cập nhật:</span>
+                  <p className="text-gray-800">
+                    {currentRestaurant.updatedAt 
+                      ? new Date(currentRestaurant.updatedAt).toLocaleString('vi-VN', {
+                          day: 'numeric',
+                          month: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : 'Chưa có thông tin'
+                    }
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-6 flex justify-end gap-3">
+                {currentRestaurant.status === 0 && (
+                  <button
+                    onClick={() => handleApproveRestaurant(currentRestaurant)}
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {isLoading ? 'Đang xử lý...' : 'Duyệt nhà hàng'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowDetailDialog(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Đóng
                 </button>
               </div>
             </div>
