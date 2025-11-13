@@ -77,7 +77,7 @@ public class RestaurantServiceImpl implements RestaurantService {
         restaurant.setDescription(request.getDescription());
         restaurant.setCreatedAt(new Date());
         restaurant.setUpdatedAt(new Date());
-        restaurant.setStatus(1);
+        restaurant.setStatus(0); // 0 = Chờ duyệt, 1 = Đã duyệt
 
         restaurantRepository.save(restaurant);
         return RestaurantResponse.fromEntity(restaurant);
