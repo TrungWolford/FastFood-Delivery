@@ -143,7 +143,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({
               return (
                 <div 
                   key={menuItem.itemId} 
-                  className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
+                  onClick={() => navigate(`/menu-item/${menuItem.itemId}`)}
+                  className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 cursor-pointer"
                 >
                   {/* Large image section */}
                   <div className="relative h-56 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
@@ -209,7 +210,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                     {showActions && (
                       <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
                         <button
-                          onClick={() => onEdit?.(menuItem)}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent card click
+                            onEdit?.(menuItem);
+                          }}
                           className="flex items-center gap-1.5 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
                           title="Chỉnh sửa"
                         >
@@ -217,7 +221,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                           Sửa
                         </button>
                         <button
-                          onClick={() => onToggleStatus?.(menuItem)}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent card click
+                            onToggleStatus?.(menuItem);
+                          }}
                           className={`flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg transition-colors font-medium ${
                             menuItem.isAvailable
                               ? 'text-orange-600 hover:bg-orange-50'

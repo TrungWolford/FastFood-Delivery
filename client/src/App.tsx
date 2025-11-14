@@ -26,6 +26,7 @@ import FastFoodOrder from './pages/FastFoodServer/FastFoodOrder';
 import FastFoodRestaurant from './pages/FastFoodServer/FastFoodRestaurant';
 import FastFoodDrone from './pages/FastFoodServer/FastFoodDrone';
 import PendingApproval from './pages/Restaurant/PendingApproval';
+import MenuItemRestaurantDetail from './pages/MenuItemDetail/MenuItemRestaurantDetail';
 
 const App: React.FC = () => {
   return (
@@ -37,6 +38,10 @@ const App: React.FC = () => {
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/payment" element={<PaymentPage />} />
       <Route path="/order-success" element={<OrderSuccessPage />} />
+      
+      {/* Menu Item Detail Route */}
+      <Route path="/menu-item/:menuItemId" element={<MenuItemRestaurantDetail />} />
+      
       <Route
         path="/product"
         element={

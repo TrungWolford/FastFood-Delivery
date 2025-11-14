@@ -4,9 +4,10 @@ import { useAppSelector } from '../../hooks/redux';
 import { toast } from 'sonner';
 import LeftTaskbar from '../../components/LeftTaskbar';
 import AddProductModal from '../../components/modals/AddProductModal';
-import EditProductModal from '../../components/modals/EditProductModal';
+import EditMenuItemModal from '../../components/modals/EditMenuItemModal';
 import ViewProductModal from '../../components/modals/ViewProductModal';
 import { menuItemService, type MenuItemResponse } from '../../services/menuItemService';
+import { restaurantService } from '../../services/restaurantService';
 import { Button } from '../../components/ui/Button/Button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
@@ -34,6 +35,7 @@ const AdminProduct: React.FC = () => {
     const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [statusFilter, setStatusFilter] = useState<string>('all');
+    const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -46,14 +48,27 @@ const AdminProduct: React.FC = () => {
         try {
             setLoading(true);
             
-            // Get all menu items with pagination
-            const response = await menuItemService.getAllMenuItems(page, itemsPerPage);
+            // Check if user has RESTAURANT role
+            const userRoles = user?.roles || [];
+            const isRestaurant = userRoles.some((role) => role.roleName === 'RESTAURANT');
+            
+            console.log('📋 loadProducts called with:', { 
+                page, 
+                isRestaurant, 
+                restaurantId,
+                userRoles: userRoles.map(r => r.roleName)
+            });
+            
+            let filteredItems: MenuItemResponse[] = [];
 
-            console.log('🔍 Backend Response:', response);
-
-            if (response.content) {
-                let filteredItems = response.content;
-
+            if (isRestaurant && restaurantId) {
+                // If RESTAURANT role, get menu items by restaurantId
+                console.log('🏪 Loading menu items for restaurant:', restaurantId);
+                const items = await menuItemService.getMenuItemsByRestaurant(restaurantId);
+                console.log('✅ Received items from backend:', items.length, 'items');
+                console.log('📦 First item restaurantId:', items[0]?.restaurantId);
+                filteredItems = items;
+                
                 // Apply search filter
                 if (searchTerm.trim()) {
                     const searchLower = searchTerm.toLowerCase();
@@ -69,9 +84,41 @@ const AdminProduct: React.FC = () => {
                     filteredItems = filteredItems.filter((item) => item.isAvailable === isActive);
                 }
 
-                setProducts(filteredItems as any); // Temporary cast until we update Product type
-                setTotalPages(response.totalPages || 1);
-                setTotalItems(response.totalElements || 0);
+                // Manual pagination for restaurant-specific items
+                const startIndex = page * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                const paginatedItems = filteredItems.slice(startIndex, endIndex);
+                
+                setProducts(paginatedItems as any);
+                setTotalPages(Math.ceil(filteredItems.length / itemsPerPage));
+                setTotalItems(filteredItems.length);
+            } else {
+                // If ADMIN or no restaurant, get all menu items with pagination
+                console.log('🔍 Loading all menu items (Admin view)');
+                const response = await menuItemService.getAllMenuItems(page, itemsPerPage);
+
+                if (response.content) {
+                    filteredItems = response.content;
+
+                    // Apply search filter
+                    if (searchTerm.trim()) {
+                        const searchLower = searchTerm.toLowerCase();
+                        filteredItems = filteredItems.filter((item) => 
+                            item.name.toLowerCase().includes(searchLower) ||
+                            item.description.toLowerCase().includes(searchLower)
+                        );
+                    }
+
+                    // Apply status filter
+                    if (statusFilter !== 'all') {
+                        const isActive = statusFilter === 'active';
+                        filteredItems = filteredItems.filter((item) => item.isAvailable === isActive);
+                    }
+
+                    setProducts(filteredItems as any);
+                    setTotalPages(response.totalPages || 1);
+                    setTotalItems(response.totalElements || 0);
+                }
             }
         } catch (error) {
             console.error('❌ Error loading menu items:', error);
@@ -87,9 +134,6 @@ const AdminProduct: React.FC = () => {
     useEffect(() => {
         document.title = 'BookCity - Quản lý sản phẩm';
 
-        // Load products on component mount
-        loadProducts(currentPage - 1); // Convert to 0-based index
-
         // Check if user is authenticated and has ADMIN or RESTAURANT role
         if (!isAuthenticated || !user) {
             navigate('/');
@@ -102,18 +146,72 @@ const AdminProduct: React.FC = () => {
 
         if (!isAdmin && !isRestaurant) {
             navigate('/');
+            return;
         }
+
+        // If user is RESTAURANT, get their restaurantId
+        const loadRestaurantId = async () => {
+            if (isRestaurant && user.userID) {
+                try {
+                    const restaurantResult = await restaurantService.getRestaurantsByOwner(user.userID);
+                    console.log('🔍 Restaurant query result:', restaurantResult);
+                    
+                    if (restaurantResult.success && restaurantResult.data && restaurantResult.data.length > 0) {
+                        const restaurantData = restaurantResult.data[0];
+                        console.log('🏪 Restaurant data:', {
+                            restaurantId: restaurantData.restaurantId,
+                            restaurantName: restaurantData.restaurantName,
+                            ownerId: restaurantData.ownerId
+                        });
+                        setRestaurantId(restaurantData.restaurantId);
+                        console.log('✅ Restaurant ID set to:', restaurantData.restaurantId);
+                    } else {
+                        console.warn('⚠️ No restaurant found for owner:', user.userID);
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading restaurant ID:', error);
+                    toast.error('Không thể tải thông tin nhà hàng');
+                }
+            } else {
+                // Admin has no specific restaurant
+                console.log('👤 User is Admin, no specific restaurant');
+                setRestaurantId(null);
+            }
+        };
+
+        loadRestaurantId();
     }, [isAuthenticated, user, navigate]);
+
+    // Load products when restaurantId is ready or when it's admin
+    useEffect(() => {
+        const userRoles = user?.roles || [];
+        const isAdmin = userRoles.some((role) => role.roleName === 'ADMIN');
+        const isRestaurant = userRoles.some((role) => role.roleName === 'RESTAURANT');
+
+        // Load products if:
+        // - User is Admin (restaurantId will be null)
+        // - User is Restaurant and restaurantId is loaded
+        if (isAdmin || (isRestaurant && restaurantId)) {
+            loadProducts(currentPage - 1);
+        }
+    }, [restaurantId, currentPage]);
 
     useEffect(() => {
         // Debounce search to avoid too many API calls
         const timeoutId = setTimeout(() => {
-            loadProducts(0); // Reset to first page when searching/filtering
-            setCurrentPage(1);
+            const userRoles = user?.roles || [];
+            const isAdmin = userRoles.some((role) => role.roleName === 'ADMIN');
+            const isRestaurant = userRoles.some((role) => role.roleName === 'RESTAURANT');
+
+            // Only load if ready
+            if (isAdmin || (isRestaurant && restaurantId)) {
+                loadProducts(0); // Reset to first page when searching/filtering
+                setCurrentPage(1);
+            }
         }, 500); // 500ms delay
 
         return () => clearTimeout(timeoutId);
-    }, [searchTerm, statusFilter]);
+    }, [searchTerm, statusFilter, restaurantId]); // Added restaurantId dependency
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
@@ -156,6 +254,51 @@ const AdminProduct: React.FC = () => {
             loadProducts(currentPage - 1);
             console.log('Product updated successfully');
         }, 500); // 0.5 seconds delay
+    };
+
+    const handleToggleStatus = async (menuItem: Product) => {
+        try {
+            const item = menuItem as any; // Cast to access MenuItem properties
+            console.log('🔄 Toggling status for menu item:', item.itemId);
+            console.log('📊 Current status:', item.isAvailable);
+            
+            // Call API to toggle status - backend returns updated MenuItem
+            const updatedMenuItem = await menuItemService.changeMenuItemStatus(item.itemId);
+            
+            console.log('✅ Status toggled successfully. New status:', updatedMenuItem.isAvailable);
+            
+            toast.success(
+                updatedMenuItem.isAvailable 
+                    ? `Đã hiện món "${updatedMenuItem.name}"` 
+                    : `Đã ẩn món "${updatedMenuItem.name}"`,
+                {
+                    duration: 2000,
+                    position: 'top-right',
+                }
+            );
+            
+            // Update the products list with the new item data
+            // This is better than reloading everything
+            setProducts(prevProducts => 
+                prevProducts.map(p => {
+                    const prevItem = p as any;
+                    return prevItem.itemId === updatedMenuItem.itemId 
+                        ? (updatedMenuItem as any)
+                        : p;
+                })
+            );
+            
+            console.log('✅ Product list updated with new status');
+        } catch (error: any) {
+            console.error('❌ Error toggling status:', error);
+            toast.error(
+                error.response?.data?.message || 'Không thể thay đổi trạng thái món ăn',
+                {
+                    duration: 3000,
+                    position: 'top-right',
+                }
+            );
+        }
     };
 
     const formatPrice = (price: number) => {
@@ -523,7 +666,7 @@ const AdminProduct: React.FC = () => {
                                                           onClick={(e) => {
                                                               e.stopPropagation();
                                                               // Toggle status logic here
-                                                              toast.info('Chức năng đang phát triển');
+                                                              handleToggleStatus(product);
                                                           }}
                                                       >
                                                           {menuItem.isAvailable ? 'Ẩn' : 'Hiện'}
@@ -623,12 +766,12 @@ const AdminProduct: React.FC = () => {
                     onSuccess={handleAddProductSuccess}
                 />
 
-                {/* Edit Product Modal */}
-                <EditProductModal
+                {/* Edit MenuItem Modal */}
+                <EditMenuItemModal
                     isOpen={isEditProductModalOpen}
                     onClose={() => setIsEditProductModalOpen(false)}
                     onSuccess={handleEditProductSuccess}
-                    product={editingProduct}
+                    menuItem={editingProduct as any}
                 />
             </div>
         </div>

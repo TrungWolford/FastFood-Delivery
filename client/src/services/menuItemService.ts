@@ -81,7 +81,7 @@ export const menuItemService = {
   },
 
   // Change menu item status (toggle isAvailable)
-  changeMenuItemStatus: async (menuItemId: string): Promise<string> => {
+  changeMenuItemStatus: async (menuItemId: string): Promise<MenuItemResponse> => {
     const response = await axiosInstance.patch(`${CONFIG.API_GATEWAY}${API.CHANGE_MENU_ITEM_STATUS(menuItemId)}`);
     return response.data;
   }
