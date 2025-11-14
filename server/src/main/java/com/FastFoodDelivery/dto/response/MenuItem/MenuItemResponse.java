@@ -2,6 +2,7 @@ package com.FastFoodDelivery.dto.response.MenuItem;
 
 import com.FastFoodDelivery.entity.MenuItem;
 import com.FastFoodDelivery.entity.Restaurant;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.Date;
@@ -16,7 +17,10 @@ public class MenuItemResponse {
     private String categoryName;
     private long price;
     private String imageUrl;
+    
+    @JsonProperty("isAvailable")
     private boolean isAvailable;
+    
     private Date createdAt;
     private Date updatedAt;
 

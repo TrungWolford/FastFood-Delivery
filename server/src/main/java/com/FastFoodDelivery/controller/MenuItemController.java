@@ -59,9 +59,9 @@ public class MenuItemController {
     }
 
     @PatchMapping("/{menuItemId}/status")
-    public ResponseEntity<String> changeMenuItemStatus(@PathVariable String menuItemId) {
+    public ResponseEntity<MenuItemResponse> changeMenuItemStatus(@PathVariable String menuItemId) {
         ObjectId objectId = new ObjectId(menuItemId);
-        menuItemService.changeStatus(objectId);
-        return ResponseEntity.ok("Menu item status changed successfully");
+        MenuItemResponse updatedMenuItem = menuItemService.changeStatus(objectId);
+        return ResponseEntity.ok(updatedMenuItem);
     }
 }

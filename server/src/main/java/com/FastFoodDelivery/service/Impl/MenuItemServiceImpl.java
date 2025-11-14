@@ -111,13 +111,18 @@ public class MenuItemServiceImpl implements MenuItemService {
     }
 
     @Override
-    public void changeStatus(ObjectId menuItemId) {
+    public MenuItemResponse changeStatus(ObjectId menuItemId) {
         MenuItem menuItem = menuItemRepository.findById(menuItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("MenuItem", "id", menuItemId.toString()));
 
+        // Toggle the status
         menuItem.setAvailable(!menuItem.isAvailable());
         menuItem.setUpdatedAt(new Date());
 
-        menuItemRepository.save(menuItem);
+        // Save and return the updated menu item
+        MenuItem savedMenuItem = menuItemRepository.save(menuItem);
+        Restaurant restaurant = restaurantRepository.findById(savedMenuItem.getRestaurantId()).orElse(null);
+        
+        return MenuItemResponse.fromEntity(savedMenuItem, restaurant);
     }
 }

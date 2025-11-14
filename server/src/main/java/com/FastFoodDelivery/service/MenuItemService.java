@@ -18,6 +18,6 @@ public interface MenuItemService {
     List<MenuItemResponse> getAllMenuItemByRestaurantId(ObjectId restaurantId);
     MenuItemResponse createMenuItem(CreateMenuItemRequest request);
     MenuItemResponse updateMenuItem(UpdateMenuItemRequest request, ObjectId menuItemId);
-    void changeStatus(ObjectId menuItemId);
+    MenuItemResponse changeStatus(ObjectId menuItemId);
 
 }
