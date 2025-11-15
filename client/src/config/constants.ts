@@ -67,24 +67,28 @@ export const API = {
   DELETE_CATEGORY: (categoryId: string) => `/category/${categoryId}`, // DELETE /api/category/{categoryId} (Admin only)
   SEARCH_CATEGORIES: '/category/search', // GET /api/category/search?keyword=xxx&page=0&size=10
 
-  // Orders - Theo OrderController.java
-  GET_ALL_ORDERS: '/order', // GET /api/order (Admin only)
-  GET_ORDER_BY_ID: (orderId: string) => `/order/${orderId}`, // GET /api/order/{orderId}
-  CREATE_ORDER: '/order', // POST /api/order (Customer only)
-  UPDATE_ORDER: (orderId: string) => `/order/${orderId}`, // PUT /api/order/{orderId} (Admin only)
-  DELETE_ORDER: (orderId: string) => `/order/${orderId}`, // DELETE /api/order/{orderId} (Admin only)
-  GET_ORDERS_BY_ACCOUNT: (accountId: string) => `/order/account/${accountId}`, // GET /api/order/account/{accountId} (Customer only)
-  CANCEL_ORDER: (orderId: string) => `/order/${orderId}/cancel`, // PUT /api/order/{orderId}/cancel (Customer only)
-  COMPLETE_ORDER: (orderId: string) => `/order/${orderId}/complete`, // PUT /api/order/{orderId}/complete (Customer confirms delivery)
-  CONFIRM_ORDER: (orderId: string) => `/order/${orderId}/confirm`, // PUT /api/order/{orderId}/confirm (Admin confirms order)
-  START_DELIVERY: (orderId: string) => `/order/${orderId}/start-delivery`, // PUT /api/order/{orderId}/start-delivery (Admin starts delivery)
-  UPDATE_ORDER_STATUS: (orderId: string) => `/order/${orderId}/update-status`, // PUT /api/order/{orderId}/update-status?status=xxx (Admin only)
-  GET_ORDER_DETAILS: (orderId: string) => `/order/${orderId}/details`, // GET /api/order/{orderId}/details
-  FILTER_ORDERS_BY_STATUS: '/order/status', // GET /api/order/status?status=xxx&page=0&size=10 (Admin only)
-  FILTER_ORDERS_BY_DATE: '/order/date-range', // GET /api/order/date-range?startDate=xxx&endDate=xxx&page=0&size=10 (Admin only)
-  SEARCH_ORDERS: '/order/search', // GET /api/order/search?keyword=xxx&page=0&size=10 (Admin only)
-  FILTER_ORDERS: '/order/filter', // GET /api/order/filter?status=xxx&page=0&size=10 (Admin only)
-  SEARCH_AND_FILTER_ORDERS: '/order/search-filter', // GET /api/order/search-filter?keyword=xxx&status=xxx&page=0&size=10 (Admin only)
+  // Orders - Theo OrderController.java (UPDATED to match MongoDB backend)
+  GET_ALL_ORDERS: '/orders', // GET /api/orders?page=0&size=10 (Admin only - with pagination)
+  GET_ORDER_BY_ID: (orderId: string) => `/orders/${orderId}`, // GET /api/orders/{orderId}
+  GET_ORDERS_BY_CUSTOMER: (customerId: string) => `/orders/user/${customerId}`, // GET /api/orders/user/{customerId}?page=0&size=10
+  GET_ORDERS_BY_RESTAURANT: (restaurantId: string) => `/orders/restaurant/${restaurantId}`, // GET /api/orders/restaurant/{restaurantId}?page=0&size=10
+  GET_ORDER_ITEMS: (orderId: string) => `/orders/${orderId}/items`, // GET /api/orders/{orderId}/items
+  CREATE_ORDER: '/orders', // POST /api/orders
+  UPDATE_ORDER: (orderId: string) => `/orders/${orderId}`, // PATCH /api/orders/{orderId} (deliveryAddress, status)
+  CANCEL_ORDER: (orderId: string) => `/orders/${orderId}/cancel`, // PATCH /api/orders/{orderId}/cancel
+  
+  // Legacy endpoints (deprecated - kept for backward compatibility)
+  GET_ORDERS_BY_ACCOUNT: (accountId: string) => `/orders/user/${accountId}`, // Alias for GET_ORDERS_BY_CUSTOMER
+  COMPLETE_ORDER: (orderId: string) => `/orders/${orderId}`, // Use UPDATE_ORDER with status instead
+  CONFIRM_ORDER: (orderId: string) => `/orders/${orderId}`, // Use UPDATE_ORDER with status instead
+  START_DELIVERY: (orderId: string) => `/orders/${orderId}`, // Use UPDATE_ORDER with status instead
+  UPDATE_ORDER_STATUS: (orderId: string) => `/orders/${orderId}`, // Use UPDATE_ORDER instead
+  GET_ORDER_DETAILS: (orderId: string) => `/orders/${orderId}/items`, // Use GET_ORDER_ITEMS instead
+  FILTER_ORDERS_BY_STATUS: '/orders', // Use GET_ALL_ORDERS with params instead
+  FILTER_ORDERS_BY_DATE: '/orders', // Use GET_ALL_ORDERS with params instead
+  SEARCH_ORDERS: '/orders', // Use GET_ALL_ORDERS with params instead
+  FILTER_ORDERS: '/orders', // Use GET_ALL_ORDERS with params instead
+  SEARCH_AND_FILTER_ORDERS: '/orders', // Use GET_ALL_ORDERS with params instead
 
   // Cart - Theo CartController.java
   GET_CART_BY_ACCOUNT: (accountId: string) => `/cart/account/${accountId}`, // GET /api/cart/account/{accountId}
