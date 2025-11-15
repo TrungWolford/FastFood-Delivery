@@ -5,13 +5,12 @@ import { logout } from '../store/slices/authSlice'
 import { 
   LayoutDashboard, 
   Package, 
-  Tags, 
   Users, 
   LogOut,
   User,
   Home,
   ShoppingBag,
-  Truck,
+  Drone,
   Star
 } from 'lucide-react'
 
@@ -43,9 +42,9 @@ const LeftTaskbar: React.FC = () => {
       path: '/admin/orders'
     },
     {
-      icon: Truck,
-      label: 'Vận chuyển',
-      path: '/admin/shippings'
+      icon: Drone,
+      label: 'Quản lý Drone',
+      path: '/admin/drones'
     },
     {
       icon: Star,

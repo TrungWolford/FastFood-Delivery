@@ -8,17 +8,33 @@ import type {
   PaginatedResponse 
 } from '../types/fastfood';
 
-// Drone Service
+/**
+ * Drone Service - Aligned with DroneController.java
+ * 
+ * Available endpoints:
+ * - GET /api/drones/restaurant/{restaurantId}?page=0&size=10
+ * - GET /api/drones/{droneId}
+ * - POST /api/drones
+ * - PUT /api/drones/{droneId}
+ * - PATCH /api/drones/{droneId}/status
+ */
 export const droneService = {
-  // Get all drones with pagination
-  getAllDrones: async (page = 0, size = 10): Promise<PaginatedResponse<Drone>> => {
+  /**
+   * Get all drones by restaurant with pagination
+   * GET /api/drones/restaurant/{restaurantId}?page=0&size=10
+   */
+  getDronesByRestaurant: async (
+    restaurantId: string,
+    page = 0,
+    size = 10
+  ): Promise<PaginatedResponse<Drone>> => {
     try {
       const response: AxiosResponse<PaginatedResponse<Drone>> = await axiosInstance.get(
-        `${API.GET_ALL_DRONES}?page=${page}&size=${size}`
+        `${API.GET_ALL_DRONES_BY_RESTAURANT(restaurantId)}?page=${page}&size=${size}`
       );
       return response.data;
     } catch (error) {
-      console.warn('⚠️ Backend API not available, using mock data for drones');
+      console.error('Error fetching drones by restaurant:', error);
       // Mock data for development
       return {
         content: [
@@ -28,7 +44,7 @@ export const droneService = {
             model: 'DJI Mavic 3',
             batteryLevel: 95,
             status: 1,
-            restaurantId: '1',
+            restaurantId: restaurantId,
             restaurantName: 'Chi nhánh 1',
             currentLocation: 'Chi nhánh 1',
             createdAt: new Date().toISOString(),
@@ -39,51 +55,17 @@ export const droneService = {
             model: 'DJI Mini 3 Pro',
             batteryLevel: 65,
             status: 2,
-            restaurantId: '1',
+            restaurantId: restaurantId,
             restaurantName: 'Chi nhánh 1',
             currentOrderId: 'ORD001',
             currentLocation: 'Đang giao hàng',
             createdAt: new Date().toISOString(),
           },
-          {
-            droneId: '3',
-            droneCode: 'DRONE-003',
-            model: 'DJI Air 2S',
-            batteryLevel: 15,
-            status: 0,
-            restaurantId: '2',
-            restaurantName: 'Chi nhánh 2',
-            currentLocation: 'Chi nhánh 2',
-            lastMaintenanceDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date().toISOString(),
-          },
-          {
-            droneId: '4',
-            droneCode: 'DRONE-004',
-            model: 'DJI Mavic 3',
-            batteryLevel: 88,
-            status: 1,
-            restaurantId: '2',
-            restaurantName: 'Chi nhánh 2',
-            currentLocation: 'Chi nhánh 2',
-            createdAt: new Date().toISOString(),
-          },
-          {
-            droneId: '5',
-            droneCode: 'DRONE-005',
-            model: 'DJI Mini 3 Pro',
-            batteryLevel: 92,
-            status: 1,
-            restaurantId: '3',
-            restaurantName: 'Chi nhánh 3',
-            currentLocation: 'Chi nhánh 3',
-            createdAt: new Date().toISOString(),
-          },
         ],
-        totalElements: 5,
+        totalElements: 2,
         totalPages: 1,
-        size: 10,
-        number: 0,
+        size: size,
+        number: page,
         first: true,
         last: true,
         empty: false,
@@ -91,7 +73,10 @@ export const droneService = {
     }
   },
 
-  // Get drone by ID
+  /**
+   * Get drone by ID
+   * GET /api/drones/{droneId}
+   */
   getDroneById: async (droneId: string): Promise<Drone> => {
     try {
       const response: AxiosResponse<Drone> = await axiosInstance.get(
@@ -104,7 +89,10 @@ export const droneService = {
     }
   },
 
-  // Create new drone
+  /**
+   * Create new drone
+   * POST /api/drones
+   */
   createDrone: async (droneData: CreateDroneRequest): Promise<Drone> => {
     try {
       const response: AxiosResponse<Drone> = await axiosInstance.post(
@@ -118,7 +106,10 @@ export const droneService = {
     }
   },
 
-  // Update drone
+  /**
+   * Update drone
+   * PUT /api/drones/{droneId}
+   */
   updateDrone: async (
     droneId: string,
     droneData: UpdateDroneRequest
@@ -135,127 +126,39 @@ export const droneService = {
     }
   },
 
-  // Delete drone
-  deleteDrone: async (droneId: string): Promise<void> => {
-    try {
-      await axiosInstance.delete(API.DELETE_DRONE(droneId));
-    } catch (error) {
-      console.error('Error deleting drone:', error);
-      throw error;
-    }
-  },
-
-  // Get drones by status
-  getDronesByStatus: async (
-    status: number,
-    page = 0,
-    size = 10
-  ): Promise<PaginatedResponse<Drone>> => {
-    try {
-      const response: AxiosResponse<PaginatedResponse<Drone>> = await axiosInstance.get(
-        `${API.GET_DRONES_BY_STATUS(status)}?page=${page}&size=${size}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching drones by status:', error);
-      throw error;
-    }
-  },
-
-  // Get drones by restaurant
-  getDronesByRestaurant: async (
-    restaurantId: string,
-    page = 0,
-    size = 10
-  ): Promise<PaginatedResponse<Drone>> => {
-    try {
-      const response: AxiosResponse<PaginatedResponse<Drone>> = await axiosInstance.get(
-        `${API.GET_DRONES_BY_RESTAURANT(restaurantId)}?page=${page}&size=${size}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching drones by restaurant:', error);
-      throw error;
-    }
-  },
-
-  // Update drone battery level
-  updateDroneBattery: async (
-    droneId: string,
-    batteryLevel: number
-  ): Promise<Drone> => {
+  /**
+   * Change drone status
+   * PATCH /api/drones/{droneId}/status
+   */
+  changeDroneStatus: async (droneId: string): Promise<Drone> => {
     try {
       const response: AxiosResponse<Drone> = await axiosInstance.patch(
-        API.UPDATE_DRONE_BATTERY(droneId),
-        { batteryLevel }
+        API.CHANGE_DRONE_STATUS(droneId)
       );
       return response.data;
     } catch (error) {
-      console.error('Error updating drone battery:', error);
+      console.error('Error changing drone status:', error);
       throw error;
     }
   },
 
-  // Assign order to drone
-  assignOrderToDrone: async (
-    droneId: string,
-    orderId: string
-  ): Promise<Drone> => {
-    try {
-      const response: AxiosResponse<Drone> = await axiosInstance.post(
-        API.ASSIGN_ORDER_TO_DRONE(droneId),
-        { orderId }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error assigning order to drone:', error);
-      throw error;
-    }
-  },
-
-  // Search drones
-  searchDrones: async (
-    keyword: string,
-    page = 0,
-    size = 10
-  ): Promise<PaginatedResponse<Drone>> => {
-    try {
-      const response: AxiosResponse<PaginatedResponse<Drone>> = await axiosInstance.get(
-        `${API.SEARCH_DRONES}?keyword=${keyword}&page=${page}&size=${size}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error searching drones:', error);
-      throw error;
-    }
-  },
-
-  // Get drone statistics
-  getDroneStats: async () => {
-    try {
-      const allDrones = await droneService.getAllDrones(0, 1000);
-      const drones = allDrones.content;
-      
-      return {
-        total: drones.length,
-        active: drones.filter(d => d.status === 1).length,
-        delivering: drones.filter(d => d.status === 2).length,
-        maintenance: drones.filter(d => d.status === 0).length,
-        averageBattery: Math.round(
-          drones.reduce((sum, d) => sum + d.batteryLevel, 0) / drones.length
-        ),
-      };
-    } catch (error) {
-      console.warn('⚠️ Backend API not available, using mock stats for drones');
-      // Mock stats
-      return {
-        total: 24,
-        active: 18,
-        delivering: 5,
-        maintenance: 1,
-        averageBattery: 75,
-      };
-    }
+  /**
+   * @deprecated Use getDronesByRestaurant instead
+   * This method is kept for backward compatibility
+   */
+  getAllDrones: async (page = 0, size = 10): Promise<PaginatedResponse<Drone>> => {
+    console.warn('⚠️ getAllDrones is deprecated. Use getDronesByRestaurant instead.');
+    // Return empty result since backend doesn't have this endpoint
+    return {
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      size: 10,
+      number: 0,
+      first: true,
+      last: true,
+      empty: true,
+    };
   },
 };
 
