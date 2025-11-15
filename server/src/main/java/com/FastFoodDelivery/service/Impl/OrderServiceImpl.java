@@ -129,9 +129,10 @@ public class OrderServiceImpl implements OrderService {
     private boolean isValidStatusTransition(String currentStatus, String newStatus) {
         return switch (currentStatus) {
             case "PENDING" -> newStatus.equals("CONFIRMED") || newStatus.equals("CANCELLED");
-            case "CONFIRMED" -> newStatus.equals("DELIVERING") || newStatus.equals("CANCELLED");
-            case "DELIVERING" -> newStatus.equals("COMPLETED");
-            case "COMPLETED", "CANCELLED" -> false; // không được đổi nữa
+            case "CONFIRMED" -> newStatus.equals("PREPARING") || newStatus.equals("CANCELLED");
+            case "PREPARING" -> newStatus.equals("SHIPPING") || newStatus.equals("CANCELLED");
+            case "SHIPPING" -> newStatus.equals("DELIVERED");
+            case "DELIVERED", "CANCELLED" -> false; // không được đổi nữa
             default -> false;
         };
     }
@@ -143,8 +144,8 @@ public class OrderServiceImpl implements OrderService {
 
         // Nếu có thay đổi địa chỉ giao hàng
         if (request.getDeliveryAddress() != null) {
-            if ("DELIVERING".equals(existingOrder.getStatus())
-                    || "COMPLETED".equals(existingOrder.getStatus())) {
+            if ("SHIPPING".equals(existingOrder.getStatus())
+                    || "DELIVERED".equals(existingOrder.getStatus())) {
                 throw new IllegalStateException("Không thể đổi địa chỉ khi đơn đã giao hoặc hoàn tất");
             }
             existingOrder.setDeliveryAddress(request.getDeliveryAddress());
