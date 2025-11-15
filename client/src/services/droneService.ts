@@ -35,34 +35,38 @@ export const droneService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching drones by restaurant:', error);
-      // Mock data for development
+      // Mock data for development - aligned with backend structure
       return {
         content: [
           {
-            droneId: '1',
-            droneCode: 'DRONE-001',
-            model: 'DJI Mavic 3',
-            batteryLevel: 95,
-            status: 1,
+            droneId: '673726c8e5f123456789abc1',
             restaurantId: restaurantId,
-            restaurantName: 'Chi nhánh 1',
-            currentLocation: 'Chi nhánh 1',
+            model: 'DJI Mavic 3',
+            capacity: 10.5,
+            battery: 95,
+            status: 'AVAILABLE',
             createdAt: new Date().toISOString(),
           },
           {
-            droneId: '2',
-            droneCode: 'DRONE-002',
-            model: 'DJI Mini 3 Pro',
-            batteryLevel: 65,
-            status: 2,
+            droneId: '673726c8e5f123456789abc2',
             restaurantId: restaurantId,
-            restaurantName: 'Chi nhánh 1',
-            currentOrderId: 'ORD001',
-            currentLocation: 'Đang giao hàng',
+            model: 'DJI Mini 3 Pro',
+            capacity: 8.0,
+            battery: 65,
+            status: 'IN_USE',
+            createdAt: new Date().toISOString(),
+          },
+          {
+            droneId: '673726c8e5f123456789abc3',
+            restaurantId: restaurantId,
+            model: 'DJI Air 2S',
+            capacity: 12.0,
+            battery: 30,
+            status: 'MAINTENANCE',
             createdAt: new Date().toISOString(),
           },
         ],
-        totalElements: 2,
+        totalElements: 3,
         totalPages: 1,
         size: size,
         number: page,

@@ -34,35 +34,27 @@ export interface UpdateRestaurantRequest {
 // Drone Types
 export interface Drone {
   droneId: string;
-  droneCode: string;
+  restaurantId: string;
   model: string;
-  batteryLevel: number; // 0-100
-  status: number; // 0: Bảo trì, 1: Sẵn sàng, 2: Đang giao hàng
-  restaurantId?: string;
-  restaurantName?: string;
-  currentOrderId?: string;
-  currentLocation?: string;
-  lastMaintenanceDate?: string;
-  createdAt: string;
+  capacity: number; // Sức chứa (kg)
+  battery: number; // 0-100
+  status: string; // "AVAILABLE", "IN_USE", "MAINTENANCE"
+  createdAt?: string;
   updatedAt?: string;
 }
 
 export interface CreateDroneRequest {
-  droneCode: string;
+  restaurantId: string;
   model: string;
-  batteryLevel: number;
-  status: number;
-  restaurantId?: string;
+  capacity: number;
+  battery: number;
 }
 
 export interface UpdateDroneRequest {
-  droneCode?: string;
   model?: string;
-  batteryLevel?: number;
-  status?: number;
-  restaurantId?: string;
-  currentOrderId?: string;
-  currentLocation?: string;
+  capacity?: number;
+  battery?: number;
+  status?: string;
 }
 
 // FastFood Order Extension
