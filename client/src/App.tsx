@@ -11,7 +11,7 @@ import AdminProduct from './pages/Admin/AdminProduct';
 import AdminAccounts from './pages/Admin/AdminAccounts';
 import AdminCategory from './pages/Admin/AdminCategory';
 import AdminOrder from './pages/Admin/AdminOrder';
-import AdminDrones from './pages/Admin/AdminDrones';
+import AdminShipping from './pages/Admin/AdminShipping';
 import AdminRating from './pages/Admin/AdminRating';
 import CheckoutPage from './pages/Checkout/CheckoutPage';
 import ProductDetail from './pages/ProductDetail/ProductDetail';
@@ -90,7 +90,7 @@ const App: React.FC = () => {
       <Route path="/admin/product" element={<AdminProduct />} />
       <Route path="/admin/products" element={<AdminProduct />} />
       <Route path="/admin/orders" element={<AdminOrder />} />
-      <Route path="/admin/drones" element={<AdminDrones />} />
+      <Route path="/admin/shippings" element={<AdminShipping />} />
       <Route path="/admin/ratings" element={<AdminRating />} />
       <Route path="/admin/accounts" element={<AdminAccounts />} />
       <Route path="/admin/categories" element={<AdminCategory />} />
@@ -119,4 +119,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

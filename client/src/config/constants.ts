@@ -149,6 +149,13 @@ export const API = {
   UPDATE_DRONE: (droneId: string) => `/drones/${droneId}`, // PUT /api/drones/{droneId}
   CHANGE_DRONE_STATUS: (droneId: string) => `/drones/${droneId}/status`, // PATCH /api/drones/{droneId}/status
 
+  // Deliveries - Theo DeliveryController.java
+  GET_DELIVERIES_BY_ORDER: (orderId: string) => `/deliveries/order/${orderId}`, // GET /api/deliveries/order/{orderId}
+  GET_DELIVERY_BY_ID: (deliveryId: string) => `/deliveries/${deliveryId}`, // GET /api/deliveries/{deliveryId}
+  CREATE_DELIVERY: '/deliveries', // POST /api/deliveries
+  UPDATE_DELIVERY: (deliveryId: string) => `/deliveries/${deliveryId}`, // PUT /api/deliveries/{deliveryId}
+  CHANGE_DELIVERY_STATUS: (deliveryId: string) => `/deliveries/${deliveryId}`, // PATCH /api/deliveries/{deliveryId}
+
   // Ratings - Theo RatingController.java
   GET_ALL_RATINGS: '/rating', // GET /api/rating?page=0&size=10
   GET_RATINGS_BY_ACCOUNT: (accountId: string) => `/rating/account/${accountId}`, // GET /api/rating/account/{accountId}?page=0&size=10
