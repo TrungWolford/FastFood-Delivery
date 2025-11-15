@@ -96,6 +96,8 @@ public class OrderServiceImpl implements OrderService {
             OrderItem item = new OrderItem();
             item.setOrderItemId(new ObjectId());
             item.setItemId(itemReq.getItemId());
+            item.setName(menuItem.getName());           // ✨ Thêm tên món
+            item.setImageUrl(menuItem.getImageUrl());   // ✨ Thêm URL hình ảnh
             item.setQuantity(itemReq.getQuantity());
             item.setNote(itemReq.getNote());
             item.setPrice(price);

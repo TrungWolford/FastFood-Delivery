@@ -5,8 +5,10 @@ import com.FastFoodDelivery.dto.response.Auth.LoginResponse;
 import com.FastFoodDelivery.dto.response.User.UserResponse;
 import com.FastFoodDelivery.entity.Role;
 import com.FastFoodDelivery.entity.User;
+import com.FastFoodDelivery.entity.Restaurant;
 import com.FastFoodDelivery.repository.RoleRepository;
 import com.FastFoodDelivery.repository.UserRepository;
+import com.FastFoodDelivery.repository.RestaurantRepository;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
+import java.util.List;
 
 /**
  * Authentication Controller
@@ -30,6 +33,9 @@ public class AuthController {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private RestaurantRepository restaurantRepository;
 
     /**
      * Login endpoint
@@ -89,8 +95,16 @@ public class AuthController {
                                 .build());
             }
             
+            // Get restaurant ID if user is a restaurant owner
+            String restaurantId = null;
+            List<Restaurant> restaurants = restaurantRepository.findByOwnerId(user.getUserID());
+            if (!restaurants.isEmpty()) {
+                restaurantId = restaurants.get(0).getRestaurantId().toString();
+                log.info("Found restaurant ID: {} for user: {}", restaurantId, user.getUserID());
+            }
+            
             // Create UserResponse
-            UserResponse userResponse = UserResponse.fromEntity(user, role);
+            UserResponse userResponse = UserResponse.fromEntity(user, role, restaurantId);
             
             log.info("Login successful for phone: {}, role: {}", request.getAccountPhone(), role.getRoleName());
             
@@ -144,7 +158,14 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
         
-        UserResponse userResponse = UserResponse.fromEntity(user, role);
+        // Get restaurant ID if user is a restaurant owner
+        String restaurantId = null;
+        List<Restaurant> restaurants = restaurantRepository.findByOwnerId(user.getUserID());
+        if (!restaurants.isEmpty()) {
+            restaurantId = restaurants.get(0).getRestaurantId().toString();
+        }
+        
+        UserResponse userResponse = UserResponse.fromEntity(user, role, restaurantId);
         return ResponseEntity.ok(userResponse);
     }
 }

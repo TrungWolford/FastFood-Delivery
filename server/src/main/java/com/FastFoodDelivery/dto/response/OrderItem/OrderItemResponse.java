@@ -7,6 +7,8 @@ import lombok.Data;
 public class OrderItemResponse {
     private String orderItemId;
     private String itemId;
+    private String name;        // Tên món ăn
+    private String imageUrl;    // URL hình ảnh món ăn
     private Integer quantity;
     private String note;
     private long price;
@@ -16,6 +18,8 @@ public class OrderItemResponse {
         OrderItemResponse response = new OrderItemResponse();
         response.setOrderItemId(orderItem.getOrderItemId().toString());
         response.setItemId(orderItem.getItemId().toString());
+        response.setName(orderItem.getName());
+        response.setImageUrl(orderItem.getImageUrl());
         response.setQuantity(orderItem.getQuantity());
         response.setNote(orderItem.getNote());
         response.setPrice(orderItem.getPrice());

@@ -5,9 +5,11 @@ import com.FastFoodDelivery.dto.request.User.UpdateUserRequest;
 import com.FastFoodDelivery.dto.response.User.UserResponse;
 import com.FastFoodDelivery.entity.Role;
 import com.FastFoodDelivery.entity.User;
+import com.FastFoodDelivery.entity.Restaurant;
 import com.FastFoodDelivery.exception.ResourceNotFoundException;
 import com.FastFoodDelivery.repository.RoleRepository;
 import com.FastFoodDelivery.repository.UserRepository;
+import com.FastFoodDelivery.repository.RestaurantRepository;
 import com.FastFoodDelivery.service.UserService;
 import com.FastFoodDelivery.util.ValidationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +33,21 @@ public class UserServiceImpl implements UserService {
     private RoleRepository roleRepository;
 
     @Autowired
+    private RestaurantRepository restaurantRepository;
+
+    @Autowired
     private ValidationUtil validationUtil;
+
+    /**
+     * Helper method to get restaurant ID for a user
+     */
+    private String getRestaurantIdForUser(ObjectId userId) {
+        List<Restaurant> restaurants = restaurantRepository.findByOwnerId(userId);
+        if (!restaurants.isEmpty()) {
+            return restaurants.get(0).getRestaurantId().toString();
+        }
+        return null;
+    }
 
     @Override
     public Page<UserResponse> getAllUser(Pageable pageable) {
@@ -54,7 +70,8 @@ public class UserServiceImpl implements UserService {
             if (role == null) {
                 throw new ResourceNotFoundException("Role", "id", user.getRoleId().toString());
             }
-            return UserResponse.fromEntity(user, role);
+            String restaurantId = getRestaurantIdForUser(user.getUserID());
+            return UserResponse.fromEntity(user, role, restaurantId);
         });
     }
 
@@ -66,7 +83,8 @@ public class UserServiceImpl implements UserService {
         Role role = roleRepository.findById(user.getRoleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "id", user.getRoleId().toString()));
         
-        return UserResponse.fromEntity(user, role);
+        String restaurantId = getRestaurantIdForUser(user.getUserID());
+        return UserResponse.fromEntity(user, role, restaurantId);
     }
 
     @Override
@@ -100,7 +118,8 @@ public class UserServiceImpl implements UserService {
         Role role = roleRepository.findById(user.getRoleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "id", user.getRoleId().toString()));
         
-        return UserResponse.fromEntity(user, role);
+        String restaurantId = getRestaurantIdForUser(user.getUserID());
+        return UserResponse.fromEntity(user, role, restaurantId);
     }
 
     @Override
@@ -135,7 +154,8 @@ public class UserServiceImpl implements UserService {
         Role role = roleRepository.findById(existingUser.getRoleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "id", existingUser.getRoleId().toString()));
         
-        return UserResponse.fromEntity(existingUser, role);
+        String restaurantId = getRestaurantIdForUser(existingUser.getUserID());
+        return UserResponse.fromEntity(existingUser, role, restaurantId);
     }
 
     @Override
@@ -159,7 +179,8 @@ public class UserServiceImpl implements UserService {
             if (role == null) {
                 throw new ResourceNotFoundException("Role", "id", user.getRoleId().toString());
             }
-            return UserResponse.fromEntity(user, role);
+            String restaurantId = getRestaurantIdForUser(user.getUserID());
+            return UserResponse.fromEntity(user, role, restaurantId);
         });
     }
 
