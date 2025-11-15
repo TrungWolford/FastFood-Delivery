@@ -11,6 +11,7 @@ export interface Account {
   password?: string;
   roleId?: string; // Backend trả về roleId
   roleText?: string; // Backend trả về roleText
+  restaurantId?: string; // ID nhà hàng (cho RESTAURANT_OWNER role)
   status: number; // 0 = INACTIVE, 1 = ACTIVE
   statusText?: string; // Backend trả về statusText
   roles: Role[]; // Backend trả về roles array
