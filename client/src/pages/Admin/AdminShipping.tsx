@@ -32,6 +32,8 @@ import {
 import { Search, Truck, Plus, Edit, Eye, RefreshCw, MapPin, Package } from 'lucide-react';
 import shippingService, { SHIPPING_STATUS_LABELS } from '../../services/shippingService';
 import { droneService } from '../../services/droneService';
+import { locationService } from '../../services/locationService';
+import DeliveryMapViewer from '../../components/DeliveryMapViewer';
 import type { ShippingResponse, CreateShippingRequest, UpdateShippingRequest, UpdateShippingStatusRequest, LocationPoint } from '../../types/shipping';
 import { ShippingStatus } from '../../types/shipping';
 import type { Drone } from '../../types/fastfood';
@@ -67,6 +69,7 @@ function AdminShipping() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedShipping, setSelectedShipping] = useState<ShippingResponse | null>(null);
+  const [droneRealTimeLocation, setDroneRealTimeLocation] = useState<LocationPoint | null>(null);
 
   const [formData, setFormData] = useState<Partial<CreateShippingRequest & UpdateShippingRequest & { deliveryId?: string }>>({
     droneId: '',
@@ -207,9 +210,30 @@ function AdminShipping() {
     delivered: shippings.filter((s) => s.status === ShippingStatus.DELIVERED).length,
   };
 
-  const handleView = (shipping: ShippingResponse) => {
+  const handleView = async (shipping: ShippingResponse) => {
     setSelectedShipping(shipping);
+    setDroneRealTimeLocation(null); // Reset previous location
     setIsViewDialogOpen(true);
+
+    // Fetch real-time drone location if status is DELIVERING
+    if (shipping.status === ShippingStatus.DELIVERING && shipping.droneId) {
+      try {
+        console.log('📍 Fetching real-time location for drone:', shipping.droneId);
+        const response = await locationService.getDroneLocation(shipping.droneId);
+        if (response.success && response.data) {
+          setDroneRealTimeLocation({
+            latitude: response.data.latitude,
+            longitude: response.data.longitude
+          });
+          console.log('✅ Real-time location fetched:', response.data);
+        } else {
+          console.log('⚠️ No location data available for this drone');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching drone location:', error);
+        // Don't show error toast, just log it
+      }
+    }
   };
 
   const openCreateDialog = () => {
@@ -536,20 +560,78 @@ function AdminShipping() {
 
         {/* View Dialog */}
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Chi tiết Vận chuyển</DialogTitle>
               <DialogDescription>Thông tin chi tiết về đơn vận chuyển</DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-1 gap-3 mt-2">
-              <div className="flex justify-between"><strong>Mã Delivery:</strong><span className="text-gray-700 text-sm">{selectedShipping?.deliveryId}</span></div>
-              <div className="flex justify-between"><strong>Mã Order:</strong><span className="text-gray-700 text-sm">{selectedShipping?.orderId}</span></div>
-              <div className="flex justify-between"><strong>Mã Drone:</strong><span className="text-gray-700 text-sm">{selectedShipping?.droneId}</span></div>
-              <div className="flex justify-between"><strong>Điểm đầu:</strong><span className="text-gray-700">{formatLocation(selectedShipping?.startLocation)}</span></div>
-              <div className="flex justify-between"><strong>Điểm cuối:</strong><span className="text-gray-700">{formatLocation(selectedShipping?.endLocation)}</span></div>
-              <div className="flex justify-between"><strong>Trạng thái:</strong><Badge className={`${getStatusColor(selectedShipping?.status || 0)} text-white`}>{getStatusLabel(selectedShipping?.status || 0)}</Badge></div>
-              <div className="flex justify-between"><strong>Giao lúc:</strong><span className="text-gray-700 text-sm">{formatDate(selectedShipping?.deliveredAt)}</span></div>
+            <div className="space-y-4">
+              {/* Delivery Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50 p-4 rounded-lg">
+                <div className="flex justify-between">
+                  <strong className="text-gray-600">Mã Delivery:</strong>
+                  <span className="text-gray-800 font-mono text-sm">{selectedShipping?.deliveryId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <strong className="text-gray-600">Mã Order:</strong>
+                  <span className="text-gray-800 font-mono text-sm">{selectedShipping?.orderId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <strong className="text-gray-600">Mã Drone:</strong>
+                  <span className="text-gray-800 font-mono text-sm">{selectedShipping?.droneId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <strong className="text-gray-600">Trạng thái:</strong>
+                  <Badge className={`${getStatusColor(selectedShipping?.status || 0)} text-white`}>
+                    {getStatusLabel(selectedShipping?.status || 0)}
+                  </Badge>
+                </div>
+                <div className="flex justify-between md:col-span-2">
+                  <strong className="text-gray-600">Giao lúc:</strong>
+                  <span className="text-gray-700 text-sm">{formatDate(selectedShipping?.deliveredAt)}</span>
+                </div>
+              </div>
+
+              {/* Location Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="w-4 h-4 text-green-600" />
+                    <strong className="text-green-700">Điểm xuất phát (Restaurant)</strong>
+                  </div>
+                  <p className="text-sm text-gray-700">{formatLocation(selectedShipping?.startLocation)}</p>
+                </div>
+                <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="w-4 h-4 text-red-600" />
+                    <strong className="text-red-700">Điểm đến (Customer)</strong>
+                  </div>
+                  <p className="text-sm text-gray-700">{formatLocation(selectedShipping?.endLocation)}</p>
+                </div>
+              </div>
+
+              {/* Real-time Map Viewer */}
+              {selectedShipping && selectedShipping.startLocation && selectedShipping.endLocation && (
+                <div className="border-t pt-4">
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-blue-500" />
+                    Bản đồ theo dõi giao hàng
+                    {selectedShipping.status === ShippingStatus.DELIVERING && (
+                      <span className="text-sm font-normal text-blue-600">(Real-time WebSocket)</span>
+                    )}
+                  </h3>
+                  <DeliveryMapViewer
+                    startLocation={selectedShipping.startLocation}
+                    endLocation={selectedShipping.endLocation}
+                    droneLocation={droneRealTimeLocation || undefined}
+                    droneId={selectedShipping.droneId}
+                    enableRealtime={selectedShipping.status === ShippingStatus.DELIVERING}
+                    height="450px"
+                  />
+                </div>
+              )}
             </div>
+            
             <DialogFooter><Button onClick={() => setIsViewDialogOpen(false)}>Đóng</Button></DialogFooter>
           </DialogContent>
         </Dialog>
