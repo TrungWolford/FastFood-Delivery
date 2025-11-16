@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import TopNavigation from '../../components/ui/Header/Header';
 import Footer from '../../components/ui/Footer/Footer';
+import MapPicker from '../../components/MapPicker';
 import { restaurantService, restaurantDetailService } from '../../services/restaurantService';
 import { accountRestaurantDetailService } from '../../services/accountRestaurantDetailService';
 import { uploadService } from '../../services/uploadService';
@@ -313,6 +314,9 @@ const AdminRegister: React.FC = () => {
       if (!phoneRegex.test(formData.phone.trim())) {
         newErrors.phone = 'Số điện thoại không hợp lệ (10-11 chữ số)';
       }
+    }
+    if (!formData.mapLocation || formData.mapLocation.lat === 0 || formData.mapLocation.lng === 0) {
+      newErrors.mapLocation = 'Vui lòng chọn vị trí trên bản đồ';
     }
     
     setErrors(newErrors);
@@ -835,17 +839,19 @@ const AdminRegister: React.FC = () => {
                 {/* Map Location */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Định vị trên bản đồ
+                    Định vị trên bản đồ <span className="text-red-500">*</span>
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                    <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500 text-sm">
-                      Click để chọn vị trí trên bản đồ
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      (Tính năng sẽ được cập nhật)
-                    </p>
-                  </div>
+                  <MapPicker
+                    onLocationSelect={(lat, lng) => {
+                      handleInputChange('mapLocation', { lat, lng });
+                    }}
+                    initialLat={formData.mapLocation?.lat}
+                    initialLng={formData.mapLocation?.lng}
+                    height="450px"
+                  />
+                  {errors.mapLocation && (
+                    <p className="text-sm text-red-500 mt-2">{errors.mapLocation}</p>
+                  )}
                 </div>
               </div>
             </div>
