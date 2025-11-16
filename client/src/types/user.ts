@@ -18,8 +18,8 @@ export interface User {
   fullname: string;         // Backend: String fullname
   fullName?: string;        // Alias (for compatibility)
   accountName?: string;     // Alias for fullname (for backward compatibility)
-  email: string;            // Backend: String email
-  phone: string;            // Backend: String phone
+  email?: string;           // Backend: String email (can be null)
+  phone?: string;           // Backend: String phone (can be null)
   phoneNumber?: string;     // Alias (for compatibility)
   accountPhone?: string;    // Alias for phone (for backward compatibility)
   address?: string;         // Backend: String address
