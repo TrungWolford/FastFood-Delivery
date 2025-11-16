@@ -26,8 +26,16 @@ export interface AddToCartRequest {
 }
 
 export interface UpdateCartItemRequest {
+  cartId: string;
   cartItemId: string;
   quantity: number;
+}
+
+// Multi-cart request for menu items
+export interface AddMenuItemToCartRequest {
+  itemId: string;
+  quantity: number;
+  note?: string;
 }
 
 export interface CartResponse {

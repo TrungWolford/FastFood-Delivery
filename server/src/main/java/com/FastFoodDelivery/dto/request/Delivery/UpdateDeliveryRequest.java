@@ -1,11 +1,10 @@
 package com.FastFoodDelivery.dto.request.Delivery;
 
-import lombok.Data;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 
-import java.util.Date;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 public class UpdateDeliveryRequest {

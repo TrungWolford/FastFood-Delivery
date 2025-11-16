@@ -1,6 +1,7 @@
 package com.FastFoodDelivery.service.Impl;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,6 +36,8 @@ public class PaymentServiceImpl implements PaymentService {
     /**
      * ✅ Tạo thanh toán VNPay (lưu DB & trả URL thanh toán)
      * ✅ Transactional: Tất cả saves hoàn thành hoặc không có gì hoàn thành
+     * ✅ Reset payment expiration: Chỉ khi CHƯA hết hạn, reset lại 15 phút
+     * ✅ Block retry nếu đã hết hạn thanh toán
      */
     @Transactional
     @Override
@@ -47,14 +50,44 @@ public class PaymentServiceImpl implements PaymentService {
             throw new IllegalStateException("Order must be PENDING to create payment.");
         }
 
-        // Tạo bản ghi payment với TxnRef duy nhất (UUID)
+        Date now = new Date();
+        
+        // ✅ Kiểm tra đơn hàng đã hết hạn thanh toán chưa
+        if (order.getPaymentExpiresAt() != null && order.getPaymentExpiresAt().before(now)) {
+            throw new IllegalStateException("Payment time has expired. Please cancel this order and create a new one.");
+        }
+
+        // ✅ Chuyển TẤT CẢ Payment PENDING cũ của Order này sang FAILED
+        // Vì user đang tạo payment mới → các payment cũ không còn hiệu lực
+        List<Payment> oldPendingPayments = paymentRepository.findAllByOrderIdAndStatus(
+            request.getOrderId(), 
+            "PENDING"
+        );
+        
+        if (!oldPendingPayments.isEmpty()) {
+            for (Payment oldPayment : oldPendingPayments) {
+                oldPayment.setStatus("FAILED");
+                oldPayment.setUpdatedAt(now);
+                paymentRepository.save(oldPayment);
+                System.out.println("⚠️ Old payment marked as FAILED: " + oldPayment.getPaymentId());
+            }
+            System.out.println("✅ Marked " + oldPendingPayments.size() + " old pending payment(s) as FAILED");
+        }
+
+        // ✅ Reset payment expiration time: 15 phút mới khi retry payment
+        Date newPaymentExpiresAt = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes
+        order.setPaymentExpiresAt(newPaymentExpiresAt);
+        order.setUpdatedAt(now);
+        orderRepository.save(order);
+
+        // Tạo bản ghi payment MỚI với TxnRef duy nhất (UUID)
         Payment payment = new Payment();
         payment.setOrderId(request.getOrderId());
         payment.setAmount(request.getAmount());
         payment.setMethod(request.getMethod());
         payment.setStatus("PENDING");
-        payment.setCreatedAt(new Date());
-        payment.setUpdatedAt(new Date());
+        payment.setCreatedAt(now);
+        payment.setUpdatedAt(now);
         
         // ✅ Tạo TxnRef duy nhất bằng UUID (thay vì random 6 digits)
         String txnRef = request.getOrderId().toString() + "-" + UUID.randomUUID().toString().substring(0, 8);

@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 const FastFoodRole: React.FC = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAppSelector((state) => state.auth)
+  const [authChecked, setAuthChecked] = useState(false)
   
   // States
   const [roles, setRoles] = useState<RoleResponse[]>([])
@@ -27,6 +28,12 @@ const FastFoodRole: React.FC = () => {
   useEffect(() => {
     document.title = 'FastFood - Vai trò'
     
+    // Prevent redirect when user refreshes the page (F5)
+    if (!authChecked) {
+      const timer = setTimeout(() => setAuthChecked(true), 200);
+      return () => clearTimeout(timer);
+    }
+    
     if (!isAuthenticated || !user) {
       navigate('/fastfood/login')
       return
@@ -40,7 +47,7 @@ const FastFoodRole: React.FC = () => {
     } else {
       fetchRoles()
     }
-  }, [isAuthenticated, user, navigate])
+  }, [authChecked, isAuthenticated, user, navigate])
 
   // Fetch roles from API
   const fetchRoles = async () => {

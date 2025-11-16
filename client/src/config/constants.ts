@@ -67,38 +67,43 @@ export const API = {
   DELETE_CATEGORY: (categoryId: string) => `/category/${categoryId}`, // DELETE /api/category/{categoryId} (Admin only)
   SEARCH_CATEGORIES: '/category/search', // GET /api/category/search?keyword=xxx&page=0&size=10
 
-  // Orders - Theo OrderController.java (UPDATED to match MongoDB backend)
-  GET_ALL_ORDERS: '/orders', // GET /api/orders?page=0&size=10 (Admin only - with pagination)
+  // Orders - Theo OrderController.java
+  GET_ALL_ORDERS: '/orders', // GET /api/orders (Admin only)
   GET_ORDER_BY_ID: (orderId: string) => `/orders/${orderId}`, // GET /api/orders/{orderId}
   GET_ORDERS_BY_CUSTOMER: (customerId: string) => `/orders/user/${customerId}`, // GET /api/orders/user/{customerId}?page=0&size=10
   GET_ORDERS_BY_RESTAURANT: (restaurantId: string) => `/orders/restaurant/${restaurantId}`, // GET /api/orders/restaurant/{restaurantId}?page=0&size=10
   GET_ORDER_ITEMS: (orderId: string) => `/orders/${orderId}/items`, // GET /api/orders/{orderId}/items
-  CREATE_ORDER: '/orders', // POST /api/orders
-  UPDATE_ORDER: (orderId: string) => `/orders/${orderId}`, // PATCH /api/orders/{orderId} (deliveryAddress, status)
-  CANCEL_ORDER: (orderId: string) => `/orders/${orderId}/cancel`, // PATCH /api/orders/{orderId}/cancel
-  
-  // Legacy endpoints (deprecated - kept for backward compatibility)
-  GET_ORDERS_BY_ACCOUNT: (accountId: string) => `/orders/user/${accountId}`, // Alias for GET_ORDERS_BY_CUSTOMER
-  COMPLETE_ORDER: (orderId: string) => `/orders/${orderId}`, // Use UPDATE_ORDER with status instead
-  CONFIRM_ORDER: (orderId: string) => `/orders/${orderId}`, // Use UPDATE_ORDER with status instead
-  START_DELIVERY: (orderId: string) => `/orders/${orderId}`, // Use UPDATE_ORDER with status instead
-  UPDATE_ORDER_STATUS: (orderId: string) => `/orders/${orderId}`, // Use UPDATE_ORDER instead
-  GET_ORDER_DETAILS: (orderId: string) => `/orders/${orderId}/items`, // Use GET_ORDER_ITEMS instead
-  FILTER_ORDERS_BY_STATUS: '/orders', // Use GET_ALL_ORDERS with params instead
-  FILTER_ORDERS_BY_DATE: '/orders', // Use GET_ALL_ORDERS with params instead
-  SEARCH_ORDERS: '/orders', // Use GET_ALL_ORDERS with params instead
-  FILTER_ORDERS: '/orders', // Use GET_ALL_ORDERS with params instead
-  SEARCH_AND_FILTER_ORDERS: '/orders', // Use GET_ALL_ORDERS with params instead
+  CREATE_ORDER: '/orders', // POST /api/orders (Customer only)
+  UPDATE_ORDER: (orderId: string) => `/orders/${orderId}`, // PUT /api/orders/{orderId} (Admin only)
+  DELETE_ORDER: (orderId: string) => `/orders/${orderId}`, // DELETE /api/orders/{orderId} (Admin only)
+  GET_ORDERS_BY_ACCOUNT: (accountId: string) => `/orders/account/${accountId}`, // GET /api/orders/account/{accountId} (Customer only)
+  CANCEL_ORDER: (orderId: string) => `/orders/${orderId}/cancel`, // PUT /api/orders/{orderId}/cancel (Customer only)
+  COMPLETE_ORDER: (orderId: string) => `/orders/${orderId}/complete`, // PUT /api/orders/{orderId}/complete (Customer confirms delivery)
+  CONFIRM_ORDER: (orderId: string) => `/orders/${orderId}/confirm`, // PUT /api/orders/{orderId}/confirm (Admin confirms order)
+  START_DELIVERY: (orderId: string) => `/orders/${orderId}/start-delivery`, // PUT /api/orders/{orderId}/start-delivery (Admin starts delivery)
+  UPDATE_ORDER_STATUS: (orderId: string) => `/orders/${orderId}/update-status`, // PUT /api/orders/{orderId}/update-status?status=xxx (Admin only)
+  GET_ORDER_DETAILS: (orderId: string) => `/orders/${orderId}/details`, // GET /api/orders/{orderId}/details
+  FILTER_ORDERS_BY_STATUS: '/orders/status', // GET /api/orders/status?status=xxx&page=0&size=10 (Admin only)
+  FILTER_ORDERS_BY_DATE: '/orders/date-range', // GET /api/orders/date-range?startDate=xxx&endDate=xxx&page=0&size=10 (Admin only)
+  SEARCH_ORDERS: '/orders/search', // GET /api/orders/search?keyword=xxx&page=0&size=10 (Admin only)
+  FILTER_ORDERS: '/order/filter', // GET /api/order/filter?status=xxx&page=0&size=10 (Admin only)
+  SEARCH_AND_FILTER_ORDERS: '/order/search-filter', // GET /api/order/search-filter?keyword=xxx&status=xxx&page=0&size=10 (Admin only)
 
-  // Cart - Theo CartController.java
-  GET_CART_BY_ACCOUNT: (accountId: string) => `/cart/account/${accountId}`, // GET /api/cart/account/{accountId}
-  CREATE_CART: (accountId: string) => `/cart/account/${accountId}`, // POST /api/cart/account/{accountId}
-  DELETE_CART: (cartId: string) => `/cart/${cartId}`, // DELETE /api/cart/{cartId}
-  ADD_ITEM_TO_CART: (accountId: string) => `/cart/account/${accountId}/items`, // POST /api/cart/account/{accountId}/items
-  UPDATE_CART_ITEM: (cartItemId: string) => `/cart/items/${cartItemId}`, // PUT /api/cart/items/{cartItemId}
-  REMOVE_ITEM_FROM_CART: (cartItemId: string) => `/cart/items/${cartItemId}`, // DELETE /api/cart/items/{cartItemId}
-  GET_CART_ITEMS: (accountId: string) => `/cart/account/${accountId}/items`, // GET /api/cart/account/{accountId}/items
-  CLEAR_CART: (accountId: string) => `/cart/account/${accountId}/clear`, // DELETE /api/cart/account/{accountId}/clear
+  // Cart - Theo CartController.java (mapping: /api/carts)
+  GET_CART_BY_ACCOUNT: (accountId: string) => `/carts/account/${accountId}`, // GET /api/carts/account/{accountId}
+  CREATE_CART: (accountId: string) => `/carts/account/${accountId}`, // POST /api/carts/account/{accountId}
+  DELETE_CART: (cartId: string) => `/carts/${cartId}`, // DELETE /api/carts/{cartId}
+  ADD_ITEM_TO_CART: (accountId: string) => `/carts/account/${accountId}/items`, // POST /api/carts/account/{accountId}/items
+  UPDATE_CART_ITEM: (cartItemId: string) => `/carts/items/${cartItemId}`, // PUT /api/carts/items/{cartItemId}
+  REMOVE_ITEM_FROM_CART: (cartItemId: string) => `/carts/items/${cartItemId}`, // DELETE /api/carts/items/{cartItemId}
+  GET_CART_ITEMS: (accountId: string) => `/carts/account/${accountId}/items`, // GET /api/carts/account/{accountId}/items
+  CLEAR_CART: (accountId: string) => `/carts/account/${accountId}/clear`, // DELETE /api/carts/account/{accountId}/clear
+  
+  // Multi-cart endpoints (new)
+  GET_ALL_CARTS_BY_USER: (userId: string) => `/carts/user/${userId}/all`, // GET /api/carts/user/{userId}/all
+  GET_ALL_CARTS_DETAIL_BY_USER: (userId: string) => `/carts/user/${userId}/detail`, // GET /api/carts/user/{userId}/detail - with menu item details
+  GET_CART_BY_USER_AND_RESTAURANT: (userId: string, restaurantId: string) => `/carts/user/${userId}/restaurant/${restaurantId}`, // GET /api/carts/user/{userId}/restaurant/{restaurantId}
+  ADD_ITEM_TO_RESTAURANT_CART: (userId: string, restaurantId: string) => `/carts/user/${userId}/restaurant/${restaurantId}/items`, // POST /api/carts/user/{userId}/restaurant/{restaurantId}/items
 
   // Users - Theo UserController.java
   GET_ALL_USERS: '/users', // GET /api/users?page=0&size=10

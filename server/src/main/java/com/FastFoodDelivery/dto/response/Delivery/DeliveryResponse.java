@@ -1,12 +1,12 @@
 package com.FastFoodDelivery.dto.response.Delivery;
 
-import com.FastFoodDelivery.entity.Delivery;
-import lombok.Data;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
-
 import java.util.Date;
+
+import com.FastFoodDelivery.entity.Delivery;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 public class DeliveryResponse {
@@ -55,7 +55,9 @@ public class DeliveryResponse {
         
         response.setStatus(delivery.getStatus());
         response.setDeliveredAt(delivery.getDeliveredAt());
-        int s = response.getStatus();
+        
+        // Fix switch statement - add break
+        int s = delivery.getStatus();
         switch (s){
             case 0:
                 response.setStatusText("Pending");
@@ -68,6 +70,9 @@ public class DeliveryResponse {
                 break;
             case -1:
                 response.setStatusText("Cancelled");
+                break;
+            default:
+                response.setStatusText("Unknown");
                 break;
         }
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../hooks/redux'
 import LeftTaskBarFastFood from '../../components/LeftTaskBarFastFood'
@@ -7,9 +7,16 @@ import { Plane, Plus, Search, Edit, Trash2, Battery, MapPin } from 'lucide-react
 const FastFoodDrone: React.FC = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAppSelector((state) => state.auth)
+  const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
     document.title = 'FastFood - Drone'
+    
+    // Prevent redirect when user refreshes the page (F5)
+    if (!authChecked) {
+      const timer = setTimeout(() => setAuthChecked(true), 200);
+      return () => clearTimeout(timer);
+    }
     
     if (!isAuthenticated || !user) {
       navigate('/fastfood/login')
@@ -22,7 +29,7 @@ const FastFoodDrone: React.FC = () => {
     if (!isAdmin) {
       navigate('/fastfood/login')
     }
-  }, [isAuthenticated, user, navigate])
+  }, [authChecked, isAuthenticated, user, navigate])
 
   return (
     <div className="min-h-screen bg-gray-50">

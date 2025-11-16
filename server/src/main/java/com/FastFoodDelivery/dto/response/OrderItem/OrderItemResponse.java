@@ -1,6 +1,8 @@
 package com.FastFoodDelivery.dto.response.OrderItem;
 
 import com.FastFoodDelivery.entity.OrderItem;
+import com.FastFoodDelivery.repository.MenuItemRepository;
+
 import lombok.Data;
 
 @Data
@@ -26,5 +28,14 @@ public class OrderItemResponse {
         response.setSubTotal(orderItem.getSubTotal());
 
         return response;
+    }
+    
+    /**
+     * ✅ Convert with MenuItem name lookup (optional)
+     * Note: OrderItem already has name field, so this method is same as fromEntity(orderItem)
+     */
+    public static OrderItemResponse fromEntity(OrderItem orderItem, MenuItemRepository menuItemRepository) {
+        // OrderItem already stores name and imageUrl, just use fromEntity
+        return fromEntity(orderItem);
     }
 }

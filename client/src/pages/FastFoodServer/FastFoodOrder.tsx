@@ -9,6 +9,7 @@ import type { OrderResponse } from '../../services/orderService'
 const FastFoodOrder: React.FC = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAppSelector((state) => state.auth)
+  const [authChecked, setAuthChecked] = useState(false)
   
   // State management
   const [orders, setOrders] = useState<OrderResponse[]>([])
@@ -23,6 +24,12 @@ const FastFoodOrder: React.FC = () => {
 
   useEffect(() => {
     document.title = 'FastFood - Đơn hàng'
+    
+    // Prevent redirect when user refreshes the page (F5)
+    if (!authChecked) {
+      const timer = setTimeout(() => setAuthChecked(true), 200);
+      return () => clearTimeout(timer);
+    }
     
     if (!isAuthenticated || !user) {
       navigate('/fastfood/login')
@@ -39,7 +46,7 @@ const FastFoodOrder: React.FC = () => {
 
     // Fetch orders
     fetchOrders()
-  }, [isAuthenticated, user, navigate])
+  }, [authChecked, isAuthenticated, user, navigate])
 
   const fetchOrders = async () => {
     try {

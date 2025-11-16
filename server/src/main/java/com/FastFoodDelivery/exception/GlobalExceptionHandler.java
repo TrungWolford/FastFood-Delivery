@@ -1,5 +1,9 @@
 package com.FastFoodDelivery.exception;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -7,10 +11,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
-
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -78,6 +78,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(
             Exception ex, WebRequest request) {
+        // ✅ ADD LOGGING TO SEE THE ERROR
+        System.err.println("❌❌❌ GLOBAL EXCEPTION CAUGHT ❌❌❌");
+        System.err.println("Error Message: " + ex.getMessage());
+        System.err.println("Error Type: " + ex.getClass().getName());
+        System.err.println("Request Path: " + request.getDescription(false));
+        ex.printStackTrace();
+        System.err.println("❌❌❌ END OF ERROR ❌❌❌");
+        
         ErrorResponse errorResponse = new ErrorResponse(
                 new Date(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),

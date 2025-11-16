@@ -8,7 +8,7 @@ export interface RestaurantResponse {
   restaurantName: string;
   address: string;
   city: string;
-  district: string;
+  ward: string;
   phone: string;
   latitude: number;
   longitude: number;

@@ -1,15 +1,13 @@
 package com.FastFoodDelivery.entity;
 
-import org.bson.types.Decimal128;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import lombok.Data;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
-
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
+
+import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import lombok.Data;
 
 @Document(collection = "orders")
 @Data
@@ -19,10 +17,27 @@ public class Order {
     private ObjectId customerId;
     private ObjectId restaurantId;
 
-    private long totalPrice;
-    private String deliveryAddress;
+    // Thông tin người nhận
+    private String receiverName;
+    private String receiverEmail;
+    private String receiverPhone;
+    private String deliveryAddress; // Số nhà, tên đường
+    private String ward; // Phường (sau sáp nhập hành chính 2025)
+    private String city; // Thành phố (sau sáp nhập hành chính 2025)
+    
+    // Tọa độ khách hàng (từ OpenStreetMap, dùng để tạo Delivery mà không cần geocode)
+    private Double customerLatitude;
+    private Double customerLongitude;
+
+    // Thông tin đơn hàng
+    private String orderNote; // Ghi chú đơn hàng
+    private long shippingFee; // Phí vận chuyển
+    private long totalPrice; // Tổng tiền hàng (chưa bao gồm ship)
+    private long finalAmount; // Tổng tiền cuối cùng (totalPrice + shippingFee)
+
     private List<OrderItem> orderItems;
-    private String status; // "PENDING", "CONFIRMED", "DELIVERING", "COMPLETED", "CANCELLED"
+    private String status; // "PENDING", "CONFIRMED", "PREPARING", "DELIVERING", "COMPLETED", "CANCELLED"
     private Date createdAt;
     private Date updatedAt;
+    private Date paymentExpiresAt; // Thời gian hết hạn thanh toán (15 phút từ khi tạo đơn)
 }

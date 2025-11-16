@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, User, ShoppingCart, Phone, LogOut, UserCircle, History, Settings, X } from 'lucide-react';
+import { Search, User, ShoppingCart, LogOut, UserCircle, History, Settings } from 'lucide-react';
 import { Button } from '../Button/Button';
 import { Input } from '../input';
 import {
@@ -10,29 +10,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../dropdowns/dropdown-menu';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '../dropdowns/hover';
 
 import { useAppSelector, useAppDispatch } from '../../../hooks/redux';
 import { logout } from '../../../store/slices/authSlice';
 import LoginDialog from '../../../pages/Mainpage/Login';
-import Cart from '../../Cart';
 import { cartService } from '../../../services/cartService';
 import { productService } from '../../../services/productService';
 import { toast } from 'sonner';
-import { imgaes } from '../../../assets/img';
 import { localStorageCartService } from '@/services/localStorageCartService';
-import type { CartItem } from '@/types/cart';
-import CategoryNavbar from '../../CategoryNavbar';
 
 const TopNavigation: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [cartItemCount, setCartItemCount] = useState(0);
-  const [hoverCartItems, setHoverCartItems] = useState<CartItem[]>([]);
+  const [cartCount, setCartCount] = useState(0); // Number of restaurants with items
 
   const handleLogout = () => {
     dispatch(logout());
@@ -98,11 +91,11 @@ const TopNavigation: React.FC = () => {
   useEffect(() => {
     const updateCartCount = () => {
       if (isAuthenticated && user) {
-        fetchCartItemsCount();
+        fetchCartCount();
       } else {
         // Lấy từ localStorage
         const count = localStorageCartService.getItemCount();
-        setCartItemCount(count);
+        setCartCount(count > 0 ? 1 : 0); // 1 cart if has items, 0 otherwise
       }
     };
 
@@ -110,152 +103,63 @@ const TopNavigation: React.FC = () => {
 
     window.addEventListener('cartUpdated', updateCartCount);
     return () => window.removeEventListener('cartUpdated', updateCartCount);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user]);
 
   // Listen for cart updates
   useEffect(() => {
     const handleCartUpdate = () => {
       if (isAuthenticated && user) {
-        fetchCartItemsCount();
+        fetchCartCount();
       } else {
         const count = localStorageCartService.getItemCount();
-        setCartItemCount(count);
+        setCartCount(count > 0 ? 1 : 0);
       }
-      fetchHoverCartItems();
-    };
-
-    const handleCloseCartModal = () => {
-      setIsCartOpen(false);
     };
 
     window.addEventListener('cartUpdated', handleCartUpdate);
-    window.addEventListener('closeCartModal', handleCloseCartModal);
 
     return () => {
       window.removeEventListener('cartUpdated', handleCartUpdate);
-      window.removeEventListener('closeCartModal', handleCloseCartModal);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user]);
 
-  const fetchCartItemsCount = async () => {
-    if (!user) return;
+  // Fetch cart count (number of restaurants with items)
+  const fetchCartCount = async () => {
+    if (!user?.accountId) return;
 
     try {
-      const response = await cartService.getCartItems(user.accountId);
+      // Get all carts for this user
+      const response = await cartService.getAllCartsByUser(user.accountId);
       if (response.success && response.data) {
-        let count = 0;
-        if (Array.isArray(response.data)) {
-          count = response.data.reduce((total, item) => total + item.quantity, 0);
-        } else if (typeof response.data === 'object' && 'items' in response.data) {
-          count =
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (response.data as any).items?.reduce((total: number, item: any) => total + item.quantity, 0) || 0;
-        }
-        setCartItemCount(count);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const carts = Array.isArray(response.data) ? response.data : [response.data] as any[];
+        // Count carts that have items
+        const cartsWithItems = carts.filter((cart) => cart.items && cart.items.length > 0);
+        setCartCount(cartsWithItems.length);
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      setCartItemCount(0);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
+      setCartCount(0);
     }
-  };
-
-  // Fetch cart items for hover preview (chỉ lấy 3 items đầu)
-  const fetchHoverCartItems = async () => {
-    try {
-      if (isAuthenticated && user) {
-        const response = await cartService.getCartItems(user.accountId);
-        if (response.success && response.data) {
-          let items: CartItem[] = [];
-          if (Array.isArray(response.data)) {
-            items = response.data;
-          } else if (typeof response.data === 'object' && 'items' in response.data) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            items = (response.data as any).items || [];
-          }
-          setHoverCartItems(items.slice(0, 3));
-        }
-      } else {
-        const localCart = localStorageCartService.getCartItems();
-        setHoverCartItems(localCart.slice(0, 3));
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      //   console.error('Error fetching hover cart items:', error);
-      setHoverCartItems([]);
-    }
-  };
-
-  const handleUpdateQuantity = async (cartItemId: string, currentQuantity: number, delta: number) => {
-    const newQuantity = currentQuantity + delta;
-    if (newQuantity <= 0) return;
-
-    try {
-      if (isAuthenticated && user) {
-        const response = await cartService.updateCartItem({
-          cartItemId,
-          quantity: newQuantity,
-        });
-        if (response.success) {
-          window.dispatchEvent(new CustomEvent('cartUpdated'));
-        }
-      } else {
-        localStorageCartService.updateQuantity(cartItemId, newQuantity);
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      //   console.error('Error updating quantity:', error);
-      toast.error('Không thể cập nhật số lượng');
-    }
-  };
-
-  const handleRemoveItem = async (cartItemId: string) => {
-    try {
-      if (isAuthenticated && user) {
-        const response = await cartService.removeFromCart(cartItemId);
-        if (response.success) {
-          toast.success('Đã xóa sản phẩm');
-          window.dispatchEvent(new CustomEvent('cartUpdated'));
-        }
-      } else {
-        localStorageCartService.removeItem(cartItemId);
-        toast.success('Đã xóa sản phẩm');
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      toast.error('Không thể xóa sản phẩm');
-    }
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
   };
 
   return (
     <>
-      <div className="bg-primary text-white">
-        {/* Top bar with hotline */}
-        <div className="bg-[#F38258] text-white px-4 py-1 text-sm">
-          <div className="container mx-auto flex items-center">
-            <Phone className="w-4 h-4 mr-2" />
-            <span className="font-medium">Hotline: 0903.400.028</span>
-            <span className="ml-2 text-white-700">(8h - 12h, 13h30 - 17h)</span>
-            <span className="ml-auto">Liên hệ hợp tác</span>
-          </div>
-        </div>
-
+      <div className="bg-primary text-white shadow-md">
         {/* Main navigation */}
-        <div className="container h-[75px]  mx-auto px-[70px] py-3 flex justify-between">
+        <div className="container h-[75px] mx-auto px-[70px] py-3 flex justify-between">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
           <button
             onClick={() => navigate('/')}
             className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <div className=" px-3 py-2 rounded-md mr-3">
-              <img src={imgaes.logo} alt="" className="w-15 h-16 bg-contain" />
+            <div className="flex items-center gap-2">
+              <div className="bg-white text-primary px-4 py-2 rounded-lg font-bold text-xl shadow-md">
+                🍔 FastFoodDelivery
+              </div>
             </div>
           </button>
 
@@ -357,119 +261,38 @@ const TopNavigation: React.FC = () => {
           {/* Divider */}
           <div className="w-[1px] h-8 bg-gray-300 mx-4"></div>
 
-          {/* Shopping cart */}
-          <div className="flex items-center gap-2 relative hover:text-amber-400 transition-colors cursor-pointer">
-            <HoverCard openDelay={200} closeDelay={300}>
-              <HoverCardTrigger asChild>
-                <div
-                  className="flex items-center group cursor-pointer"
-                  onClick={() => setIsCartOpen(true)}
-                  onMouseEnter={fetchHoverCartItems}
-                >
-                  <ShoppingCart className="w-8 h-8 group-hover:text-amber-400" />
-                  <div className="text-white  group-hover:text-amber-400">
-                    <div className=" font-medium ml-2 ">Giỏ hàng</div>
-                  </div>
-                  <div className="relative">
-                    {cartItemCount > 0 && (
-                      <span className="absolute -top-6 -right-5 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold">
-                        {cartItemCount > 99 ? '99+' : cartItemCount}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-[420px]" side="bottom" align="end" sideOffset={10} alignOffset={-20}>
-                <div className="flex flex-col items-start justify-center">
-                  <h1 className="text-[#F36F40] text-center w-full mb-4">GIỎ HÀNG</h1>
-
-                  {hoverCartItems.length === 0 ? (
-                    <div className="w-full text-center py-8 text-gray-500">
-                      <ShoppingCart className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                      <p>Giỏ hàng trống</p>
-                    </div>
-                  ) : (
-                    <div className="w-full space-y-4">
-                      {hoverCartItems.map((item) => (
-                        <div key={item.cartItemId} className="flex items-start justify-between w-full">
-                          <div className="flex">
-                            <img
-                              src={item.images?.[0] || imgaes.banner2}
-                              alt={item.productName}
-                              className="w-20 h-20 object-cover rounded"
-                            />
-                            <div className="flex flex-col ml-2">
-                              <h4 className="text-sm font-medium line-clamp-2 mb-2">{item.productName}</h4>
-                              <div className="flex items-center">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleUpdateQuantity(item.cartItemId, item.quantity, -1)}
-                                  className="w-6 h-6 p-0 rounded-full bg-[#FEF8F7] text-[#F26F3F] hover:bg-[#F26F3F] hover:text-white"
-                                  hover="none"
-                                  disabled={item.quantity <= 1}
-                                >
-                                  -
-                                </Button>
-                                <Input
-                                  value={item.quantity}
-                                  readOnly
-                                  className="w-12 h-6 mx-2 text-center text-sm rounded-[0px]"
-                                />
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleUpdateQuantity(item.cartItemId, item.quantity, 1)}
-                                  className="w-6 h-6 p-0 rounded-full bg-[#FEF8F7] text-[#F26F3F] hover:bg-[#F26F3F] hover:text-white"
-                                  hover="none"
-                                >
-                                  +
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <button
-                              onClick={() => handleRemoveItem(item.cartItemId)}
-                              className="text-gray-400 hover:text-red-500 mb-2"
-                            >
-                              <X className="w-5 h-5" />
-                            </button>
-                            <h4 className="text-sm font-semibold text-red-600">
-                              {formatPrice(item.productPrice * item.quantity)}
-                            </h4>
-                          </div>
-                        </div>
-                      ))}
-
-                      {cartItemCount > 3 && (
-                        <p className="text-center text-gray-500 text-sm">+{cartItemCount - 3} sản phẩm khác</p>
-                      )}
-
-                      <div className="pt-4 border-t">
-                        <Button
-                          onClick={() => setIsCartOpen(true)}
-                          className="w-full bg-primary text-white hover:bg-[#F38258]"
-                        >
-                          Xem giỏ hàng đầy đủ
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </HoverCardContent>
-            </HoverCard>
+          {/* Shopping cart - Simple click to navigate */}
+          <div 
+            className="flex items-center gap-2 hover:text-amber-400 transition-colors cursor-pointer group"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (isAuthenticated && user) {
+                navigate('/carts');
+              } else {
+                toast.info('Vui lòng đăng nhập để xem giỏ hàng');
+                setIsLoginDialogOpen(true);
+              }
+            }}
+          >
+            <div className="relative">
+              <ShoppingCart className="w-8 h-8 group-hover:text-amber-400" />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
+            </div>
+            <div className="text-white group-hover:text-amber-400">
+              <div className="font-medium ml-2">Giỏ hàng</div>
+            </div>
           </div>
         </div>
       </div>
 
         {/* Login Dialog */}
         <LoginDialog isOpen={isLoginDialogOpen} onClose={() => setIsLoginDialogOpen(false)} />
-
-        {/* Cart Dialog */}
-        <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       </div>
-      
-      {/* Category Navigation Bar */}
-      <CategoryNavbar />
     </>
   );
 };

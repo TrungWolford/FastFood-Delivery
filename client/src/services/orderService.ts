@@ -55,6 +55,36 @@ export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'SHIPPING' | '
  */
 export type OrderStatusNumber = 0 | 1 | 2 | 3 | 4;
 
+// New Order Response from MongoDB backend (NEW structure)
+export interface OrderItem {
+  itemId: string;
+  itemName?: string;
+  quantity: number;
+  price: number;
+  note?: string;
+}
+
+export interface OrderResponseNew {
+  orderId: string;
+  customerId: string;
+  restaurantId: string;
+  receiverName: string;
+  receiverEmail?: string;
+  receiverPhone: string;
+  deliveryAddress: string;
+  ward: string; // Phường (sau sáp nhập hành chính 2025)
+  city: string; // Thành phố (sau sáp nhập hành chính 2025)
+  orderNote?: string;
+  shippingFee: number;
+  totalPrice: number;
+  finalAmount: number;
+  orderItems: OrderItem[];
+  status: string; // PENDING, CONFIRMED, DELIVERING, COMPLETED, CANCELLED
+  createdAt: string;
+  updatedAt: string;
+  paymentExpiresAt?: string;
+}
+
 /**
  * Order Item (matches MongoDB backend OrderItem)
  */
@@ -84,17 +114,23 @@ export interface OrderResponse {
   updatedAt: string;
 }
 
-/**
- * Create Order Request (matches MongoDB backend CreateOrderRequest)
- */
+// Request để tạo order mới - Sau sáp nhập hành chính 2025
 export interface CreateOrderRequest {
   customerId: string;
   restaurantId: string;
-  items: Array<{
-    itemId: string; // menuItemId
-    quantity: number;
-  }>;
+  receiverName: string;
+  receiverEmail?: string;
+  receiverPhone: string;
   deliveryAddress: string;
+  ward: string; // Phường (sau sáp nhập)
+  city: string; // Thành phố (sau sáp nhập)
+  orderNote?: string;
+  shippingFee?: number;
+  orderItems: Array<{
+    itemId: string;
+    quantity: number;
+    note?: string;
+  }>;
 }
 
 /**
@@ -163,36 +199,36 @@ export interface ServiceResponse<T> {
  */
 const convertDateToISO = (dateValue: any): string => {
   if (!dateValue) return new Date().toISOString();
-  
+
   // If it's a string
   if (typeof dateValue === 'string') {
     // Check if it's dd/MM/yyyy format (from @JsonFormat in backend)
     const ddMMyyyyPattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
     const match = dateValue.match(ddMMyyyyPattern);
-    
+
     if (match) {
       const [, day, month, year] = match;
       // JavaScript Date expects: year, month (0-indexed), day
       const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       return date.toISOString();
     }
-    
+
     // Check if it's dd/MM/yyyy HH:mm format
     const ddMMyyyyHHmmPattern = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/;
     const matchWithTime = dateValue.match(ddMMyyyyHHmmPattern);
-    
+
     if (matchWithTime) {
       const [, day, month, year, hour, minute] = matchWithTime;
       const date = new Date(
-        parseInt(year), 
-        parseInt(month) - 1, 
+        parseInt(year),
+        parseInt(month) - 1,
         parseInt(day),
         parseInt(hour),
         parseInt(minute)
       );
       return date.toISOString();
     }
-    
+
     // If it's already ISO format or other standard format, return as is
     try {
       const date = new Date(dateValue);
@@ -202,23 +238,23 @@ const convertDateToISO = (dateValue: any): string => {
     } catch (e) {
       console.warn('Failed to parse date string:', dateValue);
     }
-    
+
     return dateValue;
   }
-  
+
   // If it's an array [year, month, day, hour, minute, second, nano]
   if (Array.isArray(dateValue)) {
     const [year, month, day, hour = 0, minute = 0, second = 0] = dateValue;
     // Note: month in JavaScript Date is 0-indexed, but from backend it's 1-indexed
     return new Date(year, month - 1, day, hour, minute, second).toISOString();
   }
-  
+
   // If it's an object with year, month, day properties
   if (typeof dateValue === 'object' && 'year' in dateValue) {
     const { year, monthValue, dayOfMonth, hour = 0, minute = 0, second = 0 } = dateValue;
     return new Date(year, (monthValue || dateValue.month) - 1, dayOfMonth || dateValue.day, hour, minute, second).toISOString();
   }
-  
+
   // Fallback: try to parse as Date
   try {
     const date = new Date(dateValue);
@@ -228,7 +264,7 @@ const convertDateToISO = (dateValue: any): string => {
   } catch (e) {
     console.warn('Failed to parse date:', dateValue);
   }
-  
+
   return new Date().toISOString();
 };
 
@@ -355,7 +391,7 @@ export const orderService = {
   ): Promise<ServiceResponse<OrderResponse[]>> => {
     try {
       console.log('📦 Fetching orders from API...');
-      
+
       const response = await axiosInstance.get<PageResponse<OrderResponse>>(API.GET_ALL_ORDERS, {
         params: { page, size },
       });
@@ -385,26 +421,26 @@ export const orderService = {
    * Get order by ID
    * Backend: GET /api/orders/{orderId}
    */
-  getOrderById: async (orderId: string): Promise<ServiceResponse<OrderResponse>> => {
-    try {
-      console.log('📦 Fetching order by ID from API:', orderId);
-      
-      const response = await axiosInstance.get<OrderResponse>(API.GET_ORDER_BY_ID(orderId));
+  // getOrderById: async (orderId: string): Promise<ServiceResponse<OrderResponse>> => {
+  //   try {
+  //     console.log('📦 Fetching order by ID from API:', orderId);
 
-      console.log('✅ Order fetched successfully:', response.data);
+  //     const response = await axiosInstance.get<OrderResponse>(API.GET_ORDER_BY_ID(orderId));
 
-      return {
-        success: true,
-        data: transformOrderResponse(response.data),
-      };
-    } catch (error: any) {
-      console.error('❌ Error getting order by ID:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể tải đơn hàng',
-      };
-    }
-  },
+  //     console.log('✅ Order fetched successfully:', response.data);
+
+  //     return {
+  //       success: true,
+  //       data: transformOrderResponse(response.data),
+  //     };
+  //   } catch (error: any) {
+  //     console.error('❌ Error getting order by ID:', error);
+  //     return {
+  //       success: false,
+  //       message: error.response?.data?.message || 'Không thể tải đơn hàng',
+  //     };
+  //   }
+  // },
 
   /**
    * Get orders by customer ID (with pagination)
@@ -536,15 +572,16 @@ export const orderService = {
       if (request.status) {
         const currentOrder = await orderService.getOrderById(orderId);
         if (currentOrder.success && currentOrder.data) {
-          const isValid = isValidStatusTransition(currentOrder.data.status, request.status);
+          const currentStatus = currentOrder.data.status as OrderStatus;
+          const isValid = isValidStatusTransition(currentStatus, request.status);
           if (!isValid) {
             console.warn('⚠️ Invalid status transition:', {
-              from: currentOrder.data.status,
+              from: currentStatus,
               to: request.status,
             });
             return {
               success: false,
-              message: `Không thể chuyển trạng thái từ ${getOrderStatusLabel(currentOrder.data.status)} sang ${getOrderStatusLabel(request.status)}`,
+              message: `Không thể chuyển trạng thái từ ${getOrderStatusLabel(currentStatus)} sang ${getOrderStatusLabel(request.status)}`,
             };
           }
         }
@@ -578,7 +615,7 @@ export const orderService = {
   cancelOrder: async (orderId: string): Promise<ServiceResponse<void>> => {
     try {
       console.log('🚫 Cancelling order:', orderId);
-      
+
       await axiosInstance.patch(API.CANCEL_ORDER(orderId));
 
       console.log('✅ Order cancelled successfully');
@@ -648,11 +685,11 @@ export const orderService = {
   ): Promise<ServiceResponse<OrderResponse>> => {
     try {
       console.log('🚁 Assigning drone and starting delivery:', { orderId, droneId });
-      
+
       // Update order with droneId and change status to SHIPPING
-      return await orderService.updateOrder(orderId, { 
+      return await orderService.updateOrder(orderId, {
         status: 'SHIPPING',
-        droneId: droneId 
+        droneId: droneId
       });
     } catch (error: any) {
       console.error('❌ Error assigning drone:', error);
@@ -728,6 +765,26 @@ export const orderService = {
     }
   },
 
+  // Get orders by account ID - Returns NEW structure
+  getOrdersByAccount: async (accountId: string): Promise<{ success: boolean; data?: OrderResponseNew[]; message?: string }> => {
+    try {
+      const response = await axiosInstance.get(API.GET_ORDERS_BY_ACCOUNT(accountId));
+      // Backend returns paginated response: { content: [...], totalElements, totalPages, ... }
+      const orders: OrderResponseNew[] = Array.isArray(response.data)
+        ? response.data
+        : response.data?.content || [];
+
+      return {
+        success: true,
+        data: orders
+      };
+    } catch {
+      return {
+        success: false,
+        message: 'Không thể tải đơn hàng'
+      };
+    }
+  },
   /**
    * Search orders by order number or customer info
    */
@@ -760,6 +817,21 @@ export const orderService = {
     }
   },
 
+  // Get order by ID - Returns NEW structure  
+  getOrderById: async (orderId: string): Promise<{ success: boolean; data?: OrderResponseNew; message?: string }> => {
+    try {
+      const response = await axiosInstance.get(API.GET_ORDER_BY_ID(orderId));
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch {
+      return {
+        success: false,
+        message: 'Không thể tải đơn hàng'
+      };
+    }
+  },
   /**
    * Get orders with multiple filters
    */
@@ -774,7 +846,7 @@ export const orderService = {
   }): Promise<ServiceResponse<OrderResponse[]>> => {
     try {
       const { page = 0, size = 10, ...otherFilters } = filters;
-      
+
       const response = await axiosInstance.get<PageResponse<OrderResponse>>(
         API.GET_ALL_ORDERS,
         {
@@ -794,47 +866,47 @@ export const orderService = {
         success: false,
         data: [],
         message: error.response?.data?.message || 'Không thể lọc đơn hàng',
-      };
+};
     }
   },
 
-  // ===========================
-  // Statistics Methods
-  // ===========================
+// ===========================
+// Statistics Methods
+// ===========================
 
-  /**
-   * Get order statistics
-   */
-  getOrderStatistics: async (filters?: {
-    startDate?: string;
-    endDate?: string;
-    restaurantId?: string;
-  }): Promise<ServiceResponse<{
-    total: number;
-    pending: number;
-    confirmed: number;
-    shipping: number;
-    delivered: number;
-    cancelled: number;
-    revenue: number;
-  }>> => {
-    try {
-      const response = await axiosInstance.get('/orders/statistics', {
-        params: filters,
-      });
+/**
+ * Get order statistics
+ */
+getOrderStatistics: async (filters?: {
+  startDate?: string;
+  endDate?: string;
+  restaurantId?: string;
+}): Promise<ServiceResponse<{
+  total: number;
+  pending: number;
+  confirmed: number;
+  shipping: number;
+  delivered: number;
+  cancelled: number;
+  revenue: number;
+}>> => {
+  try {
+    const response = await axiosInstance.get('/orders/statistics', {
+      params: filters,
+    });
 
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error: any) {
-      console.error('❌ Error getting order statistics:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể tải thống kê đơn hàng',
-      };
-    }
-  },
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error: any) {
+    console.error('❌ Error getting order statistics:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Không thể tải thống kê đơn hàng',
+    };
+  }
+},
 
   // ===========================
   // Legacy/Compatibility Methods (for backward compatibility)
@@ -844,13 +916,13 @@ export const orderService = {
    * Get orders by account ID (alias for getOrdersByCustomerId)
    * @deprecated Use getOrdersByCustomerId instead
    */
-  getOrdersByAccount: async (
-    accountId: string,
-    page: number = 0,
-    size: number = 10
-  ): Promise<ServiceResponse<OrderResponse[]>> => {
-    return orderService.getOrdersByCustomerId(accountId, page, size);
-  },
+  // getOrdersByAccount: async (
+  //   accountId: string,
+  //   page: number = 0,
+  //   size: number = 10
+  // ): Promise<ServiceResponse<OrderResponse[]>> => {
+  //   return orderService.getOrdersByCustomerId(accountId, page, size);
+  // },
 };
 
 export default orderService;

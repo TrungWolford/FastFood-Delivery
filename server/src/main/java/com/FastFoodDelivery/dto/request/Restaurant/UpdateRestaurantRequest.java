@@ -7,7 +7,7 @@ public class UpdateRestaurantRequest {
     private String restaurantName;
     private String address;
     private String city;
-    private String district;
+    private String ward;  // ✅ Đổi từ district sang ward
     private String phone;
     private double latitude;
     private double longitude;

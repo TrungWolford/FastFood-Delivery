@@ -1,22 +1,49 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { orderService, type OrderResponse } from '../../services/orderService';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../store';
+import { orderService, type OrderResponseNew } from '../../services/orderService';
+import { cartService } from '../../services/cartService';
 import { Button } from '../../components/ui/Button/Button';
 import TopNavigation from '../../components/ui/Header/Header';
 import Footer from '../../components/ui/Footer/Footer';
 
-interface LocationState {
-    orderId?: string;
-}
-
 const OrderSuccessPage: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const state = location.state as LocationState;
-    const orderId = state?.orderId;
+    const [searchParams] = useSearchParams();
+    const { user } = useSelector((state: RootState) => state.auth);
     
-    const [order, setOrder] = useState<OrderResponse | null>(null);
+    // Get orderId from query params (VNPay callback) or location state
+    const orderId = searchParams.get('orderId') || (location.state as { orderId?: string })?.orderId;
+    
+    // Check if this is a VNPay return (has vnp_ResponseCode)
+    const vnpResponseCode = searchParams.get('vnp_ResponseCode');
+    const isVNPayReturn = vnpResponseCode !== null;
+    
+    console.log('🔍 OrderSuccessPage - VNPay Return:', isVNPayReturn);
+    console.log('🔍 OrderSuccessPage - Response Code:', vnpResponseCode);
+    console.log('🔍 OrderSuccessPage - OrderId:', orderId);
+    
+    const [order, setOrder] = useState<OrderResponseNew | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [cartCleared, setCartCleared] = useState(false);
+
+    // Clear cart when component mounts (only once)
+    useEffect(() => {
+        const clearUserCart = async () => {
+            if (!user?.accountId || cartCleared) return;
+
+            try {
+                await cartService.clearCart(user.accountId);
+                setCartCleared(true);
+            } catch {
+                // Don't block the success page if cart clearing fails
+            }
+        };
+
+        clearUserCart();
+    }, [user?.accountId, cartCleared]);
 
     useEffect(() => {
         const fetchOrder = async () => {
@@ -29,13 +56,11 @@ const OrderSuccessPage: React.FC = () => {
                 setIsLoading(true);
                 const response = await orderService.getOrderById(orderId);
                 
-                console.log('📦 Order details:', response);
-                
                 if (response && response.data) {
-                    setOrder(response.data);
+                    setOrder(response.data as unknown as OrderResponseNew);
                 }
-            } catch (error) {
-                console.error('Error fetching order:', error);
+            } catch {
+                // Error fetching order
             } finally {
                 setIsLoading(false);
             }
@@ -44,43 +69,24 @@ const OrderSuccessPage: React.FC = () => {
         fetchOrder();
     }, [orderId]);
 
-    const getPaymentStatusText = (status?: number): string => {
+    const getOrderStatusText = (status: string): string => {
         switch (status) {
-            case 0: return 'Chờ thanh toán';
-            case 1: return 'Đã thanh toán';
-            case 2: return 'Thanh toán thất bại';
-            case 3: return 'Đã hoàn tiền';
+            case 'CANCELLED': return 'Đã hủy';
+            case 'PENDING': return 'Chờ thanh toán';
+            case 'CONFIRMED': return 'Đã xác nhận';
+            case 'DELIVERING': return 'Đang giao hàng';
+            case 'COMPLETED': return 'Đã giao hàng';
             default: return 'Không xác định';
         }
     };
 
-    const getPaymentStatusColor = (status?: number): string => {
+    const getOrderStatusColor = (status: string): string => {
         switch (status) {
-            case 1: return 'text-green-600 bg-green-50 border-green-200';
-            case 2: return 'text-red-600 bg-red-50 border-red-200';
-            case 3: return 'text-blue-600 bg-blue-50 border-blue-200';
-            default: return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-        }
-    };
-
-    const getOrderStatusText = (status: number): string => {
-        switch (status) {
-            case 0: return 'Đã hủy';
-            case 1: return 'Chờ xác nhận';
-            case 2: return 'Đã xác nhận';
-            case 3: return 'Đang giao hàng';
-            case 4: return 'Đã giao hàng';
-            default: return 'Không xác định';
-        }
-    };
-
-    const getOrderStatusColor = (status: number): string => {
-        switch (status) {
-            case 0: return 'text-red-600 bg-red-50 border-red-200';
-            case 1: return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-            case 2: return 'text-blue-600 bg-blue-50 border-blue-200';
-            case 3: return 'text-purple-600 bg-purple-50 border-purple-200';
-            case 4: return 'text-green-600 bg-green-50 border-green-200';
+            case 'CANCELLED': return 'text-red-600 bg-red-50 border-red-200';
+            case 'PENDING': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+            case 'CONFIRMED': return 'text-blue-600 bg-blue-50 border-blue-200';
+            case 'DELIVERING': return 'text-purple-600 bg-purple-50 border-purple-200';
+            case 'COMPLETED': return 'text-green-600 bg-green-50 border-green-200';
             default: return 'text-gray-600 bg-gray-50 border-gray-200';
         }
     };
@@ -126,7 +132,7 @@ const OrderSuccessPage: React.FC = () => {
                         <div className="space-y-4">
                             <div className="flex justify-between items-center py-3 border-b border-gray-100">
                                 <span className="text-gray-600 font-medium">Mã đơn hàng:</span>
-                                <span className="font-mono font-semibold text-gray-900">{orderId}</span>
+                                <span className="font-mono font-semibold text-gray-900">{orderId || 'N/A'}</span>
                             </div>
 
                             {order && (
@@ -134,14 +140,14 @@ const OrderSuccessPage: React.FC = () => {
                                     <div className="flex justify-between items-center py-3 border-b border-gray-100">
                                         <span className="text-gray-600 font-medium">Tổng tiền:</span>
                                         <span className="text-2xl font-bold text-green-600">
-                                            {order.totalAmount?.toLocaleString('vi-VN')} ₫
+                                            {order.finalAmount?.toLocaleString('vi-VN')} ₫
                                         </span>
                                     </div>
 
                                     <div className="flex justify-between items-center py-3 border-b border-gray-100">
                                         <span className="text-gray-600 font-medium">Trạng thái thanh toán:</span>
-                                        <span className={`px-4 py-2 rounded-full font-semibold border ${getPaymentStatusColor(order.paymentMethod)}`}>
-                                            {order.paymentMethod === 0 ? 'COD - Thanh toán khi nhận hàng' : getPaymentStatusText(1)}
+                                        <span className="px-4 py-2 rounded-full font-semibold border text-green-600 bg-green-50 border-green-200">
+                                            Đã thanh toán qua VNPay
                                         </span>
                                     </div>
 
@@ -155,7 +161,7 @@ const OrderSuccessPage: React.FC = () => {
                                     <div className="flex justify-between items-center py-3">
                                         <span className="text-gray-600 font-medium">Phương thức thanh toán:</span>
                                         <span className="font-semibold text-gray-900">
-                                            {order.paymentMethod === 0 ? '💵 Tiền mặt (COD)' : '💳 Chuyển khoản MoMo'}
+                                            💳 VNPay
                                         </span>
                                     </div>
                                 </>
@@ -182,7 +188,7 @@ const OrderSuccessPage: React.FC = () => {
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-4">
                         <Button 
-                            onClick={() => navigate('/history-order')}
+                            onClick={() => navigate('/customer/orders')}
                             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-lg shadow-lg transform transition hover:scale-105"
                         >
                             <span className="flex items-center justify-center gap-2">
