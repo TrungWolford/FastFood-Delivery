@@ -81,9 +81,9 @@ const RestaurantGrid: React.FC<RestaurantGridProps> = ({
     filteredRestaurants = filteredRestaurants.filter((restaurant) => restaurant.city === city);
   }
 
-  // Filter by district if provided
+  // Filter by ward if provided
   if (district) {
-    filteredRestaurants = filteredRestaurants.filter((restaurant) => restaurant.district === district);
+    filteredRestaurants = filteredRestaurants.filter((restaurant) => restaurant.ward === district);
   }
 
   const isLimited = limit && filteredRestaurants.length > limit;
@@ -179,13 +179,13 @@ const RestaurantGrid: React.FC<RestaurantGridProps> = ({
                 <span className="line-clamp-2">{restaurant.address}</span>
               </div>
 
-              {/* City & District */}
+              {/* City & Ward */}
               <div className="flex items-center text-xs text-gray-500 mb-3">
                 <span className="bg-gray-100 px-2 py-1 rounded-full mr-2">
                   {restaurant.city}
                 </span>
                 <span className="bg-gray-100 px-2 py-1 rounded-full">
-                  {restaurant.district}
+                  {restaurant.ward}
                 </span>
               </div>
 

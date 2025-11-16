@@ -89,7 +89,7 @@ const LoginDialog: React.FC<LoginDialogProps> = ({ isOpen, onClose }) => {
               } else if (restaurant.status === 1) {
                 // Restaurant is approved
                 toast.success('Đăng nhập thành công! Chào mừng chủ nhà hàng.')
-                navigate('/admin/dashboard')
+                navigate('/admin/product')
                 onClose()
               } else {
                 // Other status (rejected, etc.)

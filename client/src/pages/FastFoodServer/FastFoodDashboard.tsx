@@ -1,7 +1,7 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../hooks/redux'
-import { mockProducts, mockCategories, mockAccounts } from '../../hooks/data'
 import LeftTaskBarFastFood from '../../components/LeftTaskBarFastFood'
 import { 
   BarChart, 

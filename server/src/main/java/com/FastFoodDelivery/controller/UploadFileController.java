@@ -42,31 +42,53 @@ public class UploadFileController {
             @RequestParam(value = "height", required = false) Integer height) {
 
         try {
+            log.info("=== UPLOAD IMAGE REQUEST ===");
+            log.info("File name: {}", file.getOriginalFilename());
+            log.info("File size: {} bytes", file.getSize());
+            log.info("Content type: {}", file.getContentType());
+            log.info("Folder: {}", folder);
+            log.info("Width: {}, Height: {}", width, height);
+            
             // Validate file
             if (file.isEmpty()) {
+                log.error("File is empty");
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "File không được để trống"));
+                        .body(Map.of(
+                                "success", false,
+                                "error", "File không được để trống"
+                        ));
             }
 
             // Validate file type
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
+                log.error("Invalid content type: {}", contentType);
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Chỉ chấp nhận file hình ảnh"));
+                        .body(Map.of(
+                                "success", false,
+                                "error", "Chỉ chấp nhận file hình ảnh"
+                        ));
             }
 
             // Validate file size (max 10MB)
             if (file.getSize() > 10 * 1024 * 1024) {
+                log.error("File too large: {} bytes", file.getSize());
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Kích thước file không được vượt quá 10MB"));
+                        .body(Map.of(
+                                "success", false,
+                                "error", "Kích thước file không được vượt quá 10MB"
+                        ));
             }
 
+            log.info("Uploading to Cloudinary...");
             Map<String, Object> result;
             if (width != null && height != null) {
                 result = cloudinaryService.uploadImage(file, folder, width, height);
             } else {
                 result = cloudinaryService.uploadFile(file, folder);
             }
+            
+            log.info("Upload successful! URL: {}", result.get("secure_url"));
 
             // Prepare response
             Map<String, Object> response = new HashMap<>();
@@ -85,18 +107,18 @@ public class UploadFileController {
             return ResponseEntity.ok(response);
 
         } catch (IOException e) {
-            log.error("Error uploading image: {}", e.getMessage());
+            log.error("IOException uploading image: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "success", false,
                             "error", "Lỗi khi upload file: " + e.getMessage()
                     ));
         } catch (Exception e) {
-            log.error("Unexpected error: {}", e.getMessage());
+            log.error("Unexpected error uploading image: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "success", false,
-                            "error", "Đã xảy ra lỗi không mong muốn"
+                            "error", "Đã xảy ra lỗi không mong muốn: " + e.getMessage()
                     ));
         }
     }

@@ -1,5 +1,6 @@
 export interface CartItem {
   cartItemId: string;
+  cartId?: string; // Optional cart ID for API operations
   productId: string;
   productName: string;
   productPrice: number;

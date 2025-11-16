@@ -1,5 +1,4 @@
 import axiosInstance from '../libs/axios';
-import { API } from '../config/constants';
 
 export interface CreateVNPayPaymentRequest {
   orderId: string;

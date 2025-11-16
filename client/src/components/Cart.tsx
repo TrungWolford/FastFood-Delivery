@@ -19,6 +19,7 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [cartItems, setCartItems] = useState<CartItemType[]>([]);
+  const [cartId, setCartId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
@@ -47,13 +48,17 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
         const response = await cartService.getCartItems(user.accountId);
         if (response.success && response.data) {
           let items: CartItemType[] = [];
+          let fetchedCartId: string | null = null;
           if (Array.isArray(response.data)) {
             items = response.data;
           } else if (typeof response.data === 'object' && 'items' in response.data) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            items = (response.data as any).items || [];
+            const cartData = response.data as any;
+            items = cartData.items || [];
+            fetchedCartId = cartData.cartId || null;
           }
           setCartItems(items);
+          setCartId(fetchedCartId);
         }
       } else {
         // Lấy từ localStorage nếu chưa đăng nhập
@@ -78,7 +83,12 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
     try {
       if (isAuthenticated && user) {
         // Cập nhật qua API
+        if (!cartId) {
+          toast.error('Không tìm thấy giỏ hàng');
+          return;
+        }
         const response = await cartService.updateCartItem({
+          cartId,
           cartItemId,
           quantity,
         });
@@ -109,7 +119,11 @@ const Cart: React.FC<CartProps> = ({ isOpen, onClose }) => {
     try {
       if (isAuthenticated && user) {
         // Xóa qua API
-        const response = await cartService.removeFromCart(cartItemId);
+        if (!cartId) {
+          toast.error('Không tìm thấy giỏ hàng');
+          return;
+        }
+        const response = await cartService.removeFromCart(cartId, cartItemId);
         if (response.success) {
           await fetchCartItems();
           toast.success('Đã xóa sản phẩm khỏi giỏ hàng');

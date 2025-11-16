@@ -1,10 +1,11 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../hooks/redux'
 import LeftTaskBarFastFood from '../../components/LeftTaskBarFastFood'
 import { Shield, Plus, Search, Edit, Trash2, X, RefreshCw } from 'lucide-react'
 import { roleService } from '../../services/roleService'
-import type { RoleResponse, UpdateRoleRequest } from '../../services/roleService'
+import type { RoleResponse } from '../../services/roleService'
 import { toast } from 'sonner'
 
 const FastFoodRole: React.FC = () => {

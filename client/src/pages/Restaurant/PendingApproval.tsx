@@ -142,7 +142,7 @@ const PendingApproval: React.FC = () => {
                         Địa chỉ
                       </label>
                       <p className="text-gray-700">
-                        {restaurant.address}, {restaurant.district}, {restaurant.city}
+                        {restaurant.address}, {restaurant.ward}, {restaurant.city}
                       </p>
                     </div>
                   </div>

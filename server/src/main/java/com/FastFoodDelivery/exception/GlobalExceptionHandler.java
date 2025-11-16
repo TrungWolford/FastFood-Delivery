@@ -96,6 +96,30 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(
+            org.springframework.web.multipart.MaxUploadSizeExceededException ex, WebRequest request) {
+        
+        String message = "File quá lớn! Kích thước file tối đa cho phép là 10MB";
+        
+        // Try to get more specific error from cause
+        if (ex.getCause() != null && ex.getCause().getCause() != null) {
+            String causeMessage = ex.getCause().getCause().getMessage();
+            if (causeMessage != null && causeMessage.contains("bytes")) {
+                message = "File quá lớn! " + causeMessage.replace("The field file exceeds its maximum permitted size of", "Kích thước tối đa cho phép là");
+            }
+        }
+        
+        ErrorResponse errorResponse = new ErrorResponse(
+                new Date(),
+                HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                "File Too Large",
+                message,
+                request.getDescription(false).replace("uri=", "")
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.PAYLOAD_TOO_LARGE);
+    }
+
     // Error Response Class
     public static class ErrorResponse {
         private Date timestamp;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
@@ -35,7 +35,7 @@ import { droneService } from '../../services/droneService';
 import { locationService } from '../../services/locationService';
 import { websocketService } from '../../services/websocketService';
 import DeliveryMapViewer from '../../components/DeliveryMapViewer';
-import type { ShippingResponse, CreateShippingRequest, UpdateShippingRequest, UpdateShippingStatusRequest, LocationPoint } from '../../types/shipping';
+import type { ShippingResponse, CreateShippingRequest, UpdateShippingRequest, LocationPoint } from '../../types/shipping';
 import { ShippingStatus } from '../../types/shipping';
 import type { Drone } from '../../types/fastfood';
 

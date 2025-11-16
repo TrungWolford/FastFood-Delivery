@@ -560,7 +560,7 @@ const AdminRegister: React.FC = () => {
         restaurantName: formData.restaurantName,
         address: formData.address,
         city: formData.city,
-        district: formData.district,
+        ward: formData.district, // Use district value for ward field
         phone: formData.phone,
         latitude: formData.mapLocation?.lat || 0,
         longitude: formData.mapLocation?.lng || 0,

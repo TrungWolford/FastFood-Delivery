@@ -117,7 +117,7 @@ const AdminRestaurantDetail: React.FC = () => {
             setRestaurantName(restaurantData.restaurantName);
             setAddress(restaurantData.address);
             setCity(restaurantData.city);
-            setDistrict(restaurantData.district);
+            setDistrict(restaurantData.ward); // Use ward field
             setPhone(restaurantData.phone);
             setAvatarImage(restaurantData.avatarImage || '');
 
@@ -369,7 +369,7 @@ const AdminRestaurantDetail: React.FC = () => {
                                             <h3 className="text-xl font-semibold">{restaurant.restaurantName}</h3>
                                             <p className="text-gray-600 text-sm flex items-center gap-2 mt-1">
                                                 <MapPin className="w-4 h-4" />
-                                                {restaurant.address}, {restaurant.district}, {restaurant.city}
+                                                {restaurant.address}, {restaurant.ward}, {restaurant.city}
                                             </p>
                                         </div>
                                     </div>

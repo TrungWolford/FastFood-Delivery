@@ -1,8 +1,6 @@
 import axios from '../libs/axios';
 import { CONFIG, API } from '../config/constants';
 import type { 
-  Cart, 
-  CartItem, 
   AddToCartRequest, 
   UpdateCartItemRequest,
   CartResponse,
@@ -120,7 +118,7 @@ export const cartService = {
       return {
         success: true,
         message: 'Cập nhật số lượng thành công',
-        data: null
+        data: undefined
       };
     } catch (error: any) {
       console.error('❌ CartService: Error updating cart item:', error);
@@ -218,7 +216,7 @@ export const cartService = {
         return {
           success: true,
           message: 'Xóa giỏ hàng thành công',
-          data: null
+          data: undefined
         };
       }
       

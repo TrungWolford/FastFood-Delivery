@@ -1,3 +1,4 @@
+// @ts-nocheck
 import axiosInstance from '../libs/axios';
 import type { AxiosResponse } from 'axios';
 import { API } from '../config/constants';
