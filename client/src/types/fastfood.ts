@@ -1,34 +1,44 @@
 // FastFood Types
 
-// Restaurant Types
+// Restaurant Types - Synced with Backend DTO
 export interface Restaurant {
   restaurantId: string;
+  ownerId: string;
   restaurantName: string;
   address: string;
   city: string;
+  ward: string; // Phường/Xã (sau sáp nhập hành chính 2025)
   phone: string;
-  email?: string;
-  status: number; // 0: Bảo trì, 1: Hoạt động
+  latitude: number;
+  longitude: number;
+  avatarImage?: string;
+  rating: number;
+  status: number; // 0 = Chờ duyệt, 1 = Đã duyệt
   createdAt: string;
-  updatedAt?: string;
+  updatedAt: string;
 }
 
 export interface CreateRestaurantRequest {
+  ownerId: string; // Backend expects ObjectId but we send string
   restaurantName: string;
   address: string;
   city: string;
+  ward: string; // Phường/Xã
   phone: string;
-  email?: string;
-  status: number;
+  latitude: number;
+  longitude: number;
+  avatarImage?: string;
 }
 
 export interface UpdateRestaurantRequest {
   restaurantName?: string;
   address?: string;
   city?: string;
+  ward?: string; // Phường/Xã
   phone?: string;
-  email?: string;
-  status?: number;
+  latitude?: number;
+  longitude?: number;
+  avatarImage?: string;
 }
 
 // Drone Types

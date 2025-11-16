@@ -56,6 +56,16 @@ const RestaurantGrid: React.FC<RestaurantGridProps> = ({
           if (!mounted) return;
           setRestaurants(response.data.content);
           console.log('✅ Loaded restaurants:', response.data.content.length);
+          
+          // Debug: Check avatarImage field
+          response.data.content.forEach((r, idx) => {
+            console.log(`Restaurant ${idx + 1}:`, {
+              name: r.restaurantName,
+              avatarImage: r.avatarImage,
+              hasImage: !!r.avatarImage,
+              imageUrl: r.avatarImage || 'NO IMAGE'
+            });
+          });
         } else {
           console.warn('⚠️ No restaurants in response');
         }
@@ -151,12 +161,25 @@ const RestaurantGrid: React.FC<RestaurantGridProps> = ({
                   src={restaurant.avatarImage}
                   alt={restaurant.restaurantName}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  onError={(e) => {
+                    console.error('❌ Failed to load image:', restaurant.avatarImage);
+                    // Hide broken image and show fallback
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                  onLoad={() => {
+                    console.log('✅ Image loaded:', restaurant.avatarImage);
+                  }}
                 />
-              ) : (
-                <div className={`w-full h-full bg-gradient-to-br ${gradients[index % gradients.length]} flex items-center justify-center`}>
-                  <UtensilsCrossed className="w-20 h-20 text-white opacity-50" />
-                </div>
-              )}
+              ) : null}
+              
+              {/* Fallback gradient (show if no image or image failed) */}
+              <div 
+                className={`w-full h-full bg-gradient-to-br ${gradients[index % gradients.length]} flex items-center justify-center ${restaurant.avatarImage ? 'hidden' : ''}`}
+              >
+                <UtensilsCrossed className="w-20 h-20 text-white opacity-50" />
+              </div>
               
               {/* Rating Badge */}
               <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center space-x-1 shadow-lg">
