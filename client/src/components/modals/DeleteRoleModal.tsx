@@ -1,6 +1,6 @@
 import React from 'react';
 import { roleService } from '../../services/adminAccountService';
-import type { Role } from '../../types/account';
+import type { Role } from '../../types/user';
 import { Button } from '../ui/Button/Button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Trash2, Loader2, AlertTriangle } from 'lucide-react';

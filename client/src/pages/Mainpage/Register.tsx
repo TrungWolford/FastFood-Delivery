@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle
 } from '../../components/ui'
-import { Eye, EyeOff, Lock, User, Phone, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Lock, User, Phone, Loader2, Mail, MapPin } from 'lucide-react'
 import TopNavigation from '../../components/ui/Header/Header'
 import Footer from '../../components/ui/Footer/Footer'
 import { registerService } from '../../services/registerService'
@@ -24,7 +24,9 @@ const Register: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     fullName: '',
+    email: '',
     phone: '',
+    address: '',
     password: '',
     confirmPassword: '',
     acceptTerms: false
@@ -58,6 +60,18 @@ const Register: React.FC = () => {
       return false
     }
 
+    // Validate email
+    if (!formData.email.trim()) {
+      toast.error('Vui lòng nhập email')
+      return false
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error('Email không hợp lệ')
+      return false
+    }
+
     // Validate phone
     if (!formData.phone.trim()) {
       toast.error('Vui lòng nhập số điện thoại')
@@ -67,6 +81,17 @@ const Register: React.FC = () => {
     const phoneRegex = /^[0-9]{10,11}$/
     if (!phoneRegex.test(formData.phone.trim())) {
       toast.error('Số điện thoại không hợp lệ')
+      return false
+    }
+
+    // Validate address
+    if (!formData.address.trim()) {
+      toast.error('Vui lòng nhập địa chỉ')
+      return false
+    }
+
+    if (formData.address.trim().length < 10) {
+      toast.error('Địa chỉ phải có ít nhất 10 ký tự')
       return false
     }
 
@@ -115,6 +140,8 @@ const Register: React.FC = () => {
        const registerData = {
          accountName: formData.fullName.trim(),
          accountPhone: formData.phone.trim(),
+         email: formData.email.trim(),
+         address: formData.address.trim(),
          password: formData.password
        }
 
@@ -126,7 +153,9 @@ const Register: React.FC = () => {
       // Reset form
       setFormData({
         fullName: '',
+        email: '',
         phone: '',
+        address: '',
         password: '',
         confirmPassword: '',
         acceptTerms: false
@@ -181,7 +210,7 @@ const Register: React.FC = () => {
                   {/* Full Name */}
                   <div className="space-y-2">
                     <Label htmlFor="fullName" className="text-sm font-medium">
-                      Tên tài khoản *
+                      Họ và tên *
                     </Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -189,8 +218,28 @@ const Register: React.FC = () => {
                         id="fullName"
                         name="fullName"
                         type="text"
-                        placeholder="Nhập tên tài khoản"
+                        placeholder="Nhập họ và tên đầy đủ"
                         value={formData.fullName}
+                        onChange={handleInputChange}
+                        className="pl-10 h-12 text-base"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium">
+                      Email *
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="Nhập địa chỉ email"
+                        value={formData.email}
                         onChange={handleInputChange}
                         className="pl-10 h-12 text-base"
                         required
@@ -209,8 +258,28 @@ const Register: React.FC = () => {
                         id="phone"
                         name="phone"
                         type="tel"
-                        placeholder="Nhập số điện thoại"
+                        placeholder="Nhập số điện thoại (10-11 số)"
                         value={formData.phone}
+                        onChange={handleInputChange}
+                        className="pl-10 h-12 text-base"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  <div className="space-y-2">
+                    <Label htmlFor="address" className="text-sm font-medium">
+                      Địa chỉ *
+                    </Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="address"
+                        name="address"
+                        type="text"
+                        placeholder="Nhập địa chỉ chi tiết (số nhà, đường, phường, quận)"
+                        value={formData.address}
                         onChange={handleInputChange}
                         className="pl-10 h-12 text-base"
                         required

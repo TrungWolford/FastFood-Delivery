@@ -1,7 +1,7 @@
 import axiosInstance from '../libs/axios';
 import type { AxiosResponse } from 'axios';
 import { API } from '../config/constants';
-import type { Account } from '../types/account';
+import type { User as Account } from '../types/user';
 
 export interface LoginCredentials {
   email: string
@@ -18,11 +18,19 @@ export interface LoginResponse {
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
+      // Backend AuthController is at /api/account/login
+      console.log('🔐 Attempting login with:', {
+        phone: credentials.email,
+        endpoint: API.LOGIN
+      });
+      
       // Backend returns LoginResponse with { success, message, user }
-      const response: AxiosResponse<LoginResponse> = await axiosInstance.post(API.ACCOUNT_LOGIN, {
+      const response: AxiosResponse<LoginResponse> = await axiosInstance.post(API.LOGIN, {
         accountPhone: credentials.email, // Using email field as phone
         password: credentials.password
       });
+      
+      console.log('📡 Login response:', response.data);
       
       // Check if login was successful
       if (response.data.success && response.data.user) {
@@ -61,6 +69,12 @@ export const authService = {
       
     } catch (error: any) {
       console.error('❌ Login error:', error);
+      console.error('❌ Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      
       const errorMessage = error.response?.data?.message || 
                           error.message || 
                           'Đăng nhập thất bại';

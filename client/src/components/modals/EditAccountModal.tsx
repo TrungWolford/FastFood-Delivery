@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { accountService } from '../../services/adminAccountService';
-import type { Account, Role, UpdateAccountRequest } from '../../types/account';
+import type { User as Account, Role, UpdateUserRequest as UpdateAccountRequest } from '../../types/user';
 import { Button } from '../ui/Button/Button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';

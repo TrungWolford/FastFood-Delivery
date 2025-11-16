@@ -1,72 +1,50 @@
 import axiosInstance from '../libs/axios';
 import { API } from '../config/constants';
+import type { 
+  User as UserResponse, 
+  RoleInfo as UserRole,
+  CreateUserRequest,
+  UpdateUserRequest,
+  PaginatedResponse,
+  ServiceResponse
+} from '../types/user';
 
-// Types
-export interface UserRole {
-  roleId: string;
-  roleName: string;
-  description?: string;
-}
-
-export interface UserResponse {
-  userId?: string;
-  userID?: string; // Backend uses userID
-  username?: string;
-  fullname?: string; // Backend uses fullname
-  email: string;
-  phoneNumber?: string;
-  phone?: string; // Backend uses phone
-  fullName?: string;
-  address?: string;
-  status: boolean | number; // Backend may return number (0 or 1)
-  roles?: UserRole[];
-  roleText?: string; // Backend single role
-  createdAt?: string;
-  updatedAt?: string;
-}
+// Re-export for backward compatibility
+export type { UserResponse, UserRole, CreateUserRequest, UpdateUserRequest };
 
 // Helper function to normalize backend response
 function normalizeUserResponse(backendUser: any): UserResponse {
   return {
     userId: backendUser.userID || backendUser.userId,
-    username: backendUser.username || backendUser.fullname || backendUser.email?.split('@')[0],
+    userID: backendUser.userID || backendUser.userId,
+    accountId: backendUser.userID || backendUser.userId,
     fullName: backendUser.fullname || backendUser.fullName,
+    fullname: backendUser.fullname || backendUser.fullName,
+    accountName: backendUser.fullname || backendUser.fullName,
     email: backendUser.email,
     phoneNumber: backendUser.phone || backendUser.phoneNumber,
+    phone: backendUser.phone || backendUser.phoneNumber,
+    accountPhone: backendUser.phone || backendUser.phoneNumber,
     address: backendUser.address,
-    status: backendUser.status === 1 || backendUser.status === true,
+    accountAddress: backendUser.address,
+    status: (backendUser.status === 1 || backendUser.status === true) ? 1 : 0,
+    statusText: backendUser.statusText || (backendUser.status === 1 ? "Đang hoạt động" : "Đã khóa"),
+    roleId: backendUser.roleId,
+    roleText: backendUser.roleText,
     roles: backendUser.roles || (backendUser.roleText ? [{
       roleId: backendUser.roleId || '',
       roleName: backendUser.roleText
     }] : []),
+    restaurantId: backendUser.restaurantId,
     createdAt: backendUser.createdAt,
     updatedAt: backendUser.updatedAt
   };
 }
 
-export interface CreateUserRequest {
-  username: string;
-  password: string;
-  email: string;
-  phoneNumber?: string;
-  fullName?: string;
-  address?: string;
-  roleIds: string[];
-}
-
-export interface UpdateUserRequest {
-  username?: string;
-  email?: string;
-  phoneNumber?: string;
-  fullName?: string;
-  address?: string;
-  roleIds?: string[];
-}
-
 // User Service
 export const userService = {
   // Get all users with pagination
-  getAllUsers: async (page: number = 0, size: number = 10): Promise<{ success: boolean; data?: { content: UserResponse[]; totalPages: number; totalElements: number }; message?: string }> => {
+  getAllUsers: async (page: number = 0, size: number = 10): Promise<ServiceResponse<PaginatedResponse<UserResponse>>> => {
     try {
       const response = await axiosInstance.get(API.GET_ALL_USERS, {
         params: { page, size }
@@ -88,7 +66,12 @@ export const userService = {
         data: {
           content: users,
           totalPages: response.data?.totalPages || 1,
-          totalElements: response.data?.totalElements || users.length
+          totalElements: response.data?.totalElements || users.length,
+          size: size,
+          number: page,
+          first: page === 0,
+          last: page >= (response.data?.totalPages || 1) - 1,
+          empty: users.length === 0
         }
       };
     } catch (error: any) {
@@ -97,7 +80,16 @@ export const userService = {
       if (error.response?.status === 500) {
         return {
           success: true,
-          data: { content: [], totalPages: 0, totalElements: 0 },
+          data: {
+            content: [],
+            totalPages: 0,
+            totalElements: 0,
+            size: size,
+            number: page,
+            first: true,
+            last: true,
+            empty: true
+          },
           message: 'Không có dữ liệu người dùng'
         };
       }
@@ -110,7 +102,7 @@ export const userService = {
   },
 
   // Get user by ID
-  getUserById: async (userId: string): Promise<{ success: boolean; data?: UserResponse; message?: string }> => {
+  getUserById: async (userId: string): Promise<ServiceResponse<UserResponse>> => {
     try {
       const response = await axiosInstance.get(API.GET_USER_BY_ID(userId));
       return {
@@ -127,7 +119,7 @@ export const userService = {
   },
 
   // Create new user
-  createUser: async (request: CreateUserRequest): Promise<{ success: boolean; data?: UserResponse; message?: string }> => {
+  createUser: async (request: CreateUserRequest): Promise<ServiceResponse<UserResponse>> => {
     try {
       const response = await axiosInstance.post(API.CREATE_USER, request);
       return {
@@ -145,7 +137,7 @@ export const userService = {
   },
 
   // Update user
-  updateUser: async (userId: string, request: UpdateUserRequest): Promise<{ success: boolean; data?: UserResponse; message?: string }> => {
+  updateUser: async (userId: string, request: UpdateUserRequest): Promise<ServiceResponse<UserResponse>> => {
     try {
       const response = await axiosInstance.put(API.UPDATE_USER(userId), request);
       return {
@@ -163,7 +155,7 @@ export const userService = {
   },
 
   // Change user status
-  changeUserStatus: async (userId: string): Promise<{ success: boolean; message?: string }> => {
+  changeUserStatus: async (userId: string): Promise<ServiceResponse<null>> => {
     try {
       const response = await axiosInstance.patch(API.CHANGE_USER_STATUS(userId));
       return {
@@ -180,7 +172,7 @@ export const userService = {
   },
 
   // Filter users by role
-  filterUsersByRole: async (roleId: string, page: number = 0, size: number = 10): Promise<{ success: boolean; data?: { content: UserResponse[]; totalPages: number; totalElements: number }; message?: string }> => {
+  filterUsersByRole: async (roleId: string, page: number = 0, size: number = 10): Promise<ServiceResponse<PaginatedResponse<UserResponse>>> => {
     try {
       const response = await axiosInstance.get(API.FILTER_USERS_BY_ROLE(roleId), {
         params: { page, size }

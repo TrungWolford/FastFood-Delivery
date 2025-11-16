@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/redux';
 import { roleService } from '../../services/adminAccountService';
-import type { Role } from '../../types/account';
+import type { Role } from '../../types/user';
 import LeftTaskbar from '../../components/LeftTaskbar';
 import AddRoleModal from '../../components/modals/AddRoleModal';
 import EditRoleModal from '../../components/modals/EditRoleModal';

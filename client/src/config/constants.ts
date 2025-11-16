@@ -24,16 +24,19 @@ console.log('API_URL:', API_URL);
 console.log('---');
 
 export const API = {
-  // Accounts - Theo AccountController.java
-  GET_ALL_ACCOUNTS: '/account', // GET /api/account?page=0&size=10
-  GET_ACCOUNT_BY_ID: (accountId: string) => `/account/${accountId}`, // GET /api/account/{accountId}
-  CREATE_ACCOUNT: '/account', // POST /api/account
-  UPDATE_ACCOUNT: (accountId: string) => `/account/${accountId}`, // PUT /api/account/{accountId}
-  DELETE_ACCOUNT: (accountId: string) => `/account/${accountId}`, // DELETE /api/account/{accountId}
-  GET_ACCOUNTS_BY_STATUS: (status: number) => `/account/status/${status}`, // GET /api/account/status/{status}?page=0&size=10
-  GET_ACCOUNT_BY_PHONE: (accountPhone: string) => `/account/phone/${accountPhone}`, // GET /api/account/phone/{accountPhone}
-  SEARCH_ACCOUNTS: '/account/search', // GET /api/account/search?accountName=xxx&page=0&size=10
-  ACCOUNT_LOGIN: '/account/login', // POST /api/account/login
+  // ===== Authentication - AuthController =====
+  LOGIN: '/account/login', // POST /api/account/login (AuthController)
+  
+  // ===== DEPRECATED: AccountController endpoints - Use UserController instead =====
+  // GET_ALL_ACCOUNTS: '/account', // DEPRECATED - Use GET_ALL_USERS
+  // GET_ACCOUNT_BY_ID: (accountId: string) => `/account/${accountId}`, // DEPRECATED - Use GET_USER_BY_ID
+  // CREATE_ACCOUNT: '/account', // DEPRECATED - Use CREATE_USER
+  // UPDATE_ACCOUNT: (accountId: string) => `/account/${accountId}`, // DEPRECATED - Use UPDATE_USER
+  // DELETE_ACCOUNT: (accountId: string) => `/account/${accountId}`, // DEPRECATED - No equivalent
+  // GET_ACCOUNTS_BY_STATUS: (status: number) => `/account/status/${status}`, // DEPRECATED - No equivalent
+  // GET_ACCOUNT_BY_PHONE: (accountPhone: string) => `/account/phone/${accountPhone}`, // DEPRECATED - No equivalent
+  // SEARCH_ACCOUNTS: '/account/search', // DEPRECATED - No equivalent
+  // ACCOUNT_LOGIN: '/account/login', // DEPRECATED - Now under Authentication section
 
   // Menu Items - Theo MenuItemController.java
   GET_ALL_MENU_ITEMS: '/menu-items', // GET /api/menu-items?page=0&size=10
