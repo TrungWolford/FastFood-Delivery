@@ -148,7 +148,7 @@ export const API = {
   GET_DRONE_BY_ID: (droneId: string) => `/drones/${droneId}`, // GET /api/drones/{droneId}
   CREATE_DRONE: '/drones', // POST /api/drones
   UPDATE_DRONE: (droneId: string) => `/drones/${droneId}`, // PUT /api/drones/{droneId}
-  UPDATE_DRONE_STATUS: (droneId: string) => `/drones/${droneId}/status`, // PUT /api/drones/{droneId}/status?status={status}
+    UPDATE_DRONE_STATUS: (droneId: string) => `/drones/${droneId}/status`, // PUT /api/drones/{droneId}/status?status={status}
   CHANGE_DRONE_STATUS: (droneId: string) => `/drones/${droneId}/status`, // PATCH /api/drones/{droneId}/status
 
   // Deliveries - Theo DeliveryController.java
@@ -157,6 +157,10 @@ export const API = {
   CREATE_DELIVERY: '/deliveries', // POST /api/deliveries
   UPDATE_DELIVERY: (deliveryId: string) => `/deliveries/${deliveryId}`, // PUT /api/deliveries/{deliveryId}
   CHANGE_DELIVERY_STATUS: (deliveryId: string) => `/deliveries/${deliveryId}`, // PATCH /api/deliveries/{deliveryId}
+
+  // Locations - Theo LocationController.java (Redis-based realtime drone tracking)
+  UPDATE_DRONE_LOCATION: '/locations', // POST /api/locations - Update drone location (cached in Redis)
+  GET_DRONE_LOCATION: (droneId: string) => `/locations/drone/${droneId}`, // GET /api/locations/drone/{droneId} - Get current drone location from Redis/DB
 
   // Ratings - Theo RatingController.java
   GET_ALL_RATINGS: '/rating', // GET /api/rating?page=0&size=10
