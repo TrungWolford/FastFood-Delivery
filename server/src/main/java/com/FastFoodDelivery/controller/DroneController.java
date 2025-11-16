@@ -49,4 +49,21 @@ public class DroneController {
         return ResponseEntity.ok("Change status successfully");
     }
 
+    @PutMapping("/{droneId}/status")
+    public ResponseEntity<DroneResponse> updateDroneStatus(
+            @PathVariable ObjectId droneId,
+            @RequestParam String status){
+        return ResponseEntity.ok(droneService.updateDroneStatus(droneId, status));
+    }
+
+    @GetMapping("/restaurant/{restaurantId}/status/{status}")
+    public ResponseEntity<Page<DroneResponse>> getDronesByRestaurantAndStatus(
+            @PathVariable ObjectId restaurantId,
+            @PathVariable String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size){
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(droneService.getDronesByRestaurantAndStatus(restaurantId, status, pageable));
+    }
+
 }

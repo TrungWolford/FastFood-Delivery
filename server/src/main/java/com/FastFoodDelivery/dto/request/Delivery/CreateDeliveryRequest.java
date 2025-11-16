@@ -1,6 +1,8 @@
 package com.FastFoodDelivery.dto.request.Delivery;
 
 import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
 
 import java.util.Date;
@@ -9,8 +11,16 @@ import java.util.Date;
 public class CreateDeliveryRequest {
     private ObjectId droneId;
     private ObjectId orderId;
-    private double startLocation;
-    private double endLocation;
+    private LocationPoint startLocation;
+    private LocationPoint endLocation;
     private int status;
     private Date deliveredAt;
+    
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class LocationPoint {
+        private double latitude;
+        private double longitude;
+    }
 }
