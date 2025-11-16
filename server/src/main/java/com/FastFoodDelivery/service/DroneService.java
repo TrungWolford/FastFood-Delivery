@@ -14,4 +14,6 @@ public interface DroneService {
      DroneResponse updateDrone(UpdateDroneRequest request, ObjectId droneId);
      void deleteDrone(ObjectId droneId);
      void changeStatus(ObjectId droneId);
+     DroneResponse updateDroneStatus(ObjectId droneId, String status);
+     Page<DroneResponse> getDronesByRestaurantAndStatus(ObjectId restaurantId, String status, Pageable pageable);
 }
