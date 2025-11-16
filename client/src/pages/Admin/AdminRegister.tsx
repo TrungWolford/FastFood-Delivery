@@ -31,7 +31,7 @@ interface RestaurantFormData {
   address: string;
   phone: string;
   city: string;
-  district: string;
+  ward: string; // ✅ Đổi từ district sang ward (Phường/Xã)
   mapLocation: { lat: number; lng: number } | null;
   
   // Step 2: Owner Info (thông tin để tạo User account + AccountRestaurantDetail)
@@ -170,7 +170,7 @@ const AdminRegister: React.FC = () => {
     address: '',
     phone: '',
     city: '',
-    district: '',
+    ward: '', // ✅ Đổi từ district sang ward
     mapLocation: null,
     ownerName: '',
     ownerEmail: '',
@@ -304,8 +304,8 @@ const AdminRegister: React.FC = () => {
     if (!formData.city) {
       newErrors.city = 'Vui lòng chọn thành phố';
     }
-    if (!formData.district) {
-      newErrors.district = 'Vui lòng chọn quận/huyện';
+    if (!formData.ward) {
+      newErrors.ward = 'Vui lòng chọn phường/xã'; // ✅ Đổi từ district sang ward
     }
     if (!formData.phone.trim()) {
       newErrors.phone = 'Vui lòng nhập số điện thoại liên hệ';
@@ -560,7 +560,7 @@ const AdminRegister: React.FC = () => {
         restaurantName: formData.restaurantName,
         address: formData.address,
         city: formData.city,
-        ward: formData.district, // Use district value for ward field
+        ward: formData.ward, // ✅ Đúng rồi, gửi ward field
         phone: formData.phone,
         latitude: formData.mapLocation?.lat || 0,
         longitude: formData.mapLocation?.lng || 0,
@@ -791,26 +791,26 @@ const AdminRegister: React.FC = () => {
                   )}
                 </div>
 
-                {/* District */}
+                {/* Ward / District */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Quận / Huyện <span className="text-red-500">*</span>
+                    Phường / Xã <span className="text-red-500">*</span>
                   </label>
                   <select
-                    value={formData.district}
-                    onChange={(e) => handleInputChange('district', e.target.value)}
+                    value={formData.ward}
+                    onChange={(e) => handleInputChange('ward', e.target.value)}
                     className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition ${
-                      errors.district ? 'border-red-500' : 'border-gray-300'
+                      errors.ward ? 'border-red-500' : 'border-gray-300'
                     }`}
                     disabled={!formData.city}
                   >
-                    <option value="">Chọn quận/huyện</option>
+                    <option value="">Chọn phường/xã</option>
                     {DISTRICTS_HCM.map(district => (
                       <option key={district} value={district}>{district}</option>
                     ))}
                   </select>
-                  {errors.district && (
-                    <p className="text-sm text-red-500 mt-1">{errors.district}</p>
+                  {errors.ward && (
+                    <p className="text-sm text-red-500 mt-1">{errors.ward}</p>
                   )}
                 </div>
 
