@@ -213,7 +213,7 @@ const RestaurantDetail: React.FC = () => {
               {/* Address */}
               <div className="flex items-start text-gray-600 mb-2">
                 <MapPin className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
-                <span>{restaurant.address}, {restaurant.district}, {restaurant.city}</span>
+                <span>{restaurant.address}, {restaurant.ward}, {restaurant.city}</span>
               </div>
 
               {/* Phone */}
