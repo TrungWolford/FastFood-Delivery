@@ -243,7 +243,9 @@ export default function OrderDetail() {
         return 'Chờ thanh toán';
       case 'CONFIRMED':
         return 'Đã xác nhận';
-      case 'DELIVERING':
+      case 'PREPARING':
+        return 'Đang chuẩn bị';
+      case 'SHIPPING':
         return 'Đang giao hàng';
       case 'COMPLETED':
         return 'Hoàn thành';
