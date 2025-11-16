@@ -5,14 +5,15 @@ import { logout } from '../store/slices/authSlice'
 import { 
   LayoutDashboard, 
   Package, 
-  Tags, 
   Users, 
   LogOut,
   User,
   Home,
   ShoppingBag,
   Truck,
-  Star
+  Star,
+  Plane,
+  Settings
 } from 'lucide-react'
 
 const LeftTaskbar: React.FC = () => {
@@ -25,6 +26,9 @@ const LeftTaskbar: React.FC = () => {
     dispatch(logout())
     navigate('/')
   }
+
+  // Check if user has RESTAURANT role (not STAFF_RESTAURANT)
+  const isRestaurantOwner = user?.roles?.some((role) => role.roleName === 'RESTAURANT') || false
 
   const menuItems = [
     {
@@ -48,6 +52,11 @@ const LeftTaskbar: React.FC = () => {
       path: '/admin/shippings'
     },
     {
+      icon: Plane,
+      label: 'Drone',
+      path: '/admin/drones'
+    },
+    {
       icon: Star,
       label: 'Đánh giá',
       path: '/admin/ratings'
@@ -56,7 +65,13 @@ const LeftTaskbar: React.FC = () => {
       icon: Users,
       label: 'Tài khoản',
       path: '/admin/accounts'
-    }
+    },
+    // Tab "Cài đặt" chỉ hiển thị cho RESTAURANT owner (không hiển thị cho STAFF_RESTAURANT)
+    ...(isRestaurantOwner ? [{
+      icon: Settings,
+      label: 'Cài đặt',
+      path: '/admin/restaurant-detail'
+    }] : [])
   ]
 
   const isActivePath = (path: string) => {

@@ -58,10 +58,23 @@ public class DeliveryServiceImpl implements DeliveryService {
         Delivery delivery = new Delivery();
         delivery.setDroneId(request.getDroneId());
         delivery.setOrderId(request.getOrderId());
-        delivery.setStartLocation(request.getStartLocation());
-        delivery.setEndLocation(request.getEndLocation());
+        
+        // Convert LocationPoint from Request to Entity
+        if (request.getStartLocation() != null) {
+            delivery.setStartLocation(new Delivery.LocationPoint(
+                request.getStartLocation().getLatitude(),
+                request.getStartLocation().getLongitude()
+            ));
+        }
+        if (request.getEndLocation() != null) {
+            delivery.setEndLocation(new Delivery.LocationPoint(
+                request.getEndLocation().getLatitude(),
+                request.getEndLocation().getLongitude()
+            ));
+        }
+        
         delivery.setStatus(request.getStatus());
-        delivery.setDeliveredAt(request.getDeliveredAt());
+        delivery.setDeliveredAt(new Date());
 
         deliveryRepository.save(delivery);
         return DeliveryResponse.fromEntity(delivery);
@@ -73,8 +86,21 @@ public class DeliveryServiceImpl implements DeliveryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", deliveryId.toString()));
 
         delivery.setOrderId(request.getOrderId());
-        delivery.setStartLocation(request.getStartLocation());
-        delivery.setEndLocation(request.getEndLocation());
+        
+        // Convert LocationPoint from Request to Entity
+        if (request.getStartLocation() != null) {
+            delivery.setStartLocation(new Delivery.LocationPoint(
+                request.getStartLocation().getLatitude(),
+                request.getStartLocation().getLongitude()
+            ));
+        }
+        if (request.getEndLocation() != null) {
+            delivery.setEndLocation(new Delivery.LocationPoint(
+                request.getEndLocation().getLatitude(),
+                request.getEndLocation().getLongitude()
+            ));
+        }
+        
         delivery.setStatus(request.getStatus());
         delivery.setDeliveredAt(new Date());
 

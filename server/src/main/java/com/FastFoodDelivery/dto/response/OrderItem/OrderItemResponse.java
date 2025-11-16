@@ -1,6 +1,5 @@
 package com.FastFoodDelivery.dto.response.OrderItem;
 
-import com.FastFoodDelivery.entity.MenuItem;
 import com.FastFoodDelivery.entity.OrderItem;
 import com.FastFoodDelivery.repository.MenuItemRepository;
 
@@ -10,7 +9,8 @@ import lombok.Data;
 public class OrderItemResponse {
     private String orderItemId;
     private String itemId;
-    private String itemName; // ✅ NEW: Tên sản phẩm
+    private String name;        // Tên món ăn
+    private String imageUrl;    // URL hình ảnh món ăn
     private Integer quantity;
     private String note;
     private long price;
@@ -20,6 +20,8 @@ public class OrderItemResponse {
         OrderItemResponse response = new OrderItemResponse();
         response.setOrderItemId(orderItem.getOrderItemId().toString());
         response.setItemId(orderItem.getItemId().toString());
+        response.setName(orderItem.getName());
+        response.setImageUrl(orderItem.getImageUrl());
         response.setQuantity(orderItem.getQuantity());
         response.setNote(orderItem.getNote());
         response.setPrice(orderItem.getPrice());
@@ -29,23 +31,11 @@ public class OrderItemResponse {
     }
     
     /**
-     * ✅ NEW: Convert with MenuItem name lookup
+     * ✅ Convert with MenuItem name lookup (optional)
+     * Note: OrderItem already has name field, so this method is same as fromEntity(orderItem)
      */
     public static OrderItemResponse fromEntity(OrderItem orderItem, MenuItemRepository menuItemRepository) {
-        OrderItemResponse response = fromEntity(orderItem);
-        
-        // Try to get item name from MenuItem
-        if (orderItem.getItemId() != null && menuItemRepository != null) {
-            try {
-                MenuItem menuItem = menuItemRepository.findById(orderItem.getItemId()).orElse(null);
-                if (menuItem != null) {
-                    response.setItemName(menuItem.getName());
-                }
-            } catch (Exception e) {
-                // If lookup fails, itemName will be null
-            }
-        }
-        
-        return response;
+        // OrderItem already stores name and imageUrl, just use fromEntity
+        return fromEntity(orderItem);
     }
 }

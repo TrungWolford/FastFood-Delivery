@@ -70,6 +70,9 @@ export const API = {
   // Orders - Theo OrderController.java
   GET_ALL_ORDERS: '/orders', // GET /api/orders (Admin only)
   GET_ORDER_BY_ID: (orderId: string) => `/orders/${orderId}`, // GET /api/orders/{orderId}
+  GET_ORDERS_BY_CUSTOMER: (customerId: string) => `/orders/user/${customerId}`, // GET /api/orders/user/{customerId}?page=0&size=10
+  GET_ORDERS_BY_RESTAURANT: (restaurantId: string) => `/orders/restaurant/${restaurantId}`, // GET /api/orders/restaurant/{restaurantId}?page=0&size=10
+  GET_ORDER_ITEMS: (orderId: string) => `/orders/${orderId}/items`, // GET /api/orders/{orderId}/items
   CREATE_ORDER: '/orders', // POST /api/orders (Customer only)
   UPDATE_ORDER: (orderId: string) => `/orders/${orderId}`, // PUT /api/orders/{orderId} (Admin only)
   DELETE_ORDER: (orderId: string) => `/orders/${orderId}`, // DELETE /api/orders/{orderId} (Admin only)
@@ -144,18 +147,25 @@ export const API = {
   APPROVE_VERIFICATION: (accountDetailId: string) => `/account-restaurant-details/${accountDetailId}/verify/approve`, // POST /api/account-restaurant-details/{accountDetailId}/verify/approve
   REJECT_VERIFICATION: (accountDetailId: string) => `/account-restaurant-details/${accountDetailId}/verify/reject`, // POST /api/account-restaurant-details/{accountDetailId}/verify/reject
 
-  // Shipping - Theo ShippingController.java
-  GET_ALL_SHIPPING: '/shipping', // GET /api/shipping
-  GET_SHIPPING_BY_ID: (shippingId: string) => `/shipping/${shippingId}`, // GET /api/shipping/{shippingId}
-  CREATE_SHIPPING: '/shipping', // POST /api/shipping
-  UPDATE_SHIPPING: (shippingId: string) => `/shipping/${shippingId}`, // PUT /api/shipping/{shippingId}
-  DELETE_SHIPPING: (shippingId: string) => `/shipping/${shippingId}`, // DELETE /api/shipping/{shippingId}
-  GET_SHIPPING_BY_ORDER: (orderId: string) => `/shipping/order/${orderId}`, // GET /api/shipping/order/{orderId}
-  GET_SHIPPING_BY_ACCOUNT: (accountId: string) => `/shipping/account/${accountId}`, // GET /api/shipping/account/{accountId}
-  UPDATE_SHIPPING_STATUS: (shippingId: string) => `/shipping/${shippingId}/status`, // PUT /api/shipping/{shippingId}/status
-  SEARCH_SHIPPINGS: '/shipping/search', // GET /api/shipping/search?keyword=xxx&page=0&size=10
-  FILTER_SHIPPINGS: '/shipping/filter', // GET /api/shipping/filter?status=xxx&page=0&size=10
-  SEARCH_AND_FILTER_SHIPPINGS: '/shipping/search-filter', // GET /api/shipping/search-filter?keyword=xxx&status=xxx&page=0&size=10
+  // Drones - Theo DroneController.java (thay thế Shipping)
+  GET_ALL_DRONES_BY_RESTAURANT: (restaurantId: string) => `/drones/restaurant/${restaurantId}`, // GET /api/drones/restaurant/{restaurantId}?page=0&size=10
+  GET_DRONES_BY_RESTAURANT_AND_STATUS: (restaurantId: string, status: string) => `/drones/restaurant/${restaurantId}/status/${status}`, // GET /api/drones/restaurant/{restaurantId}/status/{status}?page=0&size=10
+  GET_DRONE_BY_ID: (droneId: string) => `/drones/${droneId}`, // GET /api/drones/{droneId}
+  CREATE_DRONE: '/drones', // POST /api/drones
+  UPDATE_DRONE: (droneId: string) => `/drones/${droneId}`, // PUT /api/drones/{droneId}
+    UPDATE_DRONE_STATUS: (droneId: string) => `/drones/${droneId}/status`, // PUT /api/drones/{droneId}/status?status={status}
+  CHANGE_DRONE_STATUS: (droneId: string) => `/drones/${droneId}/status`, // PATCH /api/drones/{droneId}/status
+
+  // Deliveries - Theo DeliveryController.java
+  GET_DELIVERIES_BY_ORDER: (orderId: string) => `/deliveries/order/${orderId}`, // GET /api/deliveries/order/{orderId}
+  GET_DELIVERY_BY_ID: (deliveryId: string) => `/deliveries/${deliveryId}`, // GET /api/deliveries/{deliveryId}
+  CREATE_DELIVERY: '/deliveries', // POST /api/deliveries
+  UPDATE_DELIVERY: (deliveryId: string) => `/deliveries/${deliveryId}`, // PUT /api/deliveries/{deliveryId}
+  CHANGE_DELIVERY_STATUS: (deliveryId: string) => `/deliveries/${deliveryId}`, // PATCH /api/deliveries/{deliveryId}
+
+  // Locations - Theo LocationController.java (Redis-based realtime drone tracking)
+  UPDATE_DRONE_LOCATION: '/locations', // POST /api/locations - Update drone location (cached in Redis)
+  GET_DRONE_LOCATION: (droneId: string) => `/locations/drone/${droneId}`, // GET /api/locations/drone/{droneId} - Get current drone location from Redis/DB
 
   // Ratings - Theo RatingController.java
   GET_ALL_RATINGS: '/rating', // GET /api/rating?page=0&size=10
@@ -376,7 +386,8 @@ export const ROUTES = {
     CATEGORIES: '/admin/categories',
     ORDERS: '/admin/orders',
     ROLES: '/admin/roles',
-    SHIPPING: '/admin/shipping',
+    DRONES: '/admin/drones',
+    RATINGS: '/admin/ratings',
   },
   
   // Search

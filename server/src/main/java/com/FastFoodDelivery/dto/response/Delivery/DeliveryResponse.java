@@ -1,5 +1,11 @@
 package com.FastFoodDelivery.dto.response.Delivery;
 
+import com.FastFoodDelivery.entity.Delivery;
+import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import org.bson.types.ObjectId;
+
 import java.util.Date;
 
 import com.FastFoodDelivery.entity.Delivery;
@@ -12,11 +18,19 @@ public class DeliveryResponse {
     private String deliveryId;
     private String droneId;
     private String orderId;
-    private LocationPoint startLocation; // Tọa độ nhà hàng
-    private LocationPoint endLocation; // Tọa độ khách hàng
+    private LocationPoint startLocation;
+    private LocationPoint endLocation;
     private int status;
     private Date deliveredAt;
     private String statusText;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class LocationPoint {
+        private double latitude;
+        private double longitude;
+    }
 
     public static DeliveryResponse fromEntity(Delivery delivery){
         DeliveryResponse response = new DeliveryResponse();
@@ -28,8 +42,21 @@ public class DeliveryResponse {
         }
         
         response.setOrderId(delivery.getOrderId().toString());
-        response.setStartLocation(delivery.getStartLocation());
-        response.setEndLocation(delivery.getEndLocation());
+        
+        // Convert LocationPoint from entity to response
+        if (delivery.getStartLocation() != null) {
+            response.setStartLocation(new LocationPoint(
+                delivery.getStartLocation().getLatitude(),
+                delivery.getStartLocation().getLongitude()
+            ));
+        }
+        if (delivery.getEndLocation() != null) {
+            response.setEndLocation(new LocationPoint(
+                delivery.getEndLocation().getLatitude(),
+                delivery.getEndLocation().getLongitude()
+            ));
+        }
+        
         response.setStatus(delivery.getStatus());
         response.setDeliveredAt(delivery.getDeliveredAt());
         

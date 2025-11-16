@@ -119,6 +119,8 @@ public class OrderServiceImpl implements OrderService {
             OrderItem item = new OrderItem();
             item.setOrderItemId(new ObjectId());
             item.setItemId(itemObjectId); // Use converted ObjectId
+            item.setName(menuItem.getName());           // ✨ Thêm tên món
+            item.setImageUrl(menuItem.getImageUrl());   // ✨ Thêm URL hình ảnh
             item.setQuantity(itemReq.getQuantity());
             item.setNote(itemReq.getNote());
             item.setPrice(price);
@@ -175,9 +177,10 @@ public class OrderServiceImpl implements OrderService {
     private boolean isValidStatusTransition(String currentStatus, String newStatus) {
         return switch (currentStatus) {
             case "PENDING" -> newStatus.equals("CONFIRMED") || newStatus.equals("CANCELLED");
-            case "CONFIRMED" -> newStatus.equals("DELIVERING") || newStatus.equals("CANCELLED");
-            case "DELIVERING" -> newStatus.equals("COMPLETED");
-            case "COMPLETED", "CANCELLED" -> false; // không được đổi nữa
+            case "CONFIRMED" -> newStatus.equals("PREPARING") || newStatus.equals("CANCELLED");
+            case "PREPARING" -> newStatus.equals("SHIPPING") || newStatus.equals("CANCELLED");
+            case "SHIPPING" -> newStatus.equals("DELIVERED");
+            case "DELIVERED", "CANCELLED" -> false; // không được đổi nữa
             default -> false;
         };
     }
@@ -188,10 +191,11 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId.toString()));
 
         // Kiểm tra trạng thái đơn hàng trước khi cho phép cập nhật thông tin
-        boolean canUpdateInfo = !"DELIVERING".equals(existingOrder.getStatus())
-                && !"COMPLETED".equals(existingOrder.getStatus());
+        boolean canUpdateInfo = !"SHIPPING".equals(existingOrder.getStatus())
+                && !"DELIVERED".equals(existingOrder.getStatus())
+                && !"CANCELLED".equals(existingOrder.getStatus());
 
-        // Cập nhật thông tin người nhận (chỉ khi đơn chưa giao)
+        // Cập nhật thông tin người nhận và địa chỉ (chỉ khi đơn chưa giao)
         if (canUpdateInfo) {
             if (request.getReceiverName() != null) {
                 existingOrder.setReceiverName(request.getReceiverName());

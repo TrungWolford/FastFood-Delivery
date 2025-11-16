@@ -1,6 +1,60 @@
 import axiosInstance from '../libs/axios';
 import { API } from '../config/constants';
 
+// ===========================
+// Constants
+// ===========================
+
+/**
+ * Order Status Constants
+ */
+export const ORDER_STATUS = {
+  PENDING: 'PENDING' as const,        // Chờ xác nhận
+  CONFIRMED: 'CONFIRMED' as const,    // Đã xác nhận
+  PREPARING: 'PREPARING' as const,    // Đang chuẩn bị
+  SHIPPING: 'SHIPPING' as const,      // Đang giao hàng
+  DELIVERED: 'DELIVERED' as const,    // Hoàn thành
+  CANCELLED: 'CANCELLED' as const,    // Đã hủy
+} as const;
+
+/**
+ * Order Status Labels - tiếng Việt
+ */
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  PENDING: 'Chờ xác nhận',
+  CONFIRMED: 'Đã xác nhận',
+  PREPARING: 'Đang chuẩn bị',
+  SHIPPING: 'Đang giao hàng',
+  DELIVERED: 'Hoàn thành',
+  CANCELLED: 'Đã hủy',
+};
+
+/**
+ * Order Status Colors - cho UI
+ */
+export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
+  PENDING: 'warning',
+  CONFIRMED: 'info',
+  PREPARING: 'processing',
+  SHIPPING: 'primary',
+  DELIVERED: 'success',
+  CANCELLED: 'error',
+};
+
+// ===========================
+// Type Definitions
+// ===========================
+
+/**
+ * Order Status Type - sử dụng constants từ ORDER_STATUS
+ */
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED';
+
+/**
+ * Order Status Number - giá trị số từ backend (nếu cần convert)
+ */
+export type OrderStatusNumber = 0 | 1 | 2 | 3 | 4;
+
 // New Order Response from MongoDB backend (NEW structure)
 export interface OrderItem {
   itemId: string;
@@ -31,42 +85,33 @@ export interface OrderResponseNew {
   paymentExpiresAt?: string;
 }
 
-// OLD Types (kept for backward compatibility)
-export interface OrderDetailResponse {
-  orderDetailId: string;
-  productId: string;
-  productName: string;
+/**
+ * Order Item (matches MongoDB backend OrderItem)
+ */
+export interface OrderItemResponse {
+  orderItemId: string;
+  itemId: string; // menuItemId
+  name: string;
+  price: number;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  productImages: string[];
+  subTotal: number;
+  imageUrl?: string; // URL ảnh món ăn
 }
 
-export interface ShippingInfo {
-  shippingId: string;
-  accountId: string;
-  accountName?: string;
-  receiverName: string;
-  receiverPhone: string;
-  receiverAddress: string;
-  city: string;
-  shipperName?: string;
-  shippingFee?: number;
-  shippedAt?: string;
-  status?: number; // 0: Đã hủy, 1: Đang chuẩn bị, 2: Đang giao, 3: Giao thành công
-}
-
+/**
+ * Order Response (matches MongoDB backend OrderResponse)
+ */
 export interface OrderResponse {
   orderId: string;
-  accountId: string;
-  accountName: string;
-  orderDate: string;
-  status: number; // 0: Đã hủy, 1: Đang vận chuyển, 2: Đã hoàn thành
-  paymentMethod: number; // 0: Tiền mặt (COD), 1: Chuyển khoản
-  totalAmount: number;
-  orderDetails: OrderDetailResponse[];
-  totalItems?: number;
-  shipping?: ShippingInfo;
+  customerId: string;
+  restaurantId: string;
+  orderItems: OrderItemResponse[];
+  totalPrice: number;
+  deliveryAddress: string;
+  status: OrderStatus;
+  droneId?: string; // ID của drone được giao nhiệm vụ
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Request để tạo order mới - Sau sáp nhập hành chính 2025
@@ -88,173 +133,634 @@ export interface CreateOrderRequest {
   }>;
 }
 
-// Helper: map backend Order DTO (server) to frontend OrderResponse shape used in components
-export function mapBackendOrderToFrontend(o: any): OrderResponse {
-  // Map status from string to number
-  const mapStatus = (status: string): number => {
-    const statusUpper = String(status || 'PENDING').toUpperCase();
-    switch (statusUpper) {
-      case 'CANCELLED':
-        return 0;
-      case 'PENDING':
-      case 'CONFIRMED':
-      case 'DELIVERING':
-        return 1; // Đang xử lý/vận chuyển
-      case 'COMPLETED':
-        return 2;
-      default:
-        return 1;
-    }
-  };
-
-  // Payment method - default to COD for now (MongoDB backend doesn't have payment info yet)
-  const paymentMethodFromBackend = 0; // Default to COD
-
-  // Safely parse date - handle null/undefined/invalid dates
-  const parseDate = (dateValue: any): string => {
-    if (!dateValue) {
-      return new Date().toISOString();
-    }
-    try {
-      // Check if it's in dd/MM/yyyy format (Backend format)
-      const vnDatePattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-      const match = String(dateValue).match(vnDatePattern);
-      
-      if (match) {
-        // Parse Vietnamese format: dd/MM/yyyy
-        const [, day, month, year] = match;
-        // Create date in ISO format: yyyy-MM-dd
-        const isoDate = `${year}-${month}-${day}T00:00:00`;
-        const date = new Date(isoDate);
-        if (!isNaN(date.getTime())) {
-          return date.toISOString();
-        }
-      }
-      
-      // Try standard date parsing
-      const date = new Date(dateValue);
-      if (isNaN(date.getTime())) {
-        console.warn('Invalid date value:', dateValue, 'using current date');
-        return new Date().toISOString();
-      }
-      return date.toISOString();
-    } catch (error) {
-      console.error('Error parsing date:', dateValue, error);
-      return new Date().toISOString();
-    }
-  };
-
-  // Map orderItems from MongoDB format
-  const orderDetails: OrderDetailResponse[] = (o?.orderItems || []).map((it: any) => ({
-    orderDetailId: it.orderItemId?.toString() || it.orderItemId,
-    productId: it.itemId?.toString() || it.itemId,
-    productName: it.name || 'Unknown Product', // MongoDB backend doesn't return name yet
-    quantity: it.quantity || 0,
-    unitPrice: it.price ?? 0,
-    totalPrice: it.subTotal ?? (it.price * it.quantity),
-    productImages: []
-  }));
-
-  return {
-    orderId: o.orderId?.toString() || o.orderId,
-    accountId: o.customerId?.toString() || o.customerId,
-    accountName: 'Customer', // MongoDB backend doesn't return customer name yet
-    orderDate: parseDate(o.createdAt),
-    status: mapStatus(o.status),
-    paymentMethod: paymentMethodFromBackend,
-    totalAmount: o.totalPrice ?? 0,
-    orderDetails,
-    totalItems: orderDetails.length,
-    shipping: {
-      shippingId: '',
-      accountId: o.customerId?.toString() || o.customerId,
-      receiverName: 'Customer',
-      receiverPhone: '',
-      receiverAddress: o.deliveryAddress || '',
-      city: '',
-      status: mapStatus(o.status),
-    },
-  };
+/**
+ * Update Order Request (matches MongoDB backend UpdateOrderRequest)
+ */
+export interface UpdateOrderRequest {
+  deliveryAddress?: string;
+  status?: OrderStatus;
+  droneId?: string;
 }
 
-// Order Service
-export const orderService = {
-  // Create new order
-  createOrder: async (request: CreateOrderRequest): Promise<{ success: boolean; data?: OrderResponse; message?: string }> => {
+/**
+ * Paginated Response from Spring Backend
+ */
+export interface PageResponse<T> {
+  content: T[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+    sort: {
+      sorted: boolean;
+      unsorted: boolean;
+      empty: boolean;
+    };
+    offset: number;
+    paged: boolean;
+    unpaged: boolean;
+  };
+  totalPages: number;
+  totalElements: number;
+  last: boolean;
+  size: number;
+  number: number;
+  sort: {
+    sorted: boolean;
+    unsorted: boolean;
+    empty: boolean;
+  };
+  numberOfElements: number;
+  first: boolean;
+  empty: boolean;
+}
+
+/**
+ * Service Response Wrapper
+ */
+export interface ServiceResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  totalPages?: number;
+  totalElements?: number;
+}
+
+// ===========================
+// Helper Functions
+// ===========================
+
+/**
+ * Convert date from backend to ISO string
+ * Backend có thể trả về date ở nhiều format:
+ * - ISO string: "2024-11-15T10:30:00Z"
+ * - dd/MM/yyyy format: "15/11/2024" (from @JsonFormat)
+ * - Array: [2024, 11, 15, 10, 30, 0]
+ * - LocalDateTime object: { year: 2024, month: 11, day: 15, hour: 10, minute: 30, second: 0 }
+ */
+const convertDateToISO = (dateValue: any): string => {
+  if (!dateValue) return new Date().toISOString();
+
+  // If it's a string
+  if (typeof dateValue === 'string') {
+    // Check if it's dd/MM/yyyy format (from @JsonFormat in backend)
+    const ddMMyyyyPattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const match = dateValue.match(ddMMyyyyPattern);
+
+    if (match) {
+      const [, day, month, year] = match;
+      // JavaScript Date expects: year, month (0-indexed), day
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      return date.toISOString();
+    }
+
+    // Check if it's dd/MM/yyyy HH:mm format
+    const ddMMyyyyHHmmPattern = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/;
+    const matchWithTime = dateValue.match(ddMMyyyyHHmmPattern);
+
+    if (matchWithTime) {
+      const [, day, month, year, hour, minute] = matchWithTime;
+      const date = new Date(
+        parseInt(year),
+        parseInt(month) - 1,
+        parseInt(day),
+        parseInt(hour),
+        parseInt(minute)
+      );
+      return date.toISOString();
+    }
+
+    // If it's already ISO format or other standard format, return as is
     try {
-      console.log('📦 Creating order with request:', request);
-      console.log('Request items detail:', JSON.stringify(request.items, null, 2));
-      
-      const response = await axiosInstance.post(API.CREATE_ORDER, request);
-      
-      console.log('✅ Order created successfully - Raw response:', response.data);
-      console.log('📅 createdAt value:', response.data?.createdAt);
-      console.log('📅 createdAt type:', typeof response.data?.createdAt);
-      
-      const mapped = response.data ? mapBackendOrderToFrontend(response.data) : undefined;
-      
-      console.log('✅ Mapped order:', mapped);
-      
+      const date = new Date(dateValue);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    } catch (e) {
+      console.warn('Failed to parse date string:', dateValue);
+    }
+
+    return dateValue;
+  }
+
+  // If it's an array [year, month, day, hour, minute, second, nano]
+  if (Array.isArray(dateValue)) {
+    const [year, month, day, hour = 0, minute = 0, second = 0] = dateValue;
+    // Note: month in JavaScript Date is 0-indexed, but from backend it's 1-indexed
+    return new Date(year, month - 1, day, hour, minute, second).toISOString();
+  }
+
+  // If it's an object with year, month, day properties
+  if (typeof dateValue === 'object' && 'year' in dateValue) {
+    const { year, monthValue, dayOfMonth, hour = 0, minute = 0, second = 0 } = dateValue;
+    return new Date(year, (monthValue || dateValue.month) - 1, dayOfMonth || dateValue.day, hour, minute, second).toISOString();
+  }
+
+  // Fallback: try to parse as Date
+  try {
+    const date = new Date(dateValue);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  } catch (e) {
+    console.warn('Failed to parse date:', dateValue);
+  }
+
+  return new Date().toISOString();
+};
+
+/**
+ * Transform order response from backend to frontend format
+ * Converts date fields from backend format to ISO strings
+ */
+const transformOrderResponse = (order: any): OrderResponse => {
+  console.log('🔄 Transforming order response:', {
+    orderId: order.orderId,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    createdAtType: typeof order.createdAt,
+    updatedAtType: typeof order.updatedAt
+  });
+
+  const transformed = {
+    ...order,
+    createdAt: convertDateToISO(order.createdAt),
+    updatedAt: convertDateToISO(order.updatedAt),
+  };
+
+  console.log('✅ Transformed dates:', {
+    createdAt: transformed.createdAt,
+    updatedAt: transformed.updatedAt
+  });
+
+  return transformed;
+};
+
+/**
+ * Get order status label (Vietnamese)
+ */
+export const getOrderStatusLabel = (status: OrderStatus): string => {
+  return ORDER_STATUS_LABELS[status] || 'Không xác định';
+};
+
+/**
+ * Get order status color for UI
+ */
+export const getOrderStatusColor = (status: OrderStatus): string => {
+  return ORDER_STATUS_COLORS[status] || 'default';
+};
+
+/**
+ * Check if order can be cancelled
+ */
+export const canCancelOrder = (status: OrderStatus): boolean => {
+  return status === ORDER_STATUS.PENDING || status === ORDER_STATUS.CONFIRMED;
+};
+
+/**
+ * Check if order can be confirmed
+ */
+export const canConfirmOrder = (status: OrderStatus): boolean => {
+  return status === ORDER_STATUS.PENDING;
+};
+
+/**
+ * Check if order can start preparing
+ */
+export const canStartPreparing = (status: OrderStatus): boolean => {
+  return status === ORDER_STATUS.CONFIRMED;
+};
+
+/**
+ * Check if order can start delivery
+ */
+export const canStartDelivery = (status: OrderStatus): boolean => {
+  return status === ORDER_STATUS.PREPARING;
+};
+
+/**
+ * Check if order can be completed
+ */
+export const canCompleteOrder = (status: OrderStatus): boolean => {
+  return status === ORDER_STATUS.SHIPPING;
+};
+
+/**
+ * Get next possible order statuses
+ */
+export const getNextOrderStatuses = (currentStatus: OrderStatus): OrderStatus[] => {
+  switch (currentStatus) {
+    case ORDER_STATUS.PENDING:
+      return [ORDER_STATUS.CONFIRMED, ORDER_STATUS.CANCELLED];
+    case ORDER_STATUS.CONFIRMED:
+      return [ORDER_STATUS.PREPARING, ORDER_STATUS.CANCELLED];
+    case ORDER_STATUS.PREPARING:
+      return [ORDER_STATUS.SHIPPING];
+    case ORDER_STATUS.SHIPPING:
+      return [ORDER_STATUS.DELIVERED];
+    case ORDER_STATUS.DELIVERED:
+    case ORDER_STATUS.CANCELLED:
+      return [];
+    default:
+      return [];
+  }
+};
+
+/**
+ * Validate order status transition
+ */
+export const isValidStatusTransition = (
+  currentStatus: OrderStatus,
+  newStatus: OrderStatus
+): boolean => {
+  const nextStatuses = getNextOrderStatuses(currentStatus);
+  return nextStatuses.includes(newStatus);
+};
+
+// ===========================
+// Order Service
+// ===========================
+
+export const orderService = {
+  /**
+   * Get all orders (Admin only - with pagination)
+   * Backend: GET /api/orders?page=0&size=10
+   */
+  getAllOrders: async (
+    page: number = 0,
+    size: number = 10
+  ): Promise<ServiceResponse<OrderResponse[]>> => {
+    try {
+      console.log('📦 Fetching orders from API...');
+
+      const response = await axiosInstance.get<PageResponse<OrderResponse>>(API.GET_ALL_ORDERS, {
+        params: { page, size },
+      });
+
+      console.log('✅ Orders fetched successfully:', response.data);
+
+      // Transform date fields from backend format to ISO strings
+      const transformedOrders = response.data.content.map(transformOrderResponse);
+
       return {
         success: true,
-        data: mapped,
-        message: 'Đơn hàng đã được tạo thành công'
+        data: transformedOrders,
+        totalPages: response.data.totalPages,
+        totalElements: response.data.totalElements,
       };
     } catch (error: any) {
-      console.error('❌ Error creating order:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      console.error('Request data:', request);
-      
+      console.error('❌ Error getting all orders:', error);
       return {
         success: false,
-        message: error.response?.data?.message || error.response?.data || 'Không thể tạo đơn hàng'
+        data: [],
+        message: error.response?.data?.message || 'Không thể tải danh sách đơn hàng',
       };
     }
   },
 
-  // Get all orders (for admin)
-  getAllOrders: async (page: number = 0, size: number = 10): Promise<{ success: boolean; data?: OrderResponse[]; message?: string }> => {
+  /**
+   * Get order by ID
+   * Backend: GET /api/orders/{orderId}
+   */
+  // getOrderById: async (orderId: string): Promise<ServiceResponse<OrderResponse>> => {
+  //   try {
+  //     console.log('📦 Fetching order by ID from API:', orderId);
+
+  //     const response = await axiosInstance.get<OrderResponse>(API.GET_ORDER_BY_ID(orderId));
+
+  //     console.log('✅ Order fetched successfully:', response.data);
+
+  //     return {
+  //       success: true,
+  //       data: transformOrderResponse(response.data),
+  //     };
+  //   } catch (error: any) {
+  //     console.error('❌ Error getting order by ID:', error);
+  //     return {
+  //       success: false,
+  //       message: error.response?.data?.message || 'Không thể tải đơn hàng',
+  //     };
+  //   }
+  // },
+
+  /**
+   * Get orders by customer ID (with pagination)
+   * Backend: GET /api/orders/user/{customerId}?page=0&size=10
+   */
+  getOrdersByCustomerId: async (
+    customerId: string,
+    page: number = 0,
+    size: number = 10
+  ): Promise<ServiceResponse<OrderResponse[]>> => {
     try {
-      const response = await axiosInstance.get(API.GET_ALL_ORDERS, {
-        params: { page, size }
-      });
-      
-      // Backend returns Spring Page format with { content: OrderResponse[], totalPages, totalElements, etc. }
-      let orders: OrderResponse[] = [];
-      
-      if (response.data && response.data.content) {
-        // Spring Page format
-        orders = response.data.content.map((o: any) => mapBackendOrderToFrontend(o));
-      } else if (Array.isArray(response.data)) {
-        // Direct array format
-        orders = response.data.map((o: any) => mapBackendOrderToFrontend(o));
-      } else if (response.data === null || response.data === undefined) {
-        // No data
-        orders = [];
-      }
-      
+      const response = await axiosInstance.get<PageResponse<OrderResponse>>(
+        API.GET_ORDERS_BY_CUSTOMER(customerId),
+        {
+          params: { page, size },
+        }
+      );
+
       return {
         success: true,
-        data: orders
+        data: response.data.content.map(transformOrderResponse),
+        totalPages: response.data.totalPages,
+        totalElements: response.data.totalElements,
       };
     } catch (error: any) {
-      console.error('Error getting all orders:', error);
-      
-      // Return empty array instead of failing when backend has issues
-      if (error.response?.status === 500) {
-        console.warn('⚠️ Backend error 500, returning empty array');
-        return {
-          success: true,
-          data: [],
-          message: 'Không có dữ liệu đơn hàng'
-        };
-      }
-      
+      console.error('❌ Error getting orders by customer:', error);
       return {
         success: false,
         data: [],
-        message: error.response?.data?.message || 'Không thể tải danh sách đơn hàng'
+        message: error.response?.data?.message || 'Không thể tải đơn hàng',
+      };
+    }
+  },
+
+  /**
+   * Get orders by restaurant ID (with pagination)
+   * Backend: GET /api/orders/restaurant/{restaurantId}?page=0&size=10
+   */
+  getOrdersByRestaurantId: async (
+    restaurantId: string,
+    page: number = 0,
+    size: number = 10
+  ): Promise<ServiceResponse<OrderResponse[]>> => {
+    try {
+      const response = await axiosInstance.get<PageResponse<OrderResponse>>(
+        API.GET_ORDERS_BY_RESTAURANT(restaurantId),
+        {
+          params: { page, size },
+        }
+      );
+
+      return {
+        success: true,
+        data: response.data.content.map(transformOrderResponse),
+        totalPages: response.data.totalPages,
+        totalElements: response.data.totalElements,
+      };
+    } catch (error: any) {
+      console.error('❌ Error getting orders by restaurant:', error);
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Không thể tải đơn hàng',
+      };
+    }
+  },
+
+  /**
+   * Get order items by order ID
+   * Backend: GET /api/orders/{orderId}/items
+   */
+  getOrderItemsByOrderId: async (orderId: string): Promise<ServiceResponse<OrderItemResponse[]>> => {
+    try {
+      const response = await axiosInstance.get<OrderItemResponse[]>(API.GET_ORDER_ITEMS(orderId));
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error: any) {
+      console.error('❌ Error getting order items:', error);
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Không thể tải danh sách món trong đơn hàng',
+      };
+    }
+  },
+
+  /**
+   * Create new order
+   * Backend: POST /api/orders
+   */
+  createOrder: async (request: CreateOrderRequest): Promise<ServiceResponse<OrderResponse>> => {
+    try {
+      console.log('📦 Creating order with request:', request);
+
+      const response = await axiosInstance.post<OrderResponse>(API.CREATE_ORDER, request);
+
+      console.log('✅ Order created successfully:', response.data);
+
+      return {
+        success: true,
+        data: transformOrderResponse(response.data),
+        message: 'Đơn hàng đã được tạo thành công',
+      };
+    } catch (error: any) {
+      console.error('❌ Error creating order:', error);
+      console.error('Error response:', error.response?.data);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể tạo đơn hàng',
+      };
+    }
+  },
+
+  /**
+   * Update order (deliveryAddress, status)
+   * Backend: PATCH /api/orders/{orderId}
+   */
+  updateOrder: async (
+    orderId: string,
+    request: UpdateOrderRequest
+  ): Promise<ServiceResponse<OrderResponse>> => {
+    try {
+      console.log('🔄 Updating order:', orderId, request);
+
+      // Validate status transition if status is being updated
+      if (request.status) {
+        const currentOrder = await orderService.getOrderById(orderId);
+        if (currentOrder.success && currentOrder.data) {
+          const currentStatus = currentOrder.data.status as OrderStatus;
+          const isValid = isValidStatusTransition(currentStatus, request.status);
+          if (!isValid) {
+            console.warn('⚠️ Invalid status transition:', {
+              from: currentStatus,
+              to: request.status,
+            });
+            return {
+              success: false,
+              message: `Không thể chuyển trạng thái từ ${getOrderStatusLabel(currentStatus)} sang ${getOrderStatusLabel(request.status)}`,
+            };
+          }
+        }
+      }
+
+      const response = await axiosInstance.patch<OrderResponse>(
+        API.UPDATE_ORDER(orderId),
+        request
+      );
+
+      console.log('✅ Order updated successfully:', response.data);
+
+      return {
+        success: true,
+        data: transformOrderResponse(response.data),
+        message: 'Đơn hàng đã được cập nhật thành công',
+      };
+    } catch (error: any) {
+      console.error('❌ Error updating order:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể cập nhật đơn hàng',
+      };
+    }
+  },
+
+  /**
+   * Cancel order
+   * Backend: PATCH /api/orders/{orderId}/cancel
+   */
+  cancelOrder: async (orderId: string): Promise<ServiceResponse<void>> => {
+    try {
+      console.log('🚫 Cancelling order:', orderId);
+
+      await axiosInstance.patch(API.CANCEL_ORDER(orderId));
+
+      console.log('✅ Order cancelled successfully');
+
+      return {
+        success: true,
+        message: 'Đã hủy đơn hàng thành công',
+      };
+    } catch (error: any) {
+      console.error('❌ Error cancelling order:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể hủy đơn hàng',
+      };
+    }
+  },
+
+  // ===========================
+  // Convenience Methods (using updateOrder under the hood)
+  // ===========================
+
+  /**
+   * Confirm order (Admin: PENDING -> CONFIRMED)
+   */
+  confirmOrder: async (orderId: string): Promise<ServiceResponse<OrderResponse>> => {
+    try {
+      console.log('✅ Confirming order:', orderId);
+      return await orderService.updateOrder(orderId, { status: 'CONFIRMED' });
+    } catch (error: any) {
+      console.error('❌ Error confirming order:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể xác nhận đơn hàng',
+      };
+    }
+  },
+
+  /**
+   * Start preparing (Admin: CONFIRMED -> PREPARING)
+   */
+  startPreparing: async (orderId: string): Promise<ServiceResponse<OrderResponse>> => {
+    try {
+      console.log('🍳 Starting prepare:', orderId);
+      return await orderService.updateOrder(orderId, { status: 'PREPARING' });
+    } catch (error: any) {
+      console.error('❌ Error starting preparation:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể bắt đầu chuẩn bị',
+      };
+    }
+  },
+
+  /**
+   * Start delivery (Admin: PREPARING -> SHIPPING)
+   */
+  startDelivery: async (orderId: string): Promise<ServiceResponse<OrderResponse>> => {
+    return orderService.updateOrder(orderId, { status: 'SHIPPING' });
+  },
+
+  /**
+   * Assign drone to order and start delivery (Admin: PREPARING -> SHIPPING)
+   */
+  assignDroneAndStartDelivery: async (
+    orderId: string,
+    droneId: string
+  ): Promise<ServiceResponse<OrderResponse>> => {
+    try {
+      console.log('🚁 Assigning drone and starting delivery:', { orderId, droneId });
+
+      // Update order with droneId and change status to SHIPPING
+      return await orderService.updateOrder(orderId, {
+        status: 'SHIPPING',
+        droneId: droneId
+      });
+    } catch (error: any) {
+      console.error('❌ Error assigning drone:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể giao nhiệm vụ cho drone',
+      };
+    }
+  },
+
+  /**
+   * Complete order (Admin/Customer: SHIPPING -> DELIVERED)
+   */
+  completeOrder: async (orderId: string): Promise<ServiceResponse<OrderResponse>> => {
+    try {
+      console.log('✅ Completing order:', orderId);
+      return await orderService.updateOrder(orderId, { status: 'DELIVERED' });
+    } catch (error: any) {
+      console.error('❌ Error completing order:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể hoàn thành đơn hàng',
+      };
+    }
+  },
+
+  /**
+   * Update order status
+   */
+  updateOrderStatus: async (
+    orderId: string,
+    status: OrderStatus
+  ): Promise<ServiceResponse<OrderResponse>> => {
+    return orderService.updateOrder(orderId, { status });
+  },
+
+  // ===========================
+  // Query & Filter Methods
+  // ===========================
+
+  /**
+   * Get orders by status
+   * @param status - Order status to filter by
+   * @param page - Page number (default: 0)
+   * @param size - Page size (default: 10)
+   */
+  getOrdersByStatus: async (
+    status: OrderStatus,
+    page: number = 0,
+    size: number = 10
+  ): Promise<ServiceResponse<OrderResponse[]>> => {
+    try {
+      const response = await axiosInstance.get<PageResponse<OrderResponse>>(
+        API.GET_ALL_ORDERS,
+        {
+          params: { status, page, size },
+        }
+      );
+
+      return {
+        success: true,
+        data: response.data.content.map(transformOrderResponse),
+        totalPages: response.data.totalPages,
+        totalElements: response.data.totalElements,
+      };
+    } catch (error: any) {
+      console.error('❌ Error getting orders by status:', error);
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Không thể tải danh sách đơn hàng',
       };
     }
   },
@@ -264,10 +770,10 @@ export const orderService = {
     try {
       const response = await axiosInstance.get(API.GET_ORDERS_BY_ACCOUNT(accountId));
       // Backend returns paginated response: { content: [...], totalElements, totalPages, ... }
-      const orders: OrderResponseNew[] = Array.isArray(response.data) 
-        ? response.data 
+      const orders: OrderResponseNew[] = Array.isArray(response.data)
+        ? response.data
         : response.data?.content || [];
-      
+
       return {
         success: true,
         data: orders
@@ -276,6 +782,37 @@ export const orderService = {
       return {
         success: false,
         message: 'Không thể tải đơn hàng'
+      };
+    }
+  },
+  /**
+   * Search orders by order number or customer info
+   */
+  searchOrders: async (
+    keyword: string,
+    page: number = 0,
+    size: number = 10
+  ): Promise<ServiceResponse<OrderResponse[]>> => {
+    try {
+      const response = await axiosInstance.get<PageResponse<OrderResponse>>(
+        API.GET_ALL_ORDERS,
+        {
+          params: { keyword, page, size },
+        }
+      );
+
+      return {
+        success: true,
+        data: response.data.content.map(transformOrderResponse),
+        totalPages: response.data.totalPages,
+        totalElements: response.data.totalElements,
+      };
+    } catch (error: any) {
+      console.error('❌ Error searching orders:', error);
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || 'Không thể tìm kiếm đơn hàng',
       };
     }
   },
@@ -295,257 +832,97 @@ export const orderService = {
       };
     }
   },
-
-  // Cancel order
-  cancelOrder: async (orderId: string): Promise<{ success: boolean; data?: OrderResponse; message?: string }> => {
+  /**
+   * Get orders with multiple filters
+   */
+  filterOrders: async (filters: {
+    status?: OrderStatus;
+    customerId?: string;
+    restaurantId?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    size?: number;
+  }): Promise<ServiceResponse<OrderResponse[]>> => {
     try {
-      const response = await axiosInstance.put(API.CANCEL_ORDER(orderId));
+      const { page = 0, size = 10, ...otherFilters } = filters;
+
+      const response = await axiosInstance.get<PageResponse<OrderResponse>>(
+        API.GET_ALL_ORDERS,
+        {
+          params: { ...otherFilters, page, size },
+        }
+      );
+
       return {
         success: true,
-        data: mapBackendOrderToFrontend(response.data)
+        data: response.data.content.map(transformOrderResponse),
+        totalPages: response.data.totalPages,
+        totalElements: response.data.totalElements,
       };
     } catch (error: any) {
-      console.error('Error canceling order:', error);
+      console.error('❌ Error filtering orders:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Không thể hủy đơn hàng'
-      };
+        data: [],
+        message: error.response?.data?.message || 'Không thể lọc đơn hàng',
+};
     }
   },
 
-  // Confirm order (Admin: status 1 -> 2)
-  confirmOrder: async (orderId: string): Promise<{ success: boolean; data?: OrderResponse; message?: string }> => {
-    try {
-      const response = await axiosInstance.put(API.CONFIRM_ORDER(orderId));
-      return {
-        success: true,
-        data: mapBackendOrderToFrontend(response.data),
-        message: 'Đã xác nhận đơn hàng thành công'
-      };
-    } catch (error: any) {
-      console.error('Error confirming order:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể xác nhận đơn hàng'
-      };
-    }
-  },
+// ===========================
+// Statistics Methods
+// ===========================
 
-  // Start delivery (Admin: status 2 -> 3)
-  startDelivery: async (orderId: string): Promise<{ success: boolean; data?: OrderResponse; message?: string }> => {
-    try {
-      const response = await axiosInstance.put(API.START_DELIVERY(orderId));
-      return {
-        success: true,
-        data: mapBackendOrderToFrontend(response.data),
-        message: 'Đã bắt đầu giao hàng'
-      };
-    } catch (error: any) {
-      console.error('Error starting delivery:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể bắt đầu giao hàng'
-      };
-    }
-  },
+/**
+ * Get order statistics
+ */
+getOrderStatistics: async (filters?: {
+  startDate?: string;
+  endDate?: string;
+  restaurantId?: string;
+}): Promise<ServiceResponse<{
+  total: number;
+  pending: number;
+  confirmed: number;
+  shipping: number;
+  delivered: number;
+  cancelled: number;
+  revenue: number;
+}>> => {
+  try {
+    const response = await axiosInstance.get('/orders/statistics', {
+      params: filters,
+    });
 
-  // Complete order (Customer/Admin: status 3 -> 4)
-  completeOrder: async (orderId: string): Promise<{ success: boolean; data?: OrderResponse; message?: string }> => {
-    try {
-      const response = await axiosInstance.put(API.COMPLETE_ORDER(orderId));
-      return {
-        success: true,
-        data: mapBackendOrderToFrontend(response.data),
-        message: 'Đã hoàn thành đơn hàng'
-      };
-    } catch (error: any) {
-      console.error('Error completing order:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể hoàn thành đơn hàng'
-      };
-    }
-  },
-
-  // Update order status (admin)
-  updateOrderStatus: async (orderId: string, status: number): Promise<{ success: boolean; data?: OrderResponse; message?: string }> => {
-    try {
-      const response = await axiosInstance.put(API.UPDATE_ORDER_STATUS(orderId), null, {
-        params: { status }
-      });
-      return {
-        success: true,
-        data: response.data,
-        message: 'Cập nhật trạng thái đơn hàng thành công'
-      };
-    } catch (error: any) {
-      console.error('Error updating order status:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể cập nhật trạng thái đơn hàng'
-      };
-    }
-  },
-
-  // Get orders by status (admin)
-  getOrdersByStatus: async (status: number, page: number = 0, size: number = 10): Promise<{ success: boolean; data?: OrderResponse[]; message?: string }> => {
-    try {
-      const response = await axiosInstance.get(API.FILTER_ORDERS_BY_STATUS, {
-        params: { status, page, size }
-      });
-      
-      let orders: OrderResponse[] = [];
-      
-      if (response.data && response.data.content) {
-        orders = response.data.content.map((o: any) => mapBackendOrderToFrontend(o));
-      } else if (Array.isArray(response.data)) {
-        orders = response.data.map((o: any) => mapBackendOrderToFrontend(o));
-      }
-      
-      return {
-        success: true,
-        data: orders
-      };
-    } catch (error: any) {
-      console.error('Error getting orders by status:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể tải đơn hàng'
-      };
-    }
-  },
-
-  // Get orders by date range (admin)
-  getOrdersByDateRange: async (
-    startDate: string, 
-    endDate: string, 
-    page: number = 0, 
-    size: number = 10
-  ): Promise<{ success: boolean; data?: OrderResponse[]; message?: string }> => {
-    try {
-      const response = await axiosInstance.get(API.FILTER_ORDERS_BY_DATE, {
-        params: { startDate, endDate, page, size }
-      });
-      
-      let orders: OrderResponse[] = [];
-      
-      if (response.data && response.data.content) {
-        orders = response.data.content.map((o: any) => mapBackendOrderToFrontend(o));
-      } else if (Array.isArray(response.data)) {
-        orders = response.data.map((o: any) => mapBackendOrderToFrontend(o));
-      }
-      
-      return {
-        success: true,
-        data: orders
-      };
-    } catch (error: any) {
-      console.error('Error getting orders by date range:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể tải đơn hàng'
-      };
-    }
-  },
-
-  // Search orders by keyword (orderId or accountName)
-  searchOrders: async (
-    keyword: string, 
-    page: number = 0, 
-    size: number = 10
-  ): Promise<{ success: boolean; data?: OrderResponse[]; message?: string }> => {
-    try {
-      const response = await axiosInstance.get(API.SEARCH_ORDERS, {
-        params: { keyword, page, size }
-      });
-      
-      let orders: OrderResponse[] = [];
-      
-      if (response.data && response.data.content) {
-        orders = response.data.content.map((o: any) => mapBackendOrderToFrontend(o));
-      } else if (Array.isArray(response.data)) {
-        orders = response.data.map((o: any) => mapBackendOrderToFrontend(o));
-      }
-      
-      return {
-        success: true,
-        data: orders
-      };
-    } catch (error: any) {
-      console.error('Error searching orders:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể tìm kiếm đơn hàng'
-      };
-    }
-  },
-
-  // Filter orders by status
-  filterOrdersByStatus: async (
-    status: number, 
-    page: number = 0, 
-    size: number = 10
-  ): Promise<{ success: boolean; data?: OrderResponse[]; message?: string }> => {
-    try {
-      const response = await axiosInstance.get(API.FILTER_ORDERS, {
-        params: { status, page, size }
-      });
-      
-      let orders: OrderResponse[] = [];
-      
-      if (response.data && response.data.content) {
-        orders = response.data.content.map((o: any) => mapBackendOrderToFrontend(o));
-      } else if (Array.isArray(response.data)) {
-        orders = response.data.map((o: any) => mapBackendOrderToFrontend(o));
-      }
-      
-      return {
-        success: true,
-        data: orders
-      };
-    } catch (error: any) {
-      console.error('Error filtering orders:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể lọc đơn hàng'
-      };
-    }
-  },
-
-  // Search and filter orders (combined)
-  searchAndFilterOrders: async (
-    keyword: string | null,
-    status: number | null,
-    page: number = 0,
-    size: number = 10
-  ): Promise<{ success: boolean; data?: OrderResponse[]; message?: string }> => {
-    try {
-      const params: any = { page, size };
-      if (keyword) params.keyword = keyword;
-      if (status !== null) params.status = status;
-
-      const response = await axiosInstance.get(API.SEARCH_AND_FILTER_ORDERS, { params });
-      
-      let orders: OrderResponse[] = [];
-      
-      if (response.data && response.data.content) {
-        orders = response.data.content.map((o: any) => mapBackendOrderToFrontend(o));
-      } else if (Array.isArray(response.data)) {
-        orders = response.data.map((o: any) => mapBackendOrderToFrontend(o));
-      }
-      
-      return {
-        success: true,
-        data: orders
-      };
-    } catch (error: any) {
-      console.error('Error searching and filtering orders:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Không thể tìm kiếm và lọc đơn hàng'
-      };
-    }
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error: any) {
+    console.error('❌ Error getting order statistics:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Không thể tải thống kê đơn hàng',
+    };
   }
+},
+
+  // ===========================
+  // Legacy/Compatibility Methods (for backward compatibility)
+  // ===========================
+
+  /**
+   * Get orders by account ID (alias for getOrdersByCustomerId)
+   * @deprecated Use getOrdersByCustomerId instead
+   */
+  // getOrdersByAccount: async (
+  //   accountId: string,
+  //   page: number = 0,
+  //   size: number = 10
+  // ): Promise<ServiceResponse<OrderResponse[]>> => {
+  //   return orderService.getOrdersByCustomerId(accountId, page, size);
+  // },
 };
 
 export default orderService;

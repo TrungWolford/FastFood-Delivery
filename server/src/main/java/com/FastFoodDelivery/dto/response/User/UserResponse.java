@@ -20,6 +20,7 @@ public class UserResponse {
     private String roleId;
     private String roleText;
     private List<RoleInfo> roles; // Added for frontend compatibility
+    private String restaurantId; // Added to include restaurant ID for restaurant owners
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private Date createdAt;
@@ -37,7 +38,7 @@ public class UserResponse {
         }
     }
 
-    public static UserResponse fromEntity(User user, Role role){
+    public static UserResponse fromEntity(User user, Role role, String restaurantId){
         UserResponse response = new UserResponse();
         response.setUserID(user.getUserID().toString());
         response.setFullname(user.getFullname());
@@ -50,6 +51,7 @@ public class UserResponse {
         response.setCreatedAt(user.getCreatedAt());
         response.setStatus(user.getStatus());
         response.setStatusText(user.getStatus() == 1 ? "Đang hoạt động" : "Đã khóa");
+        response.setRestaurantId(restaurantId); // Set restaurant ID if available
         
         // Add roles array for frontend compatibility
         List<RoleInfo> roles = new ArrayList<>();

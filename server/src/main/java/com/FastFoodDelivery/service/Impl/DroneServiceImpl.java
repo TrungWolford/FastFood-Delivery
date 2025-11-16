@@ -93,4 +93,25 @@ public class DroneServiceImpl implements DroneService {
 
         droneRepository.save(drone);
     }
+
+    @Override
+    public DroneResponse updateDroneStatus(ObjectId droneId, String status) {
+        Drone drone = droneRepository.findById(droneId)
+                .orElseThrow(() -> new ResourceNotFoundException("Drone", "id", droneId.toString()));
+
+        drone.setStatus(status);
+        droneRepository.save(drone);
+
+        return DroneResponse.fromEntity(drone);
+    }
+
+    @Override
+    public Page<DroneResponse> getDronesByRestaurantAndStatus(ObjectId restaurantId, String status, Pageable pageable) {
+        // Validate restaurant
+        validationUtil.validateRestaurant(restaurantId);
+
+        // Fixed: Match parameter order with repository method
+        return droneRepository.findAllByRestaurantIdAndStatus(restaurantId, status, pageable)
+                .map(DroneResponse::fromEntity);
+    }
 }
