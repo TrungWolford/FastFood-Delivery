@@ -153,6 +153,7 @@ export const API = {
 
   // Deliveries - Theo DeliveryController.java
   GET_DELIVERIES_BY_ORDER: (orderId: string) => `/deliveries/order/${orderId}`, // GET /api/deliveries/order/{orderId}
+  GET_DELIVERIES_BY_DRONE_AND_RESTAURANT: (droneId: string, restaurantId: string) => `/deliveries/drone/${droneId}/restaurant/${restaurantId}`, // GET /api/deliveries/drone/{droneId}/restaurant/{restaurantId}
   GET_DELIVERY_BY_ID: (deliveryId: string) => `/deliveries/${deliveryId}`, // GET /api/deliveries/{deliveryId}
   CREATE_DELIVERY: '/deliveries', // POST /api/deliveries
   UPDATE_DELIVERY: (deliveryId: string) => `/deliveries/${deliveryId}`, // PUT /api/deliveries/{deliveryId}

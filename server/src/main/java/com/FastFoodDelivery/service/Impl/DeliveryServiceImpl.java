@@ -5,9 +5,11 @@ import com.FastFoodDelivery.dto.request.Delivery.UpdateDeliveryRequest;
 import com.FastFoodDelivery.dto.request.Delivery.UpdateStatusDeliveryRequest;
 import com.FastFoodDelivery.dto.response.Delivery.DeliveryResponse;
 import com.FastFoodDelivery.entity.Delivery;
+import com.FastFoodDelivery.entity.Drone;
 import com.FastFoodDelivery.entity.Order;
 import com.FastFoodDelivery.exception.ResourceNotFoundException;
 import com.FastFoodDelivery.repository.DeliveryRepository;
+import com.FastFoodDelivery.repository.DroneRepository;
 import com.FastFoodDelivery.repository.OrderRepository;
 import com.FastFoodDelivery.service.DeliveryService;
 import org.bson.types.ObjectId;
@@ -25,6 +27,9 @@ public class DeliveryServiceImpl implements DeliveryService {
 
     @Autowired
     private OrderRepository orderRepository;
+    
+    @Autowired
+    private DroneRepository droneRepository;
 
     @Override
     public List<DeliveryResponse> getALlDeliveriesByOrderId(ObjectId orderId) {
@@ -62,7 +67,7 @@ public class DeliveryServiceImpl implements DeliveryService {
             ));
         }
         
-        delivery.setStatus(request.getStatus());
+        delivery.setStatus(0);
         delivery.setDeliveredAt(new Date());
 
         deliveryRepository.save(delivery);
@@ -104,5 +109,37 @@ public class DeliveryServiceImpl implements DeliveryService {
 
        delivery.setStatus(request.getStatus());
        deliveryRepository.save(delivery);
+    }
+    
+    @Override
+    public List<DeliveryResponse> getAllDeliveriesByDroneIdAndRestaurantId(ObjectId droneId, ObjectId restaurantId) {
+        try {
+            // Verify that the drone belongs to the restaurant
+            Drone drone = droneRepository.findById(droneId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Drone", "id", droneId.toString()));
+            
+            // Check if drone belongs to the restaurant
+            if (!drone.getRestaurantId().equals(restaurantId)) {
+                throw new IllegalArgumentException("Drone does not belong to this restaurant");
+            }
+            
+            // Get all deliveries for this drone
+            List<Delivery> deliveries = deliveryRepository.findAllByDroneId(droneId);
+            
+            // Filter out any null deliveries and convert to response
+            return deliveries.stream()
+                    .filter(delivery -> delivery != null && 
+                                       delivery.getDroneId() != null && 
+                                       delivery.getOrderId() != null)
+                    .map(DeliveryResponse::fromEntity)
+                    .toList();
+        } catch (ResourceNotFoundException | IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            // Log the error for debugging
+            System.err.println("Error in getAllDeliveriesByDroneIdAndRestaurantId: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error fetching deliveries: " + e.getMessage(), e);
+        }
     }
 }

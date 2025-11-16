@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface DeliveryService {
     List<DeliveryResponse> getALlDeliveriesByOrderId(ObjectId orderId);
+    List<DeliveryResponse> getAllDeliveriesByDroneIdAndRestaurantId(ObjectId droneId, ObjectId restaurantId);
     DeliveryResponse getByDeliveryId(ObjectId deliveryId);
     DeliveryResponse createDelivery(CreateDeliveryRequest request);
     DeliveryResponse updateDelivery(UpdateDeliveryRequest request, ObjectId deliveryId);

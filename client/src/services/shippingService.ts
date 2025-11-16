@@ -51,6 +51,23 @@ export const shippingService = {
     }
   },
 
+  // Get deliveries by droneId and restaurantId
+  getShippingsByDroneAndRestaurant: async (droneId: string, restaurantId: string): Promise<{ success: boolean; data?: ShippingResponse[]; message?: string }> => {
+    try {
+      const response = await axiosInstance.get(API.GET_DELIVERIES_BY_DRONE_AND_RESTAURANT(droneId, restaurantId));
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error: any) {
+      console.error('Error getting shippings by drone and restaurant:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Không thể tải thông tin vận chuyển của drone'
+      };
+    }
+  },
+
   // Create new shipping/delivery
   createShipping: async (request: CreateShippingRequest): Promise<{ success: boolean; data?: ShippingResponse; message?: string }> => {
     try {

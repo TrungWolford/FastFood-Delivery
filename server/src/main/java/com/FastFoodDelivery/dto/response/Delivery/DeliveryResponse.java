@@ -28,10 +28,16 @@ public class DeliveryResponse {
     }
 
     public static DeliveryResponse fromEntity(Delivery delivery){
+        if (delivery == null) {
+            throw new IllegalArgumentException("Delivery entity cannot be null");
+        }
+        
         DeliveryResponse response = new DeliveryResponse();
-        response.setDeliveryId(delivery.getDeliveryId().toString());
-        response.setDroneId(delivery.getDroneId().toString());
-        response.setOrderId(delivery.getOrderId().toString());
+        
+        // Safely convert ObjectIds to Strings with null checks
+        response.setDeliveryId(delivery.getDeliveryId() != null ? delivery.getDeliveryId().toString() : null);
+        response.setDroneId(delivery.getDroneId() != null ? delivery.getDroneId().toString() : null);
+        response.setOrderId(delivery.getOrderId() != null ? delivery.getOrderId().toString() : null);
         
         // Convert LocationPoint from entity to response
         if (delivery.getStartLocation() != null) {

@@ -31,8 +31,10 @@ import {
 } from '../../components/ui/select';
 import { Search, Truck, Plus, Edit, Eye, RefreshCw, MapPin, Package } from 'lucide-react';
 import shippingService, { SHIPPING_STATUS_LABELS } from '../../services/shippingService';
+import { droneService } from '../../services/droneService';
 import type { ShippingResponse, CreateShippingRequest, UpdateShippingRequest, UpdateShippingStatusRequest, LocationPoint } from '../../types/shipping';
 import { ShippingStatus } from '../../types/shipping';
+import type { Drone } from '../../types/fastfood';
 
 const SHIPPING_STATUS_OPTIONS = [
   { value: -1, label: 'Đã hủy', color: 'bg-red-600' },
@@ -50,6 +52,11 @@ function AdminShipping() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all');
+  
+  // Drone filter
+  const [drones, setDrones] = useState<Drone[]>([]);
+  const [selectedDroneId, setSelectedDroneId] = useState<string | 'all'>('all');
+  const [loadingDrones, setLoadingDrones] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -77,7 +84,29 @@ function AdminShipping() {
     return () => clearTimeout(t);
   }, [searchTerm]);
 
-  const loadShippings = async (page = 0) => {
+  // Load drones when component mounts
+  useEffect(() => {
+    const loadDrones = async () => {
+      if (!restaurantId) return;
+      
+      setLoadingDrones(true);
+      try {
+        const response = await droneService.getDronesByRestaurant(restaurantId, 0, 100);
+        if (response && response.content) {
+          setDrones(response.content);
+        }
+      } catch (error) {
+        console.error('Error loading drones:', error);
+        toast.error('Không thể tải danh sách drone');
+      } finally {
+        setLoadingDrones(false);
+      }
+    };
+
+    loadDrones();
+  }, [restaurantId]);
+
+  const loadShippings = async () => {
     if (!restaurantId) {
       console.warn('Restaurant ID not found');
       setShippings([]);
@@ -87,12 +116,55 @@ function AdminShipping() {
 
     try {
       setLoading(true);
-      // Note: Backend doesn't have getByRestaurant, so we'll need to load all or by order
-      // For now, let's assume we load by orders related to restaurant
-      // This is a placeholder - adjust based on your actual API
-      const mockData: ShippingResponse[] = []; // Replace with actual API call
+      let allDeliveries: ShippingResponse[] = [];
       
-      let list = mockData;
+      // If a specific drone is selected, load deliveries for that drone
+      if (selectedDroneId && selectedDroneId !== 'all') {
+        console.log('Loading deliveries for drone:', selectedDroneId, 'restaurant:', restaurantId);
+        const result = await shippingService.getShippingsByDroneAndRestaurant(
+          selectedDroneId,
+          restaurantId
+        );
+        
+        if (result.success && result.data) {
+          allDeliveries = result.data;
+          console.log('Loaded deliveries:', allDeliveries.length);
+        } else {
+          console.error('Failed to load deliveries:', result.message);
+          // Only show error if it's not just "no deliveries found"
+          if (result.message && !result.message.includes('không tìm thấy')) {
+            toast.error(result.message || 'Không thể tải deliveries');
+          }
+          allDeliveries = [];
+        }
+      } else {
+        // Load deliveries for all drones in the restaurant
+        const droneIds = drones.map(d => d.droneId);
+        
+        if (droneIds.length === 0) {
+          allDeliveries = [];
+        } else {
+          // Load deliveries for each drone and combine
+          console.log('Loading deliveries for all drones:', droneIds.length);
+          const promises = droneIds.map(droneId =>
+            shippingService.getShippingsByDroneAndRestaurant(droneId, restaurantId)
+              .catch(err => {
+                console.error('Error loading deliveries for drone:', droneId, err);
+                return { success: false, data: [] };
+              })
+          );
+          
+          const results = await Promise.all(promises);
+          allDeliveries = results
+            .filter(r => r.success && r.data)
+            .flatMap(r => r.data || []);
+          
+          console.log('Total deliveries loaded:', allDeliveries.length);
+        }
+      }
+      
+      // Apply filters
+      let list = allDeliveries;
       
       if (statusFilter !== 'all') {
         list = list.filter((s: ShippingResponse) => s.status === statusFilter);
@@ -122,10 +194,10 @@ function AdminShipping() {
   };
 
   useEffect(() => {
-    if (restaurantId) {
-      loadShippings(currentPage - 1);
+    if (restaurantId && drones.length > 0) {
+      loadShippings();
     }
-  }, [currentPage, debouncedSearchTerm, statusFilter, restaurantId]);
+  }, [currentPage, debouncedSearchTerm, statusFilter, restaurantId, selectedDroneId, drones]);
 
   const shippingStats = {
     total: shippings.length,
@@ -170,7 +242,7 @@ function AdminShipping() {
       if (result.success) {
         toast.success('Tạo vận chuyển thành công');
         setIsCreateDialogOpen(false);
-        loadShippings(currentPage - 1);
+        loadShippings();
       } else {
         toast.error(result.message || 'Tạo vận chuyển thất bại');
       }
@@ -208,7 +280,7 @@ function AdminShipping() {
         toast.success('Cập nhật vận chuyển thành công');
         setIsEditDialogOpen(false);
         setSelectedShipping(null);
-        loadShippings(currentPage - 1);
+        loadShippings();
       } else {
         toast.error(result.message || 'Cập nhật vận chuyển thất bại');
       }
@@ -224,7 +296,7 @@ function AdminShipping() {
       const result = await shippingService.updateShippingStatus(shipping.deliveryId, { status: newStatus });
       if (result.success) {
         toast.success('Thay đổi trạng thái thành công');
-        loadShippings(currentPage - 1);
+        loadShippings();
       } else {
         toast.error(result.message || 'Thay đổi trạng thái thất bại');
       }
@@ -298,15 +370,37 @@ function AdminShipping() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-44 border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 rounded-md">
-                    {statusFilter === 'all' ? 'Tất cả' : getStatusLabel(statusFilter as number)}
+                    {statusFilter === 'all' ? 'Tất cả trạng thái' : getStatusLabel(statusFilter as number)}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white border-gray-200 shadow-lg">
-                  <DropdownMenuItem onClick={() => { setStatusFilter('all'); setCurrentPage(1); }}>Tất cả</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setStatusFilter('all'); setCurrentPage(1); }}>Tất cả trạng thái</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => { setStatusFilter(ShippingStatus.CANCELLED); setCurrentPage(1); }}>Đã hủy</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => { setStatusFilter(ShippingStatus.PENDING); setCurrentPage(1); }}>Chờ xử lý</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => { setStatusFilter(ShippingStatus.DELIVERING); setCurrentPage(1); }}>Đang giao</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => { setStatusFilter(ShippingStatus.DELIVERED); setCurrentPage(1); }}>Đã giao hàng</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Drone Filter */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-44 border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 rounded-md">
+                    {loadingDrones ? 'Đang tải...' : selectedDroneId === 'all' ? 'Tất cả Drone' : drones.find(d => d.droneId === selectedDroneId)?.model || 'Chọn Drone'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                  <DropdownMenuItem onClick={() => { setSelectedDroneId('all'); setCurrentPage(1); }}>
+                    Tất cả Drone
+                  </DropdownMenuItem>
+                  {drones.map(drone => (
+                    <DropdownMenuItem 
+                      key={drone.droneId} 
+                      onClick={() => { setSelectedDroneId(drone.droneId); setCurrentPage(1); }}
+                    >
+                      {drone.model} - {drone.status}
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

@@ -13,7 +13,6 @@ public class CreateDeliveryRequest {
     private ObjectId orderId;
     private LocationPoint startLocation;
     private LocationPoint endLocation;
-    private int status;
 
     @Data
     @AllArgsConstructor
