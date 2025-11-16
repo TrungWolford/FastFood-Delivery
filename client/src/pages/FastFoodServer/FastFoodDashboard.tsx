@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppSelector } from '../../hooks/redux'
 import { mockProducts, mockCategories, mockAccounts } from '../../hooks/data'
@@ -19,9 +19,16 @@ import {
 const FastFoodDashboard: React.FC = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAppSelector((state) => state.auth)
+  const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
     document.title = 'FastFood - Dashboard'
+    
+    // Prevent redirect when user refreshes the page (F5)
+    if (!authChecked) {
+      const timer = setTimeout(() => setAuthChecked(true), 200);
+      return () => clearTimeout(timer);
+    }
     
     // Check if user is authenticated and has ADMIN role
     if (!isAuthenticated || !user) {
@@ -35,7 +42,7 @@ const FastFoodDashboard: React.FC = () => {
     if (!isAdmin) {
       navigate('/fastfood/login')
     }
-  }, [isAuthenticated, user, navigate])
+  }, [authChecked, isAuthenticated, user, navigate])
 
   const totalProducts = mockProducts.length
   const activeProducts = mockProducts.filter(p => p.status === 1).length

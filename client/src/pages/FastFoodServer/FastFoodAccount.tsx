@@ -9,6 +9,7 @@ import type { UserResponse } from '../../services/userService'
 const FastFoodAccount: React.FC = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAppSelector((state) => state.auth)
+  const [authChecked, setAuthChecked] = useState(false)
   
   // State management
   const [users, setUsers] = useState<UserResponse[]>([])
@@ -17,6 +18,12 @@ const FastFoodAccount: React.FC = () => {
 
   useEffect(() => {
     document.title = 'FastFood - Tài khoản'
+    
+    // Prevent redirect when user refreshes the page (F5)
+    if (!authChecked) {
+      const timer = setTimeout(() => setAuthChecked(true), 200);
+      return () => clearTimeout(timer);
+    }
     
     if (!isAuthenticated || !user) {
       navigate('/fastfood/login')
@@ -33,7 +40,7 @@ const FastFoodAccount: React.FC = () => {
 
     // Fetch users
     fetchUsers()
-  }, [isAuthenticated, user, navigate])
+  }, [authChecked, isAuthenticated, user, navigate])
 
   const fetchUsers = async () => {
     try {

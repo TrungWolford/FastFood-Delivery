@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 const FastFoodRestaurant: React.FC = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAppSelector((state) => state.auth)
+  const [authChecked, setAuthChecked] = useState(false)
   
   // Gradient colors for restaurant cards
   const gradients = [
@@ -55,6 +56,12 @@ const FastFoodRestaurant: React.FC = () => {
   useEffect(() => {
     document.title = 'FastFood - Nhà hàng'
     
+    // Prevent redirect when user refreshes the page (F5)
+    if (!authChecked) {
+      const timer = setTimeout(() => setAuthChecked(true), 200);
+      return () => clearTimeout(timer);
+    }
+    
     if (!isAuthenticated || !user) {
       navigate('/fastfood/login')
       return
@@ -68,7 +75,7 @@ const FastFoodRestaurant: React.FC = () => {
     } else {
       fetchRestaurants()
     }
-  }, [isAuthenticated, user, navigate])
+  }, [authChecked, isAuthenticated, user, navigate])
 
   // Fetch restaurants from API
   const fetchRestaurants = async () => {
