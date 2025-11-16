@@ -76,8 +76,8 @@ const FastFoodAccount: React.FC = () => {
   const filteredUsers = users.filter(u => {
     const query = searchQuery.toLowerCase()
     return (
-      u.username.toLowerCase().includes(query) ||
-      u.email.toLowerCase().includes(query) ||
+      (u.username || '').toLowerCase().includes(query) ||
+      (u.email || '').toLowerCase().includes(query) ||
       (u.fullName || '').toLowerCase().includes(query) ||
       (u.phoneNumber || '').toLowerCase().includes(query)
     )
