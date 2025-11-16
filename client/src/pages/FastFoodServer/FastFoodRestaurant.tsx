@@ -45,7 +45,7 @@ const FastFoodRestaurant: React.FC = () => {
     restaurantName: '',
     address: '',
     city: '',
-    district: '',
+    ward: '', // Phường/Xã
     phone: '',
     latitude: 0,
     longitude: 0,
@@ -116,7 +116,7 @@ const FastFoodRestaurant: React.FC = () => {
       restaurantName: '',
       address: '',
       city: '',
-      district: '',
+      ward: '', // Phường/Xã
       phone: '',
       latitude: 0,
       longitude: 0,
@@ -133,7 +133,7 @@ const FastFoodRestaurant: React.FC = () => {
       restaurantName: restaurant.restaurantName,
       address: restaurant.address,
       city: restaurant.city,
-      district: restaurant.district,
+      ward: restaurant.ward, // Phường/Xã
       phone: restaurant.phone,
       latitude: restaurant.latitude,
       longitude: restaurant.longitude,
@@ -185,7 +185,7 @@ const FastFoodRestaurant: React.FC = () => {
           restaurantName: formData.restaurantName,
           address: formData.address,
           city: formData.city,
-          district: formData.district,
+          ward: formData.ward, // Phường/Xã
           phone: formData.phone,
           latitude: formData.latitude,
           longitude: formData.longitude,
@@ -206,7 +206,7 @@ const FastFoodRestaurant: React.FC = () => {
           restaurantName: formData.restaurantName!,
           address: formData.address!,
           city: formData.city!,
-          district: formData.district!,
+          ward: formData.ward!, // Phường/Xã
           phone: formData.phone!,
           latitude: formData.latitude || 0,
           longitude: formData.longitude || 0,
@@ -420,11 +420,11 @@ const FastFoodRestaurant: React.FC = () => {
                           <span className="text-sm text-gray-600 line-clamp-2">{restaurant.address}</span>
                         </div>
 
-                        {/* City & District */}
-                        {restaurant.city && restaurant.district && (
+                        {/* City & Ward */}
+                        {restaurant.city && restaurant.ward && (
                           <div className="flex items-center gap-2.5">
                             <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            <span className="text-sm text-gray-600">{restaurant.district}, {restaurant.city}</span>
+                            <span className="text-sm text-gray-600">{restaurant.ward}, {restaurant.city}</span>
                           </div>
                         )}
 
@@ -566,13 +566,13 @@ const FastFoodRestaurant: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Quận/Huyện <span className="text-red-500">*</span>
+                      Phường/Xã <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      value={formData.district || ''}
-                      onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                      placeholder="VD: Quận 1"
+                      value={formData.ward || ''}
+                      onChange={(e) => setFormData({ ...formData, ward: e.target.value })}
+                      placeholder="VD: Phường Bến Nghé"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                       required
                     />
@@ -759,7 +759,7 @@ const FastFoodRestaurant: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-500 mb-1">Khu vực</p>
-                    <p className="text-sm text-gray-800">{currentRestaurant.district}, {currentRestaurant.city}</p>
+                    <p className="text-sm text-gray-800">{currentRestaurant.ward}, {currentRestaurant.city}</p>
                   </div>
                   <div>
                     <p className="text-xs font-medium text-gray-500 mb-1">Số điện thoại</p>

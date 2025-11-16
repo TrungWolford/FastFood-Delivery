@@ -105,13 +105,30 @@ export interface OrderResponse {
   orderId: string;
   customerId: string;
   restaurantId: string;
-  orderItems: OrderItemResponse[];
-  totalPrice: number;
+  
+  // Thông tin người nhận
+  receiverName: string;
+  receiverEmail?: string;
+  receiverPhone: string;
   deliveryAddress: string;
+  ward: string; // Phường/Xã
+  city: string; // Thành phố
+  
+  // Tọa độ khách hàng
+  customerLatitude?: number;
+  customerLongitude?: number;
+  
+  // Thông tin đơn hàng
+  orderNote?: string;
+  shippingFee: number;
+  totalPrice: number; // Tổng tiền hàng
+  finalAmount: number; // Tổng tiền cuối cùng (totalPrice + shippingFee)
+  
+  orderItems: OrderItemResponse[];
   status: OrderStatus;
-  droneId?: string; // ID của drone được giao nhiệm vụ
   createdAt: string;
   updatedAt: string;
+  paymentExpiresAt?: string; // Thời gian hết hạn thanh toán
 }
 
 // Request để tạo order mới - Sau sáp nhập hành chính 2025
@@ -122,8 +139,10 @@ export interface CreateOrderRequest {
   receiverEmail?: string;
   receiverPhone: string;
   deliveryAddress: string;
-  ward: string; // Phường (sau sáp nhập)
+  ward: string; // Phường/Xã (sau sáp nhập)
   city: string; // Thành phố (sau sáp nhập)
+  customerLatitude?: number; // Tọa độ từ OpenStreetMap
+  customerLongitude?: number;
   orderNote?: string;
   shippingFee?: number;
   orderItems: Array<{
@@ -137,9 +156,20 @@ export interface CreateOrderRequest {
  * Update Order Request (matches MongoDB backend UpdateOrderRequest)
  */
 export interface UpdateOrderRequest {
+  // Thông tin người nhận
+  receiverName?: string;
+  receiverEmail?: string;
+  receiverPhone?: string;
   deliveryAddress?: string;
+  ward?: string;
+  city?: string;
+  customerLatitude?: number;
+  customerLongitude?: number;
+  
+  // Thông tin đơn hàng
+  orderNote?: string;
+  shippingFee?: number;
   status?: OrderStatus;
-  droneId?: string;
 }
 
 /**
@@ -678,6 +708,7 @@ export const orderService = {
 
   /**
    * Assign drone to order and start delivery (Admin: PREPARING -> SHIPPING)
+   * Note: droneId is managed by Shipping/Delivery entity, not Order entity
    */
   assignDroneAndStartDelivery: async (
     orderId: string,
@@ -686,10 +717,10 @@ export const orderService = {
     try {
       console.log('🚁 Assigning drone and starting delivery:', { orderId, droneId });
 
-      // Update order with droneId and change status to SHIPPING
+      // Just update order status to SHIPPING
+      // DroneId should be assigned in Shipping/Delivery creation
       return await orderService.updateOrder(orderId, {
-        status: 'SHIPPING',
-        droneId: droneId
+        status: 'SHIPPING'
       });
     } catch (error: any) {
       console.error('❌ Error assigning drone:', error);

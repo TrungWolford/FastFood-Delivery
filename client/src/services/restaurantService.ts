@@ -24,7 +24,7 @@ export interface CreateRestaurantRequest {
   restaurantName: string;
   address: string;
   city: string;
-  district: string;
+  ward: string; // Phường/Xã (sau sáp nhập hành chính 2025)
   phone: string;
   latitude: number;
   longitude: number;
@@ -35,7 +35,7 @@ export interface UpdateRestaurantRequest {
   restaurantName?: string;
   address?: string;
   city?: string;
-  district?: string;
+  ward?: string; // Phường/Xã
   phone?: string;
   latitude?: number;
   longitude?: number;
@@ -161,16 +161,16 @@ export const restaurantService = {
     }
   },
 
-  // Get restaurants by city and district
-  getRestaurantsByCityAndDistrict: async (city: string, district: string): Promise<{ success: boolean; data?: RestaurantResponse[]; message?: string }> => {
+  // Get restaurants by city and ward
+  getRestaurantsByCityAndWard: async (city: string, ward: string): Promise<{ success: boolean; data?: RestaurantResponse[]; message?: string }> => {
     try {
-      const response = await axiosInstance.get(API.GET_RESTAURANTS_BY_CITY_DISTRICT(city, district));
+      const response = await axiosInstance.get(API.GET_RESTAURANTS_BY_CITY_WARD(city, ward));
       return {
         success: true,
         data: response.data || []
       };
     } catch (error: any) {
-      console.error('Error getting restaurants by city and district:', error);
+      console.error('Error getting restaurants by city and ward:', error);
       return {
         success: false,
         data: [],

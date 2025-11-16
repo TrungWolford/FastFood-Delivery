@@ -219,12 +219,20 @@ public class OrderServiceImpl implements OrderService {
             if (request.getCity() != null) {
                 existingOrder.setCity(request.getCity());
             }
+            if (request.getCustomerLatitude() != null) {
+                existingOrder.setCustomerLatitude(request.getCustomerLatitude());
+            }
+            if (request.getCustomerLongitude() != null) {
+                existingOrder.setCustomerLongitude(request.getCustomerLongitude());
+            }
         } else {
             // Nếu đơn đang giao hoặc đã hoàn tất, chỉ báo lỗi nếu có cố gắng thay đổi
             if (request.getDeliveryAddress() != null || request.getReceiverName() != null
                     || request.getReceiverPhone() != null || request.getReceiverEmail() != null
                     || request.getWard() != null
-                    || request.getCity() != null) {
+                    || request.getCity() != null
+                    || request.getCustomerLatitude() != null
+                    || request.getCustomerLongitude() != null) {
                 throw new IllegalStateException("Không thể thay đổi thông tin giao hàng khi đơn đã giao hoặc hoàn tất");
             }
         }

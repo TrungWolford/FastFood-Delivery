@@ -123,7 +123,7 @@ export const API = {
   GET_RESTAURANT_BY_ID: (restaurantId: string) => `/restaurants/${restaurantId}`, // GET /api/restaurants/{restaurantId}
   GET_RESTAURANTS_BY_OWNER: (ownerId: string) => `/restaurants/owner/${ownerId}`, // GET /api/restaurants/owner/{ownerId}
   GET_RESTAURANTS_BY_CITY: (city: string) => `/restaurants/city/${city}`, // GET /api/restaurants/city/{city}
-  GET_RESTAURANTS_BY_CITY_DISTRICT: (city: string, district: string) => `/restaurants/city/${city}/district/${district}`, // GET /api/restaurants/city/{city}/district/{district}
+  GET_RESTAURANTS_BY_CITY_WARD: (city: string, ward: string) => `/restaurants/city/${city}/ward/${ward}`, // GET /api/restaurants/city/{city}/ward/{ward}
   GET_RESTAURANTS_BY_STATUS: (status: number) => `/restaurants/status/${status}`, // GET /api/restaurants/status/{status}
   CREATE_RESTAURANT: '/restaurants', // POST /api/restaurants
   UPDATE_RESTAURANT: (restaurantId: string) => `/restaurants/${restaurantId}`, // PUT /api/restaurants/{restaurantId}

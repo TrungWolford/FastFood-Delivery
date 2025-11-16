@@ -9,9 +9,12 @@ public class UpdateOrderRequest {
     private String receiverEmail;
     private String receiverPhone;
     private String deliveryAddress;
-    private String ward;
-    private String district;
-    private String city;
+    private String ward; // Phường/Xã
+    private String city; // Thành phố
+    
+    // Tọa độ khách hàng
+    private Double customerLatitude;
+    private Double customerLongitude;
 
     // Thông tin đơn hàng
     private String orderNote;

@@ -21,9 +21,12 @@ public class OrderResponse {
     private String receiverEmail;
     private String receiverPhone;
     private String deliveryAddress;
-    private String ward;
-    private String district;
-    private String city;
+    private String ward; // Phường/Xã (sau sáp nhập hành chính 2025)
+    private String city; // Thành phố (sau sáp nhập hành chính 2025)
+    
+    // Tọa độ khách hàng
+    private Double customerLatitude;
+    private Double customerLongitude;
 
     // Thông tin đơn hàng
     private String orderNote;
@@ -57,6 +60,10 @@ public class OrderResponse {
         response.setWard(order.getWard());
         response.setCity(order.getCity()); // Sau sáp nhập hành chính 2025, không còn quận/huyện
         
+        // Tọa độ khách hàng
+        response.setCustomerLatitude(order.getCustomerLatitude());
+        response.setCustomerLongitude(order.getCustomerLongitude());
+
         // Thông tin đơn hàng
         response.setOrderNote(order.getOrderNote());
         response.setShippingFee(order.getShippingFee());
@@ -94,6 +101,10 @@ public class OrderResponse {
         response.setDeliveryAddress(order.getDeliveryAddress());
         response.setWard(order.getWard());
         response.setCity(order.getCity()); // Sau sáp nhập hành chính 2025, không còn quận/huyện
+        
+        // Tọa độ khách hàng
+        response.setCustomerLatitude(order.getCustomerLatitude());
+        response.setCustomerLongitude(order.getCustomerLongitude());
         
         // Thông tin đơn hàng
         response.setOrderNote(order.getOrderNote());
