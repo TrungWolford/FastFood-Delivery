@@ -1,14 +1,15 @@
 package com.FastFoodDelivery.dto.request.Delivery;
 
-import lombok.Data;
 import org.bson.types.ObjectId;
 
-import java.util.Date;
+import com.FastFoodDelivery.entity.Delivery.LocationPoint;
+
+import lombok.Data;
 
 @Data
 public class UpdateDeliveryRequest {
     private ObjectId orderId;
-    private double startLocation;
-    private double endLocation;
+    private LocationPoint startLocation; // Tọa độ nhà hàng
+    private LocationPoint endLocation; // Tọa độ khách hàng
     private int status;
 }
