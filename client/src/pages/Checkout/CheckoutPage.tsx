@@ -14,6 +14,7 @@ import { orderService } from '../../services/orderService';
 import { vnpayService } from '../../services/vnpayService';
 import OpenStreetMapAutocomplete, { type SelectedAddress } from '../../components/OpenStreetMapAutocomplete';
 import { toast } from 'sonner';
+import { canMakePurchase, getUserRoleDisplay } from '../../utils/roleCheck';
 
 // Shipping method options
 const SHIPPING_METHODS = [
@@ -110,6 +111,17 @@ const CheckoutPage: React.FC = () => {
 
     if (!isAuthenticated || !user) {
       toast.error('Vui lòng đăng nhập để thanh toán');
+      navigate('/');
+      return;
+    }
+
+    // Kiểm tra quyền mua hàng - chỉ Customer mới được phép thanh toán
+    if (!canMakePurchase(user)) {
+      const roleDisplay = getUserRoleDisplay(user);
+      toast.error(
+        `Tài khoản ${roleDisplay} không thể thanh toán đơn hàng. Chỉ khách hàng mới được phép mua hàng.`,
+        { duration: 3000 }
+      );
       navigate('/');
       return;
     }

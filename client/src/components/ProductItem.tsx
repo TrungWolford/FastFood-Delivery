@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 import { localStorageCartService } from '@/services/localStorageCartService';
 import { cartService } from '../services/cartService';
+import { canMakePurchase, getUserRoleDisplay } from '../utils/roleCheck';
 import './ProductItem.css';
 
 interface ProductItemProps {
@@ -99,6 +100,13 @@ const ProductItem: React.FC<ProductItemProps> = ({ product, onAddToCart, onAddTo
 
   // Xử lý thêm vào giỏ hàng với logic createCart trước
   const handleAddToCart = async () => {
+    // Kiểm tra quyền mua hàng - chỉ Customer mới được phép
+    if (isAuthenticated && user && !canMakePurchase(user)) {
+      const roleDisplay = getUserRoleDisplay(user);
+      toast.error(`Tài khoản ${roleDisplay} không thể mua hàng. Chỉ khách hàng mới có thể đặt món.`);
+      return;
+    }
+
     setIsAddingToCart(true);
     try {
       if (isAuthenticated && user) {

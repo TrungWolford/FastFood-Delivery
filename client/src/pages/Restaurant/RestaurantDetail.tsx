@@ -21,6 +21,7 @@ import type { RestaurantResponse, RestaurantDetailResponse } from '../../service
 import type { MenuItemResponse } from '../../services/menuItemService';
 import { useAppSelector } from '../../hooks/redux';
 import { toast } from 'sonner';
+import { canMakePurchase, getUserRoleDisplay } from '../../utils/roleCheck';
 
 const RestaurantDetail: React.FC = () => {
   const { restaurantId } = useParams<{ restaurantId: string }>();
@@ -45,6 +46,17 @@ const RestaurantDetail: React.FC = () => {
       if (!restaurantId) {
         setError('Restaurant ID not provided');
         setLoading(false);
+        return;
+      }
+
+      // Kiểm tra quyền mua hàng - chỉ Customer mới được phép xem chi tiết nhà hàng và menu
+      if (!canMakePurchase(user)) {
+        const roleDisplay = getUserRoleDisplay(user);
+        toast.error(
+          `Tài khoản ${roleDisplay} không thể xem menu nhà hàng. Chỉ khách hàng mới được phép mua hàng.`,
+          { duration: 3000 }
+        );
+        navigate('/');
         return;
       }
 
@@ -82,7 +94,7 @@ const RestaurantDetail: React.FC = () => {
     };
 
     loadData();
-  }, [restaurantId]);
+  }, [restaurantId, user, navigate]);
 
   const handleAddToCart = (menuItem: MenuItemResponse) => {
     setSelectedItem(menuItem);

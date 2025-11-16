@@ -5,9 +5,26 @@ import TopNavigation from '../../components/ui/Header/Header';
 import MainBanner from '../../components/MainBanner';
 import RestaurantGrid from '../../components/RestaurantGrid';
 import Footer from '../../components/ui/Footer/Footer';
+import { useAppSelector } from '../../hooks/redux';
+import { canMakePurchase, getUserRoleDisplay } from '../../utils/roleCheck';
+import { toast } from 'sonner';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
+  const user = useAppSelector((state) => state.auth.user);
+
+  const handleViewAllRestaurants = () => {
+    // Kiểm tra quyền mua hàng - chỉ Customer mới được phép xem danh sách nhà hàng
+    if (!canMakePurchase(user)) {
+      const roleDisplay = getUserRoleDisplay(user);
+      toast.error(
+        `Tài khoản ${roleDisplay} không thể xem danh sách nhà hàng. Chỉ khách hàng mới được phép mua hàng.`,
+        { duration: 3000 }
+      );
+      return;
+    }
+    navigate('/restaurants');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -28,7 +45,7 @@ const Home: React.FC = () => {
         {/* Button Xem tất cả nhà hàng */}
         <div className="flex justify-center mt-8">
           <button
-            onClick={() => navigate('/restaurants')}
+            onClick={handleViewAllRestaurants}
             className="px-8 py-3 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors duration-200 shadow-md hover:shadow-lg"
           >
             Xem tất cả nhà hàng

@@ -16,6 +16,8 @@ import { cartService } from '../../services/cartService';
 import { restaurantService } from '../../services/restaurantService';
 import type { RestaurantResponse } from '../../services/restaurantService';
 import { useAppSelector } from '../../hooks/redux';
+import { canMakePurchase, getUserRoleDisplay } from '../../utils/roleCheck';
+import { toast } from 'sonner';
 
 interface CartItemData {
   cartItemId: string;
@@ -56,6 +58,17 @@ const MultiCartView: React.FC = () => {
       }
 
       if (!isAuthenticated || !user?.accountId) {
+        navigate('/');
+        return;
+      }
+
+      // Kiểm tra quyền mua hàng - chỉ Customer mới được phép xem giỏ hàng
+      if (!canMakePurchase(user)) {
+        const roleDisplay = getUserRoleDisplay(user);
+        toast.error(
+          `Tài khoản ${roleDisplay} không thể xem giỏ hàng. Chỉ khách hàng mới được phép mua hàng.`,
+          { duration: 3000 }
+        );
         navigate('/');
         return;
       }

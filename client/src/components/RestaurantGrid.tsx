@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/Button/Button';
 import { ArrowRight, MapPin, Star, UtensilsCrossed } from 'lucide-react';
 import { restaurantService } from '../services/restaurantService';
+import { useAppSelector } from '../hooks/redux';
+import { canMakePurchase, getUserRoleDisplay } from '../utils/roleCheck';
+import { toast } from 'sonner';
 import type { RestaurantResponse } from '../services/restaurantService';
 
 interface RestaurantGridProps {
@@ -24,6 +27,7 @@ const RestaurantGrid: React.FC<RestaurantGridProps> = ({
   viewAllLink,
 }) => {
   const navigate = useNavigate();
+  const user = useAppSelector((state) => state.auth.user);
 
   const [restaurants, setRestaurants] = useState<RestaurantResponse[]>([]);
   const [loading, setLoading] = useState(false);
@@ -104,6 +108,16 @@ const RestaurantGrid: React.FC<RestaurantGridProps> = ({
   console.log('📊 Final filtered restaurants:', filteredRestaurants.length);
 
   const handleRestaurantClick = (restaurantId: string) => {
+    // Kiểm tra quyền mua hàng - chỉ Customer mới được phép
+    if (!canMakePurchase(user)) {
+      const roleDisplay = getUserRoleDisplay(user);
+      toast.error(
+        `Tài khoản ${roleDisplay} không thể xem menu và đặt hàng. Chỉ khách hàng mới được phép mua hàng.`,
+        { duration: 3000 }
+      );
+      return;
+    }
+
     navigate(`/restaurant/${restaurantId}`);
   };
 
