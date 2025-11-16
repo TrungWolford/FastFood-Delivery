@@ -1,17 +1,12 @@
 package com.FastFoodDelivery.dto.response.Delivery;
 
-import com.FastFoodDelivery.entity.Delivery;
-import lombok.Data;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
-
 import java.util.Date;
 
 import com.FastFoodDelivery.entity.Delivery;
-import com.FastFoodDelivery.entity.Delivery.LocationPoint;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 public class DeliveryResponse {
@@ -33,15 +28,16 @@ public class DeliveryResponse {
     }
 
     public static DeliveryResponse fromEntity(Delivery delivery){
-        DeliveryResponse response = new DeliveryResponse();
-        response.setDeliveryId(delivery.getDeliveryId().toString());
-        
-        // Handle null droneId
-        if (delivery.getDroneId() != null) {
-            response.setDroneId(delivery.getDroneId().toString());
+        if (delivery == null) {
+            throw new IllegalArgumentException("Delivery entity cannot be null");
         }
         
-        response.setOrderId(delivery.getOrderId().toString());
+        DeliveryResponse response = new DeliveryResponse();
+        
+        // Safely convert ObjectIds to Strings with null checks
+        response.setDeliveryId(delivery.getDeliveryId() != null ? delivery.getDeliveryId().toString() : null);
+        response.setDroneId(delivery.getDroneId() != null ? delivery.getDroneId().toString() : null);
+        response.setOrderId(delivery.getOrderId() != null ? delivery.getOrderId().toString() : null);
         
         // Convert LocationPoint from entity to response
         if (delivery.getStartLocation() != null) {

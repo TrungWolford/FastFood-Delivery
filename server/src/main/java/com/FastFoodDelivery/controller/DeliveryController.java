@@ -24,6 +24,13 @@ public class DeliveryController {
         return ResponseEntity.ok(deliveryService.getALlDeliveriesByOrderId(orderId));
     }
 
+    @GetMapping("/drone/{droneId}/restaurant/{restaurantId}")
+    public ResponseEntity<List<DeliveryResponse>> getAllDeliveriesByDroneIdAndRestaurantId(
+            @PathVariable ObjectId droneId,
+            @PathVariable ObjectId restaurantId) {
+        return ResponseEntity.ok(deliveryService.getAllDeliveriesByDroneIdAndRestaurantId(droneId, restaurantId));
+    }
+
     @GetMapping("/{deliveryId}")
     public ResponseEntity<DeliveryResponse> getByDeliveryId(@PathVariable ObjectId deliveryId){
         return ResponseEntity.ok(deliveryService.getByDeliveryId(deliveryId));

@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface DeliveryRepository extends MongoRepository<Delivery, ObjectId> {
     List<Delivery> findAllByOrderId(ObjectId orderId);
+    List<Delivery> findAllByDroneId(ObjectId droneId);
 }

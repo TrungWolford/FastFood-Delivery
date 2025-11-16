@@ -13,10 +13,12 @@ import com.FastFoodDelivery.dto.request.Delivery.UpdateStatusDeliveryRequest;
 import com.FastFoodDelivery.dto.response.Delivery.DeliveryResponse;
 import com.FastFoodDelivery.entity.Delivery;
 import com.FastFoodDelivery.entity.Delivery.LocationPoint;
+import com.FastFoodDelivery.entity.Drone;
 import com.FastFoodDelivery.entity.Order;
 import com.FastFoodDelivery.entity.Restaurant;
 import com.FastFoodDelivery.exception.ResourceNotFoundException;
 import com.FastFoodDelivery.repository.DeliveryRepository;
+import com.FastFoodDelivery.repository.DroneRepository;
 import com.FastFoodDelivery.repository.OrderRepository;
 import com.FastFoodDelivery.repository.RestaurantRepository;
 import com.FastFoodDelivery.service.DeliveryService;
@@ -36,6 +38,9 @@ public class DeliveryServiceImpl implements DeliveryService {
     
     @Autowired
     private GeocodingService geocodingService;
+    
+    @Autowired
+    private DroneRepository droneRepository;
 
     @Override
     public List<DeliveryResponse> getALlDeliveriesByOrderId(ObjectId orderId) {
@@ -73,7 +78,7 @@ public class DeliveryServiceImpl implements DeliveryService {
             ));
         }
         
-        delivery.setStatus(request.getStatus());
+        delivery.setStatus(0);
         delivery.setDeliveredAt(new Date());
 
         deliveryRepository.save(delivery);
@@ -118,7 +123,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     }
     
     /**
-     * ✅ NEW: Tạo Delivery tự động từ Order sau khi thanh toán thành công
+     * ✅ Tạo Delivery tự động từ Order sau khi thanh toán thành công
      */
     @Override
     public DeliveryResponse createDeliveryFromOrder(ObjectId orderId) throws Exception {
@@ -171,7 +176,6 @@ public class DeliveryServiceImpl implements DeliveryService {
         }
         
         // 3. Geocode customer address to get coordinates (endLocation)
-        // Sau sáp nhập hành chính 2025, không còn quận/huyện
         String fullAddress = String.format("%s, %s, %s",
             order.getDeliveryAddress(),
             order.getWard(),
@@ -194,5 +198,37 @@ public class DeliveryServiceImpl implements DeliveryService {
         System.out.println("✅ [DeliveryService] Delivery created successfully with ID: " + savedDelivery.getDeliveryId());
         
         return DeliveryResponse.fromEntity(savedDelivery);
+    }
+    
+    @Override
+    public List<DeliveryResponse> getAllDeliveriesByDroneIdAndRestaurantId(ObjectId droneId, ObjectId restaurantId) {
+        try {
+            // Verify that the drone belongs to the restaurant
+            Drone drone = droneRepository.findById(droneId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Drone", "id", droneId.toString()));
+            
+            // Check if drone belongs to the restaurant
+            if (!drone.getRestaurantId().equals(restaurantId)) {
+                throw new IllegalArgumentException("Drone does not belong to this restaurant");
+            }
+            
+            // Get all deliveries for this drone
+            List<Delivery> deliveries = deliveryRepository.findAllByDroneId(droneId);
+            
+            // Filter out any null deliveries and convert to response
+            return deliveries.stream()
+                    .filter(delivery -> delivery != null && 
+                                       delivery.getDroneId() != null && 
+                                       delivery.getOrderId() != null)
+                    .map(DeliveryResponse::fromEntity)
+                    .toList();
+        } catch (ResourceNotFoundException | IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            // Log the error for debugging
+            System.err.println("Error in getAllDeliveriesByDroneIdAndRestaurantId: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error fetching deliveries: " + e.getMessage(), e);
+        }
     }
 }
