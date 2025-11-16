@@ -449,10 +449,75 @@ const AdminRegister: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Step 0: Create User Account with RESTAURANT role
-      console.log('Creating user account with RESTAURANT role...');
+      // ==========================================
+      // STEP 1: UPLOAD ALL IMAGES FIRST
+      // ==========================================
+      console.log('🖼️  Step 1: Uploading all images to Cloudinary...');
       
-      // Call API directly with correct backend structure
+      // 1.1: Upload CCCD images
+      console.log('📤 Uploading CCCD images...');
+      const cccdFrontFile = uploadService.dataUrlToFile(formData.cccdFront, 'cccd-front.jpg');
+      const cccdBackFile = uploadService.dataUrlToFile(formData.cccdBack, 'cccd-back.jpg');
+      
+      const cccdFrontResult = await uploadService.uploadImage(cccdFrontFile, 'cccd');
+      if (!cccdFrontResult.success || !cccdFrontResult.data) {
+        throw new Error('Không thể upload ảnh CCCD mặt trước');
+      }
+      console.log('✅ CCCD Front URL:', cccdFrontResult.data.url);
+      
+      const cccdBackResult = await uploadService.uploadImage(cccdBackFile, 'cccd');
+      if (!cccdBackResult.success || !cccdBackResult.data) {
+        throw new Error('Không thể upload ảnh CCCD mặt sau');
+      }
+      console.log('✅ CCCD Back URL:', cccdBackResult.data.url);
+      
+      // 1.2: Upload business license images
+      console.log('📤 Uploading business license images...');
+      const businessLicenseFiles = formData.businessLicenses.map((dataUrl, index) =>
+        uploadService.dataUrlToFile(dataUrl, `business-license-${index + 1}.jpg`)
+      );
+      
+      const businessLicenseResult = await uploadService.uploadMultipleImages(
+        businessLicenseFiles,
+        'business-license'
+      );
+      
+      if (!businessLicenseResult.success || !businessLicenseResult.data) {
+        throw new Error('Không thể upload ảnh giấy phép kinh doanh');
+      }
+      console.log('✅ Business License URLs:', businessLicenseResult.data.map(img => img.url));
+      
+      // 1.3: Upload restaurant images (avatar, cover, menu)
+      console.log('📤 Uploading restaurant images...');
+      
+      const avatarFile = uploadService.dataUrlToFile(formData.avatarImage, 'avatar.jpg');
+      const avatarResult = await uploadService.uploadImage(avatarFile, 'restaurant');
+      if (!avatarResult.success || !avatarResult.data) {
+        throw new Error('Không thể upload ảnh đại diện nhà hàng');
+      }
+      console.log('✅ Avatar URL:', avatarResult.data.url);
+      
+      const coverFile = uploadService.dataUrlToFile(formData.coverImage, 'cover.jpg');
+      const coverResult = await uploadService.uploadImage(coverFile, 'restaurant');
+      if (!coverResult.success || !coverResult.data) {
+        throw new Error('Không thể upload ảnh bìa nhà hàng');
+      }
+      console.log('✅ Cover URL:', coverResult.data.url);
+      
+      const menuFile = uploadService.dataUrlToFile(formData.menuImage, 'menu.jpg');
+      const menuResult = await uploadService.uploadImage(menuFile, 'restaurant/menu');
+      if (!menuResult.success || !menuResult.data) {
+        throw new Error('Không thể upload ảnh menu');
+      }
+      console.log('✅ Menu URL:', menuResult.data.url);
+      
+      console.log('🎉 All images uploaded successfully to Cloudinary!');
+      
+      // ==========================================
+      // STEP 2: CREATE USER ACCOUNT
+      // ==========================================
+      console.log('👤 Step 2: Creating user account with RESTAURANT role...');
+      
       const createUserResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/users`, {
         method: 'POST',
         headers: {
@@ -460,11 +525,11 @@ const AdminRegister: React.FC = () => {
         },
         body: JSON.stringify({
           fullname: formData.ownerName,
-          password: formData.ownerPassword, // Sử dụng mật khẩu người dùng nhập
+          password: formData.ownerPassword,
           email: formData.ownerEmail,
           phone: formData.ownerPhone,
-          address: formData.ownerAddress, // Sử dụng địa chỉ cá nhân
-          role: restaurantRoleId // roleId của RESTAURANT
+          address: formData.ownerAddress,
+          role: restaurantRoleId
         })
       });
       
@@ -472,11 +537,10 @@ const AdminRegister: React.FC = () => {
         const errorData = await createUserResponse.json().catch(() => ({}));
         const errorMessage = errorData.message || 'Không thể tạo tài khoản người dùng';
         
-        // Hiển thị lỗi cụ thể cho người dùng
         if (errorMessage.toLowerCase().includes('phone') && errorMessage.toLowerCase().includes('exist')) {
-          alert(`❌ Số điện thoại "${formData.ownerPhone}" đã được sử dụng.\n\nVui lòng sử dụng số điện thoại khác cho tài khoản chủ nhà hàng.`);
+          alert(`❌ Số điện thoại "${formData.ownerPhone}" đã được sử dụng.\n\nVui lòng sử dụng số điện thoại khác.`);
         } else if (errorMessage.toLowerCase().includes('email') && errorMessage.toLowerCase().includes('exist')) {
-          alert(`❌ Email "${formData.ownerEmail}" đã được sử dụng.\n\nVui lòng sử dụng email khác cho tài khoản chủ nhà hàng.`);
+          alert(`❌ Email "${formData.ownerEmail}" đã được sử dụng.\n\nVui lòng sử dụng email khác.`);
         } else {
           alert(`❌ Lỗi tạo tài khoản: ${errorMessage}`);
         }
@@ -490,91 +554,34 @@ const AdminRegister: React.FC = () => {
         throw new Error('Không nhận được userId từ server');
       }
       
-      console.log('User account created successfully:', userId);
+      console.log('✅ User account created successfully! UserId:', userId);
       
-      // Step 1: Upload CCCD images with folder="cccd"
-      console.log('Uploading CCCD images...');
-      
-      // Convert base64 to File objects
-      const cccdFrontFile = uploadService.dataUrlToFile(formData.cccdFront, 'cccd-front.jpg');
-      const cccdBackFile = uploadService.dataUrlToFile(formData.cccdBack, 'cccd-back.jpg');
-      
-      // Upload CCCD images
-      const cccdFrontResult = await uploadService.uploadImage(cccdFrontFile, 'cccd');
-      if (!cccdFrontResult.success || !cccdFrontResult.data) {
-        throw new Error('Không thể upload ảnh CCCD mặt trước');
-      }
-      
-      const cccdBackResult = await uploadService.uploadImage(cccdBackFile, 'cccd');
-      if (!cccdBackResult.success || !cccdBackResult.data) {
-        throw new Error('Không thể upload ảnh CCCD mặt sau');
-      }
-      
-      console.log('CCCD images uploaded successfully');
-      
-      // Step 2: Upload business license images with folder="business-license"
-      console.log('Uploading business license images...');
-      const businessLicenseFiles = formData.businessLicenses.map((dataUrl, index) =>
-        uploadService.dataUrlToFile(dataUrl, `business-license-${index + 1}.jpg`)
-      );
-      
-      const businessLicenseResult = await uploadService.uploadMultipleImages(
-        businessLicenseFiles,
-        'business-license'
-      );
-      
-      if (!businessLicenseResult.success || !businessLicenseResult.data) {
-        throw new Error('Không thể upload ảnh giấy phép kinh doanh');
-      }
-      
-      console.log('Business license images uploaded successfully');
-      
-      // Step 3: Upload restaurant images (avatar, cover, menu)
-      console.log('Uploading restaurant images...');
-      
-      const avatarFile = uploadService.dataUrlToFile(formData.avatarImage, 'avatar.jpg');
-      const avatarResult = await uploadService.uploadImage(avatarFile, 'restaurant');
-      if (!avatarResult.success || !avatarResult.data) {
-        throw new Error('Không thể upload ảnh đại diện nhà hàng');
-      }
-      
-      const coverFile = uploadService.dataUrlToFile(formData.coverImage, 'cover.jpg');
-      const coverResult = await uploadService.uploadImage(coverFile, 'restaurant');
-      if (!coverResult.success || !coverResult.data) {
-        throw new Error('Không thể upload ảnh bìa nhà hàng');
-      }
-      
-      const menuFile = uploadService.dataUrlToFile(formData.menuImage, 'menu.jpg');
-      const menuResult = await uploadService.uploadImage(menuFile, 'restaurant/menu');
-      if (!menuResult.success || !menuResult.data) {
-        throw new Error('Không thể upload ảnh menu');
-      }
-      
-      console.log('Restaurant images uploaded successfully');
-      
-      // Step 4: Create Restaurant (với userId mới tạo làm ownerId)
-      console.log('Creating restaurant...');
+      // ==========================================
+      // STEP 3: CREATE RESTAURANT WITH IMAGE URLs
+      // ==========================================
+      console.log('🏪 Step 3: Creating restaurant with uploaded image URLs...');
       
       const restaurantData = {
-        ownerId: userId, // Sử dụng userId vừa tạo
+        ownerId: userId,
         restaurantName: formData.restaurantName,
         address: formData.address,
         city: formData.city,
-        ward: formData.ward, // ✅ Đúng rồi, gửi ward field
+        ward: formData.ward,
         phone: formData.phone,
         latitude: formData.mapLocation?.lat || 0,
         longitude: formData.mapLocation?.lng || 0,
-        avatarImage: avatarResult.data.url
+        avatarImage: avatarResult.data.url // ✅ URL from Cloudinary
       };
+      
+      console.log('📝 Restaurant data to send:', restaurantData);
       
       const restaurantResult = await restaurantService.createRestaurant(restaurantData);
       
       if (!restaurantResult.success || !restaurantResult.data) {
         const errorMessage = restaurantResult.message || 'Không thể tạo nhà hàng';
         
-        // Hiển thị lỗi cụ thể
         if (errorMessage.toLowerCase().includes('phone') && errorMessage.toLowerCase().includes('exist')) {
-          alert(`❌ Số điện thoại nhà hàng "${formData.phone}" đã được sử dụng.\n\nVui lòng sử dụng số điện thoại khác cho nhà hàng.\n\nLưu ý: Số điện thoại nhà hàng phải khác số điện thoại chủ nhà hàng.`);
+          alert(`❌ Số điện thoại nhà hàng "${formData.phone}" đã được sử dụng.\n\nVui lòng sử dụng số điện thoại khác.`);
         } else {
           alert(`❌ Lỗi tạo nhà hàng: ${errorMessage}`);
         }
@@ -582,10 +589,13 @@ const AdminRegister: React.FC = () => {
       }
       
       const restaurantId = restaurantResult.data.restaurantId;
-      console.log('Restaurant created successfully:', restaurantId);
+      console.log('✅ Restaurant created successfully! RestaurantId:', restaurantId);
+      console.log('🖼️  Avatar image saved to database:', restaurantData.avatarImage);
       
-      // Step 5: Create Restaurant Detail
-      console.log('Creating restaurant detail...');
+      // ==========================================
+      // STEP 4: CREATE RESTAURANT DETAIL
+      // ==========================================
+      console.log('📋 Step 4: Creating restaurant detail...');
       
       const restaurantDetailData = {
         openingHours: formData.openingHours,
@@ -593,8 +603,8 @@ const AdminRegister: React.FC = () => {
         cuisines: formData.cuisineTypes,
         specialties: formData.specialtyDishes,
         description: formData.description,
-        coverImage: coverResult.data.url,
-        menuImages: [menuResult.data.url]
+        coverImage: coverResult.data.url, // ✅ URL from Cloudinary
+        menuImages: [menuResult.data.url] // ✅ URL from Cloudinary
       };
       
       const restaurantDetailResult = await restaurantDetailService.createRestaurantDetail(
@@ -603,31 +613,30 @@ const AdminRegister: React.FC = () => {
       );
       
       if (!restaurantDetailResult.success) {
-        console.warn('Failed to create restaurant detail:', restaurantDetailResult.message);
-        // We don't throw here because the restaurant is already created
+        console.warn('⚠️  Failed to create restaurant detail:', restaurantDetailResult.message);
       } else {
-        console.log('Restaurant detail created successfully');
+        console.log('✅ Restaurant detail created successfully');
       }
       
-      // Step 6: Create Account Restaurant Detail
-      console.log('Creating account restaurant detail...');
+      // ==========================================
+      // STEP 5: CREATE ACCOUNT RESTAURANT DETAIL
+      // ==========================================
+      console.log('📝 Step 5: Creating account restaurant detail...');
       
-      // Lưu ý: Thông tin người đại diện (name, email, phone) đã được lưu trong User entity
-      // Ở đây chỉ cần lưu userId và các tài liệu xác minh
       const accountRestaurantDetailData = {
-        userId: userId, // Sử dụng userId vừa tạo
+        userId: userId,
         restaurantId: restaurantId,
         cccdImages: [
           {
             side: 'front',
-            url: cccdFrontResult.data.url
+            url: cccdFrontResult.data.url // ✅ URL from Cloudinary
           },
           {
             side: 'back',
-            url: cccdBackResult.data.url
+            url: cccdBackResult.data.url // ✅ URL from Cloudinary
           }
         ],
-        businessLicenseImages: businessLicenseResult.data.map(img => img.url)
+        businessLicenseImages: businessLicenseResult.data.map(img => img.url) // ✅ URLs from Cloudinary
       };
       
       const accountDetailResult = await accountRestaurantDetailService.createAccountRestaurantDetail(
@@ -635,13 +644,19 @@ const AdminRegister: React.FC = () => {
       );
       
       if (!accountDetailResult.success) {
-        console.warn('Failed to create account detail:', accountDetailResult.message);
-        // We don't throw here because the restaurant is already created
+        console.warn('⚠️  Failed to create account detail:', accountDetailResult.message);
       } else {
-        console.log('Account restaurant detail created successfully');
+        console.log('✅ Account restaurant detail created successfully');
       }
       
-      // Success!
+      // ==========================================
+      // SUCCESS!
+      // ==========================================
+      console.log('🎉 ===== REGISTRATION COMPLETED SUCCESSFULLY! =====');
+      console.log('👤 User ID:', userId);
+      console.log('🏪 Restaurant ID:', restaurantId);
+      console.log('🖼️  All images saved with Cloudinary URLs');
+      
       setSuccessData({
         email: formData.ownerEmail,
         restaurantName: formData.restaurantName
@@ -649,7 +664,7 @@ const AdminRegister: React.FC = () => {
       setShowSuccessModal(true);
       
     } catch (error: any) {
-      console.error('Error submitting form:', error);
+      console.error('❌ Error submitting form:', error);
       alert(error.message || 'Có lỗi xảy ra. Vui lòng thử lại!');
     } finally {
       setIsSubmitting(false);

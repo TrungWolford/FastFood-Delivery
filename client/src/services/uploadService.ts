@@ -34,10 +34,17 @@ export const uploadService = {
         }
       });
 
+      // Backend response structure:
+      // { success: true, message: "...", data: { url, publicId, format, ... } }
+      console.log('📤 Upload response:', response.data);
+
+      // Extract nested data from backend response
+      const backendData = response.data.data || response.data;
+      
       return {
-        success: true,
-        data: response.data,
-        message: 'Upload ảnh thành công'
+        success: response.data.success !== false,
+        data: backendData, // ✅ Now data directly contains { url, publicId, ... }
+        message: response.data.message || 'Upload ảnh thành công'
       };
     } catch (error: any) {
       console.error('Error uploading image:', error);
