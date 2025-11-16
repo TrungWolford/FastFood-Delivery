@@ -1,11 +1,17 @@
 // Shipping types based on Delivery entity from Backend
 
+// LocationPoint interface matching Backend
+export interface LocationPoint {
+  latitude: number;
+  longitude: number;
+}
+
 export interface Shipping {
   deliveryId: string;
   droneId: string;
   orderId: string;
-  startLocation: number;
-  endLocation: number;
+  startLocation: LocationPoint;
+  endLocation: LocationPoint;
   status: ShippingStatus;
   deliveredAt: string | Date;
   statusText?: string;
@@ -38,16 +44,16 @@ export const SHIPPING_STATUS_COLORS: Record<ShippingStatus, string> = {
 export interface CreateShippingRequest {
   droneId: string;
   orderId: string;
-  startLocation: number;
-  endLocation: number;
+  startLocation: LocationPoint;
+  endLocation: LocationPoint;
   status: ShippingStatus;
   deliveredAt?: string | Date;
 }
 
 export interface UpdateShippingRequest {
   orderId?: string;
-  startLocation?: number;
-  endLocation?: number;
+  startLocation?: LocationPoint;
+  endLocation?: LocationPoint;
   status?: ShippingStatus;
 }
 

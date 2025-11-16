@@ -31,7 +31,7 @@ import {
 } from '../../components/ui/select';
 import { Search, Truck, Plus, Edit, Eye, RefreshCw, MapPin, Package } from 'lucide-react';
 import shippingService, { SHIPPING_STATUS_LABELS } from '../../services/shippingService';
-import type { ShippingResponse, CreateShippingRequest, UpdateShippingRequest, UpdateShippingStatusRequest } from '../../types/shipping';
+import type { ShippingResponse, CreateShippingRequest, UpdateShippingRequest, UpdateShippingStatusRequest, LocationPoint } from '../../types/shipping';
 import { ShippingStatus } from '../../types/shipping';
 
 const SHIPPING_STATUS_OPTIONS = [
@@ -64,8 +64,8 @@ function AdminShipping() {
   const [formData, setFormData] = useState<Partial<CreateShippingRequest & UpdateShippingRequest & { deliveryId?: string }>>({
     droneId: '',
     orderId: '',
-    startLocation: 0,
-    endLocation: 0,
+    startLocation: { latitude: 0, longitude: 0 },
+    endLocation: { latitude: 0, longitude: 0 },
     status: ShippingStatus.PENDING,
   });
 
@@ -144,8 +144,8 @@ function AdminShipping() {
     setFormData({ 
       droneId: '',
       orderId: '',
-      startLocation: 0,
-      endLocation: 0,
+      startLocation: { latitude: 0, longitude: 0 },
+      endLocation: { latitude: 0, longitude: 0 },
       status: ShippingStatus.PENDING,
     });
     setIsCreateDialogOpen(true);
@@ -161,8 +161,8 @@ function AdminShipping() {
       const createRequest: CreateShippingRequest = {
         droneId: formData.droneId as string,
         orderId: formData.orderId as string,
-        startLocation: formData.startLocation as number,
-        endLocation: formData.endLocation as number,
+        startLocation: formData.startLocation as LocationPoint,
+        endLocation: formData.endLocation as LocationPoint,
         status: formData.status as ShippingStatus,
       };
       
@@ -234,7 +234,10 @@ function AdminShipping() {
     }
   };
 
-  const formatLocation = (loc?: number) => (typeof loc === 'number' ? loc.toFixed(6) : 'N/A');
+  const formatLocation = (loc?: LocationPoint) => {
+    if (!loc) return 'N/A';
+    return `${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}`;
+  };
   const formatDate = (date?: string | Date) => {
     if (!date) return 'N/A';
     return new Date(date).toLocaleString('vi-VN');
@@ -482,21 +485,67 @@ function AdminShipping() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Điểm đầu (Location)</label>
+                <label className="text-sm font-medium">Điểm đầu - Latitude</label>
                 <Input 
                   type="number" 
                   step="0.000001"
-                  value={formData.startLocation ?? 0} 
-                  onChange={(e) => setFormData((s) => ({ ...s, startLocation: Number(e.target.value) }))} 
+                  value={formData.startLocation?.latitude ?? 0} 
+                  onChange={(e) => setFormData((s) => ({ 
+                    ...s, 
+                    startLocation: { 
+                      latitude: Number(e.target.value), 
+                      longitude: s.startLocation?.longitude ?? 0 
+                    } 
+                  }))} 
+                  placeholder="VD: 10.762622"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Điểm cuối (Location)</label>
+                <label className="text-sm font-medium">Điểm đầu - Longitude</label>
                 <Input 
                   type="number" 
                   step="0.000001"
-                  value={formData.endLocation ?? 0} 
-                  onChange={(e) => setFormData((s) => ({ ...s, endLocation: Number(e.target.value) }))} 
+                  value={formData.startLocation?.longitude ?? 0} 
+                  onChange={(e) => setFormData((s) => ({ 
+                    ...s, 
+                    startLocation: { 
+                      latitude: s.startLocation?.latitude ?? 0,
+                      longitude: Number(e.target.value) 
+                    } 
+                  }))} 
+                  placeholder="VD: 106.660172"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Điểm cuối - Latitude</label>
+                <Input 
+                  type="number" 
+                  step="0.000001"
+                  value={formData.endLocation?.latitude ?? 0} 
+                  onChange={(e) => setFormData((s) => ({ 
+                    ...s, 
+                    endLocation: { 
+                      latitude: Number(e.target.value),
+                      longitude: s.endLocation?.longitude ?? 0 
+                    } 
+                  }))} 
+                  placeholder="VD: 10.775622"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Điểm cuối - Longitude</label>
+                <Input 
+                  type="number" 
+                  step="0.000001"
+                  value={formData.endLocation?.longitude ?? 0} 
+                  onChange={(e) => setFormData((s) => ({ 
+                    ...s, 
+                    endLocation: { 
+                      latitude: s.endLocation?.latitude ?? 0,
+                      longitude: Number(e.target.value) 
+                    } 
+                  }))} 
+                  placeholder="VD: 106.678172"
                 />
               </div>
               <div>
@@ -541,21 +590,63 @@ function AdminShipping() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Điểm đầu (Location)</label>
+                <label className="text-sm font-medium">Điểm đầu - Latitude</label>
                 <Input 
                   type="number" 
                   step="0.000001"
-                  value={formData.startLocation ?? 0} 
-                  onChange={(e) => setFormData((s) => ({ ...s, startLocation: Number(e.target.value) }))} 
+                  value={formData.startLocation?.latitude ?? 0} 
+                  onChange={(e) => setFormData((s) => ({ 
+                    ...s, 
+                    startLocation: { 
+                      latitude: Number(e.target.value), 
+                      longitude: s.startLocation?.longitude ?? 0 
+                    } 
+                  }))} 
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Điểm cuối (Location)</label>
+                <label className="text-sm font-medium">Điểm đầu - Longitude</label>
                 <Input 
                   type="number" 
                   step="0.000001"
-                  value={formData.endLocation ?? 0} 
-                  onChange={(e) => setFormData((s) => ({ ...s, endLocation: Number(e.target.value) }))} 
+                  value={formData.startLocation?.longitude ?? 0} 
+                  onChange={(e) => setFormData((s) => ({ 
+                    ...s, 
+                    startLocation: { 
+                      latitude: s.startLocation?.latitude ?? 0,
+                      longitude: Number(e.target.value) 
+                    } 
+                  }))} 
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Điểm cuối - Latitude</label>
+                <Input 
+                  type="number" 
+                  step="0.000001"
+                  value={formData.endLocation?.latitude ?? 0} 
+                  onChange={(e) => setFormData((s) => ({ 
+                    ...s, 
+                    endLocation: { 
+                      latitude: Number(e.target.value),
+                      longitude: s.endLocation?.longitude ?? 0 
+                    } 
+                  }))} 
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Điểm cuối - Longitude</label>
+                <Input 
+                  type="number" 
+                  step="0.000001"
+                  value={formData.endLocation?.longitude ?? 0} 
+                  onChange={(e) => setFormData((s) => ({ 
+                    ...s, 
+                    endLocation: { 
+                      latitude: s.endLocation?.latitude ?? 0,
+                      longitude: Number(e.target.value) 
+                    } 
+                  }))} 
                 />
               </div>
               <div>
