@@ -4,7 +4,7 @@ import banner2 from './banner2.jpg'
 import banner3 from './banner3.jpg'
 import banner4 from './banner4.jpg'
 
-export const imgaes = {
+export const images = {
   logo,
   banner,
   banner2,

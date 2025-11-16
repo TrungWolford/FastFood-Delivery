@@ -1,7 +1,37 @@
 import axiosInstance from '../libs/axios';
 import { API } from '../config/constants';
 
-// Types
+// New Order Response from MongoDB backend (NEW structure)
+export interface OrderItem {
+  itemId: string;
+  itemName?: string;
+  quantity: number;
+  price: number;
+  note?: string;
+}
+
+export interface OrderResponseNew {
+  orderId: string;
+  customerId: string;
+  restaurantId: string;
+  receiverName: string;
+  receiverEmail?: string;
+  receiverPhone: string;
+  deliveryAddress: string;
+  ward: string; // Phường (sau sáp nhập hành chính 2025)
+  city: string; // Thành phố (sau sáp nhập hành chính 2025)
+  orderNote?: string;
+  shippingFee: number;
+  totalPrice: number;
+  finalAmount: number;
+  orderItems: OrderItem[];
+  status: string; // PENDING, CONFIRMED, DELIVERING, COMPLETED, CANCELLED
+  createdAt: string;
+  updatedAt: string;
+  paymentExpiresAt?: string;
+}
+
+// OLD Types (kept for backward compatibility)
 export interface OrderDetailResponse {
   orderDetailId: string;
   productId: string;
@@ -39,13 +69,22 @@ export interface OrderResponse {
   shipping?: ShippingInfo;
 }
 
+// Request để tạo order mới - Sau sáp nhập hành chính 2025
 export interface CreateOrderRequest {
-  accountId: string;
-  shippingId: string;
-  paymentMethod: number; // 0: Tiền mặt, 1: Chuyển khoản
-  items: Array<{
-    productId: string;
+  customerId: string;
+  restaurantId: string;
+  receiverName: string;
+  receiverEmail?: string;
+  receiverPhone: string;
+  deliveryAddress: string;
+  ward: string; // Phường (sau sáp nhập)
+  city: string; // Thành phố (sau sáp nhập)
+  orderNote?: string;
+  shippingFee?: number;
+  orderItems: Array<{
+    itemId: string;
     quantity: number;
+    note?: string;
   }>;
 }
 
@@ -220,40 +259,39 @@ export const orderService = {
     }
   },
 
-  // Get orders by account ID
-  getOrdersByAccount: async (accountId: string): Promise<{ success: boolean; data?: OrderResponse[]; message?: string }> => {
+  // Get orders by account ID - Returns NEW structure
+  getOrdersByAccount: async (accountId: string): Promise<{ success: boolean; data?: OrderResponseNew[]; message?: string }> => {
     try {
       const response = await axiosInstance.get(API.GET_ORDERS_BY_ACCOUNT(accountId));
-      // Backend returns OrderResponse with fields: createdAt, orderItems, payment (object)
-      // Map backend shape to frontend OrderResponse expected by components
-      const mapped: OrderResponse[] = (response.data || []).map((o: any) => mapBackendOrderToFrontend(o));
+      // Backend returns paginated response: { content: [...], totalElements, totalPages, ... }
+      const orders: OrderResponseNew[] = Array.isArray(response.data) 
+        ? response.data 
+        : response.data?.content || [];
+      
       return {
         success: true,
-        data: mapped
+        data: orders
       };
-    } catch (error: any) {
-      console.error('Error getting orders:', error);
+    } catch {
       return {
         success: false,
-        message: error.response?.data?.message || 'Không thể tải đơn hàng'
+        message: 'Không thể tải đơn hàng'
       };
     }
   },
 
-  // Get order by ID
-  getOrderById: async (orderId: string): Promise<{ success: boolean; data?: OrderResponse; message?: string }> => {
+  // Get order by ID - Returns NEW structure  
+  getOrderById: async (orderId: string): Promise<{ success: boolean; data?: OrderResponseNew; message?: string }> => {
     try {
       const response = await axiosInstance.get(API.GET_ORDER_BY_ID(orderId));
-      const mapped = response.data ? mapBackendOrderToFrontend(response.data) : undefined;
       return {
         success: true,
-        data: mapped
+        data: response.data
       };
-    } catch (error: any) {
-      console.error('Error getting order:', error);
+    } catch {
       return {
         success: false,
-        message: error.response?.data?.message || 'Không thể tải đơn hàng'
+        message: 'Không thể tải đơn hàng'
       };
     }
   },

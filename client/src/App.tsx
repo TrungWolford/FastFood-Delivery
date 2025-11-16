@@ -3,7 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home/Home';
 import Register from './pages/Mainpage/Register';
 import ProfileCustomer from './pages/Customer/ProfileCustomer';
-import HistoryReceipt from './pages/Customer/HistoryOrder';
+import OrderHistory from './pages/Customer/OrderHistory';
+import OrderDetail from './pages/Customer/OrderDetail';
 import ProductPage from './pages/Customer/Product';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import AdminRegister from './pages/Admin/AdminRegister';
@@ -27,6 +28,8 @@ import FastFoodRestaurant from './pages/FastFoodServer/FastFoodRestaurant';
 import FastFoodDrone from './pages/FastFoodServer/FastFoodDrone';
 import PendingApproval from './pages/Restaurant/PendingApproval';
 import MenuItemRestaurantDetail from './pages/MenuItemDetail/MenuItemRestaurantDetail';
+import RestaurantDetail from './pages/Restaurant/RestaurantDetail';
+import MultiCartView from './pages/Cart/MultiCartView';
 
 const App: React.FC = () => {
   return (
@@ -34,10 +37,17 @@ const App: React.FC = () => {
       <Route path="/" element={<Home />} />
       <Route path="/account/register" element={<Register />} />
       <Route path="/account/profile" element={<ProfileCustomer />} />
-      <Route path="/customer/orders" element={<HistoryReceipt />} />
+      <Route path="/customer/orders" element={<OrderHistory />} />
+      <Route path="/customer/orders/:orderId" element={<OrderDetail />} />
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/payment" element={<PaymentPage />} />
       <Route path="/order-success" element={<OrderSuccessPage />} />
+      
+      {/* Multi-Cart View Route */}
+      <Route path="/carts" element={<MultiCartView />} />
+      
+      {/* Restaurant Detail Route */}
+      <Route path="/restaurant/:restaurantId" element={<RestaurantDetail />} />
       
       {/* Menu Item Detail Route */}
       <Route path="/menu-item/:menuItemId" element={<MenuItemRestaurantDetail />} />

@@ -6,7 +6,8 @@ import type {
   AddToCartRequest, 
   UpdateCartItemRequest,
   CartResponse,
-  AddToCartResponse 
+  AddToCartResponse,
+  AddMenuItemToCartRequest 
 } from '../types/cart';
 
 export const cartService = {
@@ -91,10 +92,13 @@ export const cartService = {
   // Cập nhật số lượng sản phẩm trong giỏ hàng
   async updateCartItem(request: UpdateCartItemRequest): Promise<CartResponse> {
     try {
-      console.log('🔄 CartService: Updating cart item with URL:', `${CONFIG.API_GATEWAY}${API.UPDATE_CART_ITEM(request.cartItemId)}`);
+      console.log('🔄 CartService: Updating cart item with URL:', `${CONFIG.API_GATEWAY}/carts/${request.cartId}/items/${request.cartItemId}`);
       console.log('🔄 CartService: Request body:', request);
       
-      const response = await axios.put(`${CONFIG.API_GATEWAY}${API.UPDATE_CART_ITEM(request.cartItemId)}`, request);
+      const response = await axios.put(
+        `${CONFIG.API_GATEWAY}/carts/${request.cartId}/items/${request.cartItemId}`, 
+        { quantity: request.quantity }
+      );
       
       console.log('✅ CartService: Update cart item success:', response.data);
       
@@ -132,11 +136,11 @@ export const cartService = {
   },
 
   // Xóa sản phẩm khỏi giỏ hàng
-  async removeFromCart(cartItemId: string): Promise<CartResponse> {
+  async removeFromCart(cartId: string, cartItemId: string): Promise<CartResponse> {
     try {
-      console.log('🔄 CartService: Removing cart item with URL:', `${CONFIG.API_GATEWAY}${API.REMOVE_ITEM_FROM_CART(cartItemId)}`);
+      console.log('🔄 CartService: Removing cart item with URL:', `${CONFIG.API_GATEWAY}/carts/${cartId}/items/${cartItemId}`);
       
-      const response = await axios.delete(`${CONFIG.API_GATEWAY}${API.REMOVE_ITEM_FROM_CART(cartItemId)}`);
+      const response = await axios.delete(`${CONFIG.API_GATEWAY}/carts/${cartId}/items/${cartItemId}`);
       
       console.log('✅ CartService: Remove from cart success:', response.data);
       
@@ -158,7 +162,7 @@ export const cartService = {
       return {
         success: true,
         message: 'Xóa sản phẩm khỏi giỏ hàng thành công',
-        data: null
+        data: undefined
       };
     } catch (error: any) {
       console.error('❌ CartService: Error removing from cart:', error);
@@ -233,6 +237,99 @@ export const cartService = {
         success: false,
         message: error.response?.data?.message || error.message || 'Lỗi khi xóa giỏ hàng',
         error: error.message
+      };
+    }
+  },
+
+  // ===== MULTI-CART METHODS (Restaurant-based carts) =====
+  
+  // Lấy tất cả giỏ hàng của user (mỗi restaurant = 1 cart)
+  async getAllCartsByUser(userId: string): Promise<CartResponse> {
+    try {
+      const response = await axios.get(`${CONFIG.API_GATEWAY}${API.GET_ALL_CARTS_BY_USER(userId)}`);
+      
+      return {
+        success: true,
+        message: 'Lấy danh sách giỏ hàng thành công',
+        data: response.data
+      };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message || 'Lỗi khi lấy danh sách giỏ hàng',
+        error: err.message
+      };
+    }
+  },
+
+  // Lấy tất cả giỏ hàng của user (với đầy đủ thông tin món ăn)
+  async getAllCartsDetailByUser(userId: string): Promise<CartResponse> {
+    try {
+      const response = await axios.get(
+        `${CONFIG.API_GATEWAY}${API.GET_ALL_CARTS_DETAIL_BY_USER(userId)}`
+      );
+      
+      return {
+        success: true,
+        message: 'Lấy danh sách giỏ hàng chi tiết thành công',
+        data: response.data
+      };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message || 'Lỗi khi lấy danh sách giỏ hàng',
+        error: err.message
+      };
+    }
+  },
+
+  // Lấy giỏ hàng của user tại 1 restaurant cụ thể
+  async getCartByUserAndRestaurant(userId: string, restaurantId: string): Promise<CartResponse> {
+    try {
+      const response = await axios.get(
+        `${CONFIG.API_GATEWAY}${API.GET_CART_BY_USER_AND_RESTAURANT(userId, restaurantId)}`
+      );
+      
+      return {
+        success: true,
+        message: 'Lấy giỏ hàng thành công',
+        data: response.data
+      };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message || 'Lỗi khi lấy giỏ hàng',
+        error: err.message
+      };
+    }
+  },
+
+  // Thêm menu item vào cart của restaurant (auto-create cart nếu chưa có)
+  async addItemToRestaurantCart(
+    userId: string, 
+    restaurantId: string, 
+    request: AddMenuItemToCartRequest
+  ): Promise<CartResponse> {
+    try {
+      const response = await axios.post(
+        `${CONFIG.API_GATEWAY}${API.ADD_ITEM_TO_RESTAURANT_CART(userId, restaurantId)}`,
+        request
+      );
+      
+      return {
+        success: true,
+        message: 'Thêm vào giỏ hàng thành công',
+        data: response.data
+      };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message || 'Lỗi khi thêm vào giỏ hàng',
+        error: err.message
       };
     }
   }
