@@ -63,7 +63,7 @@ public class DeliveryServiceImpl implements DeliveryService {
         }
         
         delivery.setStatus(request.getStatus());
-        delivery.setDeliveredAt(request.getDeliveredAt());
+        delivery.setDeliveredAt(new Date());
 
         deliveryRepository.save(delivery);
         return DeliveryResponse.fromEntity(delivery);

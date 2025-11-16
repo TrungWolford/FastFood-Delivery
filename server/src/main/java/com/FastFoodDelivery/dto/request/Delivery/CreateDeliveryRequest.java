@@ -14,8 +14,7 @@ public class CreateDeliveryRequest {
     private LocationPoint startLocation;
     private LocationPoint endLocation;
     private int status;
-    private Date deliveredAt;
-    
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
