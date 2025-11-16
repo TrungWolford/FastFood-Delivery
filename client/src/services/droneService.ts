@@ -131,6 +131,22 @@ export const droneService = {
   },
 
   /**
+   * Update drone status to specific value
+   * PUT /api/drones/{droneId}/status?status={status}
+   */
+  updateDroneStatus: async (droneId: string, status: string): Promise<Drone> => {
+    try {
+      const response: AxiosResponse<Drone> = await axiosInstance.put(
+        `${API.UPDATE_DRONE_STATUS(droneId)}?status=${status}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error updating drone status:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Change drone status
    * PATCH /api/drones/{droneId}/status
    */
@@ -142,6 +158,35 @@ export const droneService = {
       return response.data;
     } catch (error) {
       console.error('Error changing drone status:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get drones by restaurant and status (e.g., "AVAILABLE")
+   * GET /api/drones/restaurant/{restaurantId}/status/{status}?page=0&size=10
+   */
+  getDronesByRestaurantAndStatus: async (
+    restaurantId: string,
+    status: string,
+    page = 0,
+    size = 10
+  ): Promise<PaginatedResponse<Drone>> => {
+    const endpoint = `${API.GET_DRONES_BY_RESTAURANT_AND_STATUS(restaurantId, status)}?page=${page}&size=${size}`;
+    console.log('🔍 Calling API:', endpoint);
+    
+    try {
+      const response: AxiosResponse<PaginatedResponse<Drone>> = await axiosInstance.get(endpoint);
+      console.log('✅ API Response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ API Error:', {
+        endpoint,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
       throw error;
     }
   },

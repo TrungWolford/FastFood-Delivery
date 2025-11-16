@@ -14,6 +14,7 @@ import AdminOrder from './pages/Admin/AdminOrder';
 import AdminShipping from './pages/Admin/AdminShipping';
 import AdminDrones from './pages/Admin/AdminDrones';
 import AdminRating from './pages/Admin/AdminRating';
+import AdminRestaurantDetail from './pages/Admin/AdminRestaurantDetail';
 import CheckoutPage from './pages/Checkout/CheckoutPage';
 import ProductDetail from './pages/ProductDetail/ProductDetail';
 import PaymentPage from './pages/Payment/PaymentPage';
@@ -96,6 +97,7 @@ const App: React.FC = () => {
       <Route path="/admin/ratings" element={<AdminRating />} />
       <Route path="/admin/accounts" element={<AdminAccounts />} />
       <Route path="/admin/categories" element={<AdminCategory />} />
+      <Route path="/admin/restaurant-detail" element={<AdminRestaurantDetail />} />
 
       {/* Restaurant Routes */}
       <Route path="/restaurant/pending-approval" element={<PendingApproval />} />

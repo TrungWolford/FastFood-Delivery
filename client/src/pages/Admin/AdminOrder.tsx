@@ -206,18 +206,41 @@ const AdminOrder: React.FC = () => {
         }
     };
 
-    // Load available drones for restaurant
+    // Load available drones for restaurant (status = "AVAILABLE")
     const loadAvailableDrones = async (restaurantId: string) => {
         try {
-            const response = await droneService.getDronesByRestaurant(restaurantId);
-            if (response.content) {
-                // Filter only available drones (status = 1)
-                const available = response.content.filter(drone => drone.status === 1);
-                setAvailableDrones(available);
+            console.log('🔍 Loading available drones for restaurant:', restaurantId);
+            
+            // Try to use the new API endpoint first
+            try {
+                const response = await droneService.getDronesByRestaurantAndStatus(restaurantId, 'AVAILABLE', 0, 100);
+                if (response.content) {
+                    console.log('✅ Available drones (from new API):', response.content);
+                    setAvailableDrones(response.content);
+                    if (response.content.length === 0) {
+                        toast.warning('Không có drone nào sẵn sàng. Vui lòng kiểm tra lại.');
+                    }
+                    return;
+                }
+            } catch (apiError) {
+                console.warn('⚠️ New API failed, falling back to filter method:', apiError);
+                // Fallback to old method: get all and filter
+                const allDronesResponse = await droneService.getDronesByRestaurant(restaurantId, 0, 100);
+                if (allDronesResponse.content) {
+                    const availableDrones = allDronesResponse.content.filter(
+                        (drone) => drone.status === 'AVAILABLE'
+                    );
+                    console.log('✅ Available drones (filtered):', availableDrones);
+                    setAvailableDrones(availableDrones);
+                    if (availableDrones.length === 0) {
+                        toast.warning('Không có drone nào sẵn sàng. Vui lòng kiểm tra lại.');
+                    }
+                }
             }
         } catch (error) {
-            console.error('Error loading drones:', error);
-            toast.error('Không thể tải danh sách drone');
+            console.error('❌ Error loading drones:', error);
+            toast.error('Không thể tải danh sách drone. Vui lòng kiểm tra lại.');
+            setAvailableDrones([]);
         }
     };
 
@@ -248,6 +271,15 @@ const AdminOrder: React.FC = () => {
             );
 
             if (response.success) {
+                // Update drone status to "IN_USE" (Đang giao)
+                try {
+                    await droneService.updateDroneStatus(selectedDroneId, 'IN_USE');
+                    console.log('✅ Drone status updated to IN_USE');
+                } catch (droneError) {
+                    console.error('⚠️ Failed to update drone status:', droneError);
+                    // Don't block the main flow if drone update fails
+                }
+
                 toast.success('Đã giao nhiệm vụ cho drone và bắt đầu giao hàng!');
                 setIsDroneDialogOpen(false);
                 setSelectedDroneId('');
@@ -269,8 +301,21 @@ const AdminOrder: React.FC = () => {
     // Handle complete order (SHIPPING -> DELIVERED)
     const handleCompleteOrder = async (orderId: string) => {
         try {
+            const order = orders.find(o => o.orderId === orderId);
             const response = await orderService.completeOrder(orderId);
+            
             if (response.success) {
+                // Update drone status back to "AVAILABLE" (Sẵn sàng)
+                if (order?.droneId) {
+                    try {
+                        await droneService.updateDroneStatus(order.droneId, 'AVAILABLE');
+                        console.log('✅ Drone status updated to AVAILABLE');
+                    } catch (droneError) {
+                        console.error('⚠️ Failed to update drone status:', droneError);
+                        // Don't block the main flow if drone update fails
+                    }
+                }
+
                 toast.success('Đã hoàn thành đơn hàng!');
                 loadOrders(currentPage - 1);
                 if (selectedOrder?.orderId === orderId) {
@@ -872,16 +917,19 @@ const AdminOrder: React.FC = () => {
                                     >
                                         <div className="flex justify-between items-center">
                                             <div>
-                                                <p className="font-semibold text-gray-900">{drone.droneCode}</p>
+                                                <p className="font-semibold text-gray-900">#{drone.droneId.substring(0, 8)}</p>
                                                 <p className="text-sm text-gray-600">{drone.model}</p>
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-sm font-medium">
-                                                    🔋 {drone.batteryLevel}%
+                                                    🔋 {drone.battery}%
                                                 </p>
                                                 <p className="text-xs text-gray-500">
-                                                    📍 {drone.currentLocation}
+                                                    � {drone.capacity} kg
                                                 </p>
+                                                <Badge className="bg-green-600 text-white mt-1">
+                                                    {drone.status}
+                                                </Badge>
                                             </div>
                                         </div>
                                     </div>

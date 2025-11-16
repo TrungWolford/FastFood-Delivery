@@ -144,9 +144,11 @@ export const API = {
 
   // Drones - Theo DroneController.java (thay thế Shipping)
   GET_ALL_DRONES_BY_RESTAURANT: (restaurantId: string) => `/drones/restaurant/${restaurantId}`, // GET /api/drones/restaurant/{restaurantId}?page=0&size=10
+  GET_DRONES_BY_RESTAURANT_AND_STATUS: (restaurantId: string, status: string) => `/drones/restaurant/${restaurantId}/status/${status}`, // GET /api/drones/restaurant/{restaurantId}/status/{status}?page=0&size=10
   GET_DRONE_BY_ID: (droneId: string) => `/drones/${droneId}`, // GET /api/drones/{droneId}
   CREATE_DRONE: '/drones', // POST /api/drones
   UPDATE_DRONE: (droneId: string) => `/drones/${droneId}`, // PUT /api/drones/{droneId}
+  UPDATE_DRONE_STATUS: (droneId: string) => `/drones/${droneId}/status`, // PUT /api/drones/{droneId}/status?status={status}
   CHANGE_DRONE_STATUS: (droneId: string) => `/drones/${droneId}/status`, // PATCH /api/drones/{droneId}/status
 
   // Deliveries - Theo DeliveryController.java
