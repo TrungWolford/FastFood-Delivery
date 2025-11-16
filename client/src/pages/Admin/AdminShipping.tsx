@@ -33,6 +33,7 @@ import { Search, Truck, Plus, Edit, Eye, RefreshCw, MapPin, Package } from 'luci
 import shippingService, { SHIPPING_STATUS_LABELS } from '../../services/shippingService';
 import { droneService } from '../../services/droneService';
 import { locationService } from '../../services/locationService';
+import { websocketService } from '../../services/websocketService';
 import DeliveryMapViewer from '../../components/DeliveryMapViewer';
 import type { ShippingResponse, CreateShippingRequest, UpdateShippingRequest, UpdateShippingStatusRequest, LocationPoint } from '../../types/shipping';
 import { ShippingStatus } from '../../types/shipping';
@@ -108,6 +109,54 @@ function AdminShipping() {
 
     loadDrones();
   }, [restaurantId]);
+
+  // Connect to WebSocket when component mounts
+  useEffect(() => {
+    console.log('🔌 Initializing WebSocket connection...');
+    websocketService.connect()
+      .then(() => {
+        console.log('✅ WebSocket connected successfully');
+      })
+      .catch((error) => {
+        console.error('❌ WebSocket connection failed:', error);
+        toast.error('Không thể kết nối WebSocket cho real-time tracking');
+      });
+
+    // Cleanup: disconnect when component unmounts
+    return () => {
+      console.log('🔌 Disconnecting WebSocket...');
+      websocketService.disconnect();
+    };
+  }, []);
+
+  // Subscribe to drone location updates when viewing a shipping with DELIVERING status
+  useEffect(() => {
+    if (!selectedShipping || 
+        !isViewDialogOpen || 
+        selectedShipping.status !== ShippingStatus.DELIVERING || 
+        !selectedShipping.droneId) {
+      return;
+    }
+
+    console.log('📡 Subscribing to drone location updates:', selectedShipping.droneId);
+    
+    const unsubscribe = websocketService.subscribeToDroneLocation(
+      selectedShipping.droneId,
+      (location) => {
+        console.log('📍 Real-time location update received:', location);
+        setDroneRealTimeLocation({
+          latitude: location.latitude,
+          longitude: location.longitude
+        });
+      }
+    );
+
+    // Cleanup: unsubscribe when dialog closes or shipping changes
+    return () => {
+      console.log('📡 Unsubscribing from drone location updates');
+      unsubscribe();
+    };
+  }, [selectedShipping, isViewDialogOpen]);
 
   const loadShippings = async () => {
     if (!restaurantId) {
