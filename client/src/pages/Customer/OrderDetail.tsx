@@ -7,6 +7,8 @@ import { vnpayService } from '../../services/vnpayService';
 import { toast } from '../../hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/Button/Button';
+import TopNavigation from '../../components/ui/Header/Header';
+import Footer from '../../components/ui/Footer/Footer';
 import {
   Package,
   MapPin,
@@ -254,30 +256,41 @@ export default function OrderDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang tải thông tin đơn hàng...</p>
-        </div>
+      <div className="min-h-screen flex flex-col">
+        <TopNavigation />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Đang tải thông tin đơn hàng...</p>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Không tìm thấy đơn hàng</h2>
-          <Button onClick={() => navigate('/customer/orders')}>Quay lại danh sách đơn hàng</Button>
-        </div>
+      <div className="min-h-screen flex flex-col">
+        <TopNavigation />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Không tìm thấy đơn hàng</h2>
+            <Button onClick={() => navigate('/customer/orders')}>Quay lại danh sách đơn hàng</Button>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <TopNavigation />
+      
+      <main className="flex-1 py-8">
+        <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
         <div className="mb-6">
           <Button variant="outline" onClick={() => navigate('/customer/orders')} className="mb-4">
@@ -433,7 +446,7 @@ export default function OrderDetail() {
             <CardContent>
               <p className="font-semibold">{order.deliveryAddress}</p>
               <p className="text-gray-600 mt-1">
-                {order.ward}, {order.district}
+                {order.ward}
               </p>
               <p className="text-gray-600">{order.city}</p>
             </CardContent>
@@ -517,7 +530,10 @@ export default function OrderDetail() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </main>
+      
+      <Footer />
     </div>
   );
 }

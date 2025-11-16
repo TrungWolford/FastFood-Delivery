@@ -26,7 +26,7 @@ public interface RestaurantService {
     
     // Get by location
     List<RestaurantResponse> getRestaurantsByCity(String city);
-    List<RestaurantResponse> getRestaurantsByCityAndDistrict(String city, String district);
+    List<RestaurantResponse> getRestaurantsByCityAndWard(String city, String ward);  // ✅ Đổi từ District sang Ward
     
     // Get by status
     List<RestaurantResponse> getRestaurantsByStatus(int status);

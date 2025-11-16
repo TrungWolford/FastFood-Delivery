@@ -152,6 +152,10 @@ public class OrderServiceImpl implements OrderService {
         order.setWard(request.getWard());
         order.setCity(request.getCity());
         
+        // Tọa độ khách hàng (từ OpenStreetMap Autocomplete)
+        order.setCustomerLatitude(request.getCustomerLatitude());
+        order.setCustomerLongitude(request.getCustomerLongitude());
+        
         // Thông tin đơn hàng
         order.setOrderNote(request.getOrderNote());
         order.setShippingFee(shippingFee);

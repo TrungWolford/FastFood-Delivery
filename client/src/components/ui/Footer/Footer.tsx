@@ -1,50 +1,50 @@
 import React from 'react'
-import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Youtube, CreditCard, Truck, Shield, RotateCcw } from 'lucide-react'
+import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Youtube, CreditCard, Clock, Navigation } from 'lucide-react'
 
 const Footer: React.FC = () => {
   return (
     <footer className="bg-slate-800 text-white">
       {/* Services Section */}
-      <div className="bg-orange-300 py-8">
+      <div className="bg-gradient-to-r from-orange-400 to-amber-400 py-8">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="flex items-center space-x-3">
-              <div className="bg-amber-400 p-3 rounded-full">
-                <Truck className="h-6 w-6 text-white-800" />
+              <div className="bg-white p-3 rounded-full shadow-lg">
+                <div className="text-2xl">🚁</div>
               </div>
               <div>
-                <h4 className="font-semibold">Miễn phí vận chuyển</h4>
-                <p className="text-sm text-white">Đơn hàng từ 200.000đ</p>
+                <h4 className="font-semibold text-white">Giao hàng siêu tốc</h4>
+                <p className="text-sm text-orange-50">15-30 phút bằng drone</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-3">
-              <div className="bg-amber-400 p-3 rounded-full">
-                <Shield className="h-6 w-6 text-white" />
+              <div className="bg-white p-3 rounded-full shadow-lg">
+                <Navigation className="h-6 w-6 text-orange-500" />
               </div>
               <div>
-                <h4 className="font-semibold">Thanh toán an toàn</h4>
-                <p className="text-sm text-white">Bảo mật 100%</p>
+                <h4 className="font-semibold text-white">Theo dõi thời gian thực</h4>
+                <p className="text-sm text-orange-50">GPS chính xác từng mét</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-3">
-              <div className="bg-amber-400 p-3 rounded-full">
-                <RotateCcw className="h-6 w-6 text-white" />
+              <div className="bg-white p-3 rounded-full shadow-lg">
+                <MapPin className="h-6 w-6 text-orange-500" />
               </div>
               <div>
-                <h4 className="font-semibold">Đổi trả dễ dàng</h4>
-                <p className="text-sm text-white">Trong vòng 30 ngày</p>
+                <h4 className="font-semibold text-white">Phủ sóng rộng</h4>
+                <p className="text-sm text-orange-50">Toàn bộ khu vực nội thành</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-3">
-              <div className="bg-amber-400 p-3 rounded-full">
-                <Phone className="h-6 w-6 text-white" />
+              <div className="bg-white p-3 rounded-full shadow-lg">
+                <Clock className="h-6 w-6 text-orange-500" />
               </div>
               <div>
-                <h4 className="font-semibold">Hỗ trợ 24/7</h4>
-                <p className="text-sm text-white">Luôn sẵn sàng phục vụ</p>
+                <h4 className="font-semibold text-white">Hỗ trợ 24/7</h4>
+                <p className="text-sm text-orange-50">Luôn sẵn sàng phục vụ</p>
               </div>
             </div>
           </div>
@@ -52,92 +52,87 @@ const Footer: React.FC = () => {
       </div>
 
       {/* Main Footer Content */}
-      <div className="py-12 bg-orange-400">
+      <div className="py-12 bg-orange-500">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Company Info */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <div className="bg-amber-400 text-white font-bold px-3 py-2 rounded">
-                  FS
-                </div>
-                <span className="text-xl font-bold">VuaTraiCay.com</span>
+                <span className="text-3xl">🍔</span>
+                <span className="text-xl font-bold text-white">FastFoodDelivery</span>
               </div>
-              <p className="text-white text-sm leading-relaxed">
-                Hệ thống nhà sách trực tuyến hàng đầu Việt Nam với hàng triệu đầu sách đa dạng, 
-                phục vụ nhu cầu đọc sách của mọi lứa tuổi.
+              <p className="text-orange-50 text-sm leading-relaxed">
+                Nền tảng giao đồ ăn bằng drone hiện đại nhất Việt Nam. 
+                Mang hương vị tuyệt hảo đến tận tay bạn trong chớp mắt.
               </p>
               <div className="flex space-x-3">
-                <a href="#" className="bg-blue-600 p-2 rounded-full hover:bg-blue-700 transition-colors">
-                  <Facebook className="h-4 w-4" />
+                <a href="#" className="bg-white/20 backdrop-blur-sm p-2 rounded-full hover:bg-white/30 transition-all">
+                  <Facebook className="h-4 w-4 text-white" />
                 </a>
-                <a href="#" className="bg-blue-400 p-2 rounded-full hover:bg-blue-500 transition-colors">
-                  <Twitter className="h-4 w-4" />
+                <a href="#" className="bg-white/20 backdrop-blur-sm p-2 rounded-full hover:bg-white/30 transition-all">
+                  <Twitter className="h-4 w-4 text-white" />
                 </a>
-                <a href="#" className="bg-pink-600 p-2 rounded-full hover:bg-pink-700 transition-colors">
-                  <Instagram className="h-4 w-4" />
+                <a href="#" className="bg-white/20 backdrop-blur-sm p-2 rounded-full hover:bg-white/30 transition-all">
+                  <Instagram className="h-4 w-4 text-white" />
                 </a>
-                <a href="#" className="bg-red-600 p-2 rounded-full hover:bg-red-700 transition-colors">
-                  <Youtube className="h-4 w-4" />
+                <a href="#" className="bg-white/20 backdrop-blur-sm p-2 rounded-full hover:bg-white/30 transition-all">
+                  <Youtube className="h-4 w-4 text-white" />
                 </a>
               </div>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h3 className="font-semibold text-lg mb-4">Liên kết nhanh</h3>
-              <ul className="space-y-2 text-white">
-                <li><a href="#" className="hover:text-amber-400 transition-colors">Trang chủ</a></li>
-                <li><a href="#" className="hover:text-amber-400 transition-colors">Sản phẩm mới</a></li>
-                <li><a href="#" className="hover:text-amber-400 transition-colors">Sản phẩm bán chạy</a></li>
-                <li><a href="#" className="hover:text-amber-400 transition-colors">Khuyến mãi</a></li>
-                <li><a href="#" className="hover:text-amber-400 transition-colors">Tin tức</a></li>
-                <li><a href="#" className="hover:text-amber-400 transition-colors">Liên hệ</a></li>
+              <h3 className="font-semibold text-lg mb-4 text-white">Liên kết nhanh</h3>
+              <ul className="space-y-2 text-orange-50">
+                <li><a href="#" className="hover:text-white transition-colors">Nhà hàng</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Cách hoạt động</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Trở thành đối tác</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Tải ứng dụng</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Tin tức</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Liên hệ</a></li>
               </ul>
             </div>
 
             {/* Categories */}
             <div>
-              <h3 className="font-semibold text-lg mb-4">Danh mục sản phẩm</h3>
-              <ul className="space-y-2 text-white">
-                <li><a href="#" className="hover:text-amber-400 transition-colors">Trái cây nhiệt đới</a></li>
-                <li><a href="#" className="hover:text-amber-400 transition-colors">Trái cây nhập khẩu</a></li>
+              <h3 className="font-semibold text-lg mb-4 text-white">Danh mục món ăn</h3>
+              <ul className="space-y-2 text-orange-50">
+                <li><a href="#" className="hover:text-white transition-colors">🍜 Món Á</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">🍕 Món Tây</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">🍔 Fast Food</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">🍰 Tráng miệng</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">🧋 Đồ uống</a></li>
               </ul>
             </div>
 
             {/* Contact Info */}
             <div>
-              <h3 className="font-semibold text-lg mb-4">Thông tin liên hệ</h3>
-              <div className="space-y-3 text-white">
+              <h3 className="font-semibold text-lg mb-4 text-white">Thông tin liên hệ</h3>
+              <div className="space-y-3 text-orange-50">
                 <div className="flex items-center space-x-3">
-                  <MapPin className="h-4 w-4 text-amber-400 flex-shrink-0" />
-                  <span className="text-sm">123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh</span>
+                  <MapPin className="h-4 w-4 text-white flex-shrink-0" />
+                  <span className="text-sm">227 Nguyễn Văn Cừ, Quận 5, TP. Hồ Chí Minh</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Phone className="h-4 w-4 text-amber-400 flex-shrink-0" />
-                  <span className="text-sm">0903.400.028</span>
+                  <Phone className="h-4 w-4 text-white flex-shrink-0" />
+                  <span className="text-sm">1900.1234</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Mail className="h-4 w-4 text-amber-400 flex-shrink-0" />
-                  <span className="text-sm">info@vuatraicay.vn</span>
+                  <Mail className="h-4 w-4 text-white flex-shrink-0" />
+                  <span className="text-sm">support@fastfooddelivery.vn</span>
                 </div>
               </div>
               
               {/* Payment Methods */}
               <div className="mt-6">
-                <h4 className="font-semibold mb-3">Phương thức thanh toán</h4>
+                <h4 className="font-semibold mb-3 text-white">Phương thức thanh toán</h4>
                 <div className="flex space-x-2">
-                  <div className="bg-white p-2 rounded">
-                    <CreditCard className="h-6 w-6 text-slate-800" />
+                  <div className="bg-white/20 backdrop-blur-sm p-2 rounded hover:bg-white/30 transition-all">
+                    <CreditCard className="h-6 w-6 text-white" />
                   </div>
-                  <div className="bg-blue-600 p-2 rounded text-white text-xs font-bold flex items-center justify-center">
-                    VISA
-                  </div>
-                  <div className="bg-red-600 p-2 rounded text-white text-xs font-bold flex items-center justify-center">
-                    MC
-                  </div>
-                  <div className="bg-green-600 p-2 rounded text-white text-xs font-bold flex items-center justify-center">
-                    ATM
+                  <div className="bg-white/20 backdrop-blur-sm p-2 rounded text-white text-xs font-bold flex items-center justify-center hover:bg-white/30 transition-all px-3">
+                    VNPAY
                   </div>
                 </div>
               </div>
@@ -146,17 +141,15 @@ const Footer: React.FC = () => {
         </div>
       </div>
 
-      
-
       {/* Copyright */}
-      <div className="bg-orange-500 border-t  py-4">
+      <div className="bg-orange-600 border-t border-orange-700 py-4">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center text-sm text-white">
-            <p><span>&copy; 2025 VuaTraiCay.Com</span> Tất cả quyền được bảo lưu.</p>
+            <p><span>&copy; 2025 FastFoodDelivery</span> - Tất cả quyền được bảo lưu.</p>
             <div className="flex space-x-4 mt-2 md:mt-0">
-              <a href="#" className="hover:text-amber-400 transition-colors">Chính sách bảo mật</a>
-              <a href="#" className="hover:text-amber-400 transition-colors">Điều khoản sử dụng</a>
-              <a href="#" className="hover:text-amber-400 transition-colors">Sitemap</a>
+              <a href="#" className="hover:text-amber-200 transition-colors">Chính sách bảo mật</a>
+              <a href="#" className="hover:text-amber-200 transition-colors">Điều khoản sử dụng</a>
+              <a href="#" className="hover:text-amber-200 transition-colors">Sitemap</a>
             </div>
           </div>
         </div>

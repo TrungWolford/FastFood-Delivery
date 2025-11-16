@@ -73,8 +73,8 @@ public class RestaurantServiceImpl implements RestaurantService {
     }
 
     @Override
-    public List<RestaurantResponse> getRestaurantsByCityAndDistrict(String city, String district) {
-        return restaurantRepository.findByCityAndDistrict(city, district)
+    public List<RestaurantResponse> getRestaurantsByCityAndWard(String city, String ward) {  // ✅ Đổi từ District sang Ward
+        return restaurantRepository.findByCityAndWard(city, ward)
                 .stream()
                 .map(RestaurantResponse::fromEntity)
                 .toList();
@@ -104,7 +104,7 @@ public class RestaurantServiceImpl implements RestaurantService {
         restaurant.setRestaurantName(request.getRestaurantName());
         restaurant.setAddress(request.getAddress());
         restaurant.setCity(request.getCity());
-        restaurant.setDistrict(request.getDistrict());
+        restaurant.setWard(request.getWard());  // ✅ Đổi từ district sang ward
         restaurant.setPhone(request.getPhone());
         restaurant.setLatitude(request.getLatitude());
         restaurant.setLongitude(request.getLongitude());
@@ -147,8 +147,8 @@ public class RestaurantServiceImpl implements RestaurantService {
         if (request.getCity() != null) {
             restaurant.setCity(request.getCity());
         }
-        if (request.getDistrict() != null) {
-            restaurant.setDistrict(request.getDistrict());
+        if (request.getWard() != null) {  // ✅ Đổi từ district sang ward
+            restaurant.setWard(request.getWard());
         }
         if (request.getLatitude() > 0) {
             restaurant.setLatitude(request.getLatitude());

@@ -151,8 +151,17 @@ public class DeliveryServiceImpl implements DeliveryService {
         if (restaurant.getLatitude() == 0.0 && restaurant.getLongitude() == 0.0) {
             System.out.println("⚠️ [DeliveryService] Restaurant has no coordinates, geocoding restaurant address...");
             
-            // Geocode restaurant address
-            String restaurantAddress = restaurant.getAddress() + ", " + restaurant.getCity();
+            // Geocode restaurant address - Build full address với ward
+            String restaurantAddress;
+            if (restaurant.getWard() != null && !restaurant.getWard().isEmpty()) {
+                restaurantAddress = String.format("%s, %s, %s", 
+                    restaurant.getAddress(), 
+                    restaurant.getWard(), 
+                    restaurant.getCity()
+                );
+            } else {
+                restaurantAddress = restaurant.getAddress() + ", " + restaurant.getCity();
+            }
             System.out.println("📍 [DeliveryService] Restaurant address: " + restaurantAddress);
             
             try {
@@ -175,16 +184,28 @@ public class DeliveryServiceImpl implements DeliveryService {
             );
         }
         
-        // 3. Geocode customer address to get coordinates (endLocation)
-        String fullAddress = String.format("%s, %s, %s",
-            order.getDeliveryAddress(),
-            order.getWard(),
-            order.getCity()
-        );
-        
-        System.out.println("📦 [DeliveryService] Geocoding customer address: " + fullAddress);
-        LocationPoint endLocation = geocodingService.geocode(fullAddress);
-        System.out.println("📦 [DeliveryService] Customer location: lat=" + endLocation.getLatitude() + ", lon=" + endLocation.getLongitude());
+        // 3. Get customer location (endLocation)
+        // Ưu tiên dùng coordinates từ Order (đã lấy từ OpenStreetMap Autocomplete)
+        LocationPoint endLocation;
+        if (order.getCustomerLatitude() != null && order.getCustomerLongitude() != null) {
+            System.out.println("✅ [DeliveryService] Using customer coordinates from Order: lat=" + order.getCustomerLatitude() + ", lon=" + order.getCustomerLongitude());
+            endLocation = new LocationPoint(
+                order.getCustomerLatitude(),
+                order.getCustomerLongitude()
+            );
+        } else {
+            // Fallback: Geocode customer address nếu không có coordinates
+            System.out.println("⚠️ [DeliveryService] No customer coordinates in Order, geocoding customer address...");
+            String fullAddress = String.format("%s, %s, %s",
+                order.getDeliveryAddress(),
+                order.getWard(),
+                order.getCity()
+            );
+            
+            System.out.println("📦 [DeliveryService] Geocoding customer address: " + fullAddress);
+            endLocation = geocodingService.geocode(fullAddress);
+            System.out.println("📦 [DeliveryService] Customer location: lat=" + endLocation.getLatitude() + ", lon=" + endLocation.getLongitude());
+        }
         
         // 4. Create Delivery
         Delivery delivery = new Delivery();

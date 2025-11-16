@@ -14,7 +14,7 @@ public class RestaurantResponse {
     private String restaurantName;
     private String address;
     private String city;
-    private String district;
+    private String ward;  // ✅ Đổi từ district sang ward
     private String phone;
     private double latitude;
     private double longitude;
@@ -35,7 +35,7 @@ public class RestaurantResponse {
         response.setRestaurantName(restaurant.getRestaurantName());
         response.setAddress(restaurant.getAddress());
         response.setCity(restaurant.getCity());
-        response.setDistrict(restaurant.getDistrict());
+        response.setWard(restaurant.getWard());  // ✅ Đổi từ setDistrict sang setWard
         response.setPhone(restaurant.getPhone());
         response.setLatitude(restaurant.getLatitude());
         response.setLongitude(restaurant.getLongitude());

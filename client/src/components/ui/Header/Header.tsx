@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, User, ShoppingCart, Phone, LogOut, UserCircle, History, Settings } from 'lucide-react';
+import { Search, User, ShoppingCart, LogOut, UserCircle, History, Settings } from 'lucide-react';
 import { Button } from '../Button/Button';
 import { Input } from '../input';
 import {
@@ -18,8 +18,6 @@ import { cartService } from '../../../services/cartService';
 import { productService } from '../../../services/productService';
 import { toast } from 'sonner';
 import { localStorageCartService } from '@/services/localStorageCartService';
-import { images } from '../../../assets/img';
-import CategoryNavbar from '../../CategoryNavbar';
 
 const TopNavigation: React.FC = () => {
   const navigate = useNavigate();
@@ -149,27 +147,19 @@ const TopNavigation: React.FC = () => {
 
   return (
     <>
-      <div className="bg-primary text-white">
-        {/* Top bar with hotline */}
-        <div className="bg-[#F38258] text-white px-4 py-1 text-sm">
-          <div className="container mx-auto flex items-center">
-            <Phone className="w-4 h-4 mr-2" />
-            <span className="font-medium">Hotline: 0903.400.028</span>
-            <span className="ml-2 text-white-700">(8h - 12h, 13h30 - 17h)</span>
-            <span className="ml-auto">Liên hệ hợp tác</span>
-          </div>
-        </div>
-
+      <div className="bg-primary text-white shadow-md">
         {/* Main navigation */}
-        <div className="container h-[75px]  mx-auto px-[70px] py-3 flex justify-between">
+        <div className="container h-[75px] mx-auto px-[70px] py-3 flex justify-between">
         <div className="flex items-center justify-between gap-4">
           {/* Logo */}
           <button
             onClick={() => navigate('/')}
             className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <div className=" px-3 py-2 rounded-md mr-3">
-              <img src={images.logo} alt="" className="w-15 h-16 bg-contain" />
+            <div className="flex items-center gap-2">
+              <div className="bg-white text-primary px-4 py-2 rounded-lg font-bold text-xl shadow-md">
+                🍔 FastFoodDelivery
+              </div>
             </div>
           </button>
 
@@ -303,9 +293,6 @@ const TopNavigation: React.FC = () => {
         {/* Login Dialog */}
         <LoginDialog isOpen={isLoginDialogOpen} onClose={() => setIsLoginDialogOpen(false)} />
       </div>
-      
-      {/* Category Navigation Bar */}
-      <CategoryNavbar />
     </>
   );
 };

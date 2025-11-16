@@ -11,9 +11,7 @@ import { useAppSelector } from '../../hooks/redux';
 import { cartService } from '../../services/cartService';
 import { orderService } from '../../services/orderService';
 import { vnpayService } from '../../services/vnpayService';
-import { vietnamProvinceService, type Province, type Ward } from '../../services/vietnamProvinceService';
-import { addressService, type AddressSuggestion } from '../../services/addressService';
-import AddressAutocomplete from '../../components/AddressAutocomplete';
+import OpenStreetMapAutocomplete, { type SelectedAddress } from '../../components/OpenStreetMapAutocomplete';
 import { toast } from 'sonner';
 
 // Shipping method options
@@ -50,26 +48,17 @@ const CheckoutPage: React.FC = () => {
   const restaurantId = searchParams.get('restaurantId');
   const cartId = searchParams.get('cartId');
 
-  // Form state - Sau sáp nhập: chỉ còn city và ward
+  // Form state - Dùng OpenStreetMap autocomplete
   const [formData, setFormData] = useState({
     receiverName: '',
     receiverEmail: '',
     receiverPhone: '',
-    deliveryAddress: '',
-    wardCode: 0,
-    cityCode: 0,
+    deliveryAddress: '', // Địa chỉ đầy đủ từ user input
     orderNote: '',
   });
 
-  // Lưu suggestion đã chọn để validation
-  const [selectedAddressSuggestion, setSelectedAddressSuggestion] = useState<AddressSuggestion | null>(null);
-  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
-
-  // Province/Ward state - Sau sáp nhập: Thành phố -> Phường (không còn Quận/Huyện)
-  const [provinces, setProvinces] = useState<Province[]>([]);
-  const [wards, setWards] = useState<Ward[]>([]);
-  const [isLoadingProvinces, setIsLoadingProvinces] = useState(false);
-  const [isLoadingWards, setIsLoadingWards] = useState(false);
+  // Lưu thông tin địa chỉ đã chọn từ OpenStreetMap (bao gồm coordinates)
+  const [selectedAddress, setSelectedAddress] = useState<SelectedAddress | null>(null);
 
   // Cart & Order state
   const [cartDetail, setCartDetail] = useState<CartDetail | null>(null);
@@ -109,11 +98,6 @@ const CheckoutPage: React.FC = () => {
     }
   }, [user?.accountId, cartId, navigate]);
 
-  // Load provinces on mount
-  useEffect(() => {
-    loadProvinces();
-  }, []);
-
   // Check authentication
   useEffect(() => {
     // Prevent redirect when user refreshes the page (F5)
@@ -137,50 +121,6 @@ const CheckoutPage: React.FC = () => {
 
     loadCartDetail();
   }, [authChecked, isAuthenticated, user, restaurantId, cartId, navigate, loadCartDetail]);
-
-  const loadProvinces = async () => {
-    setIsLoadingProvinces(true);
-    try {
-      const data = await vietnamProvinceService.getAllProvinces();
-      setProvinces(data);
-    } catch {
-      toast.error('Không thể tải danh sách tỉnh thành');
-    } finally {
-      setIsLoadingProvinces(false);
-    }
-  };
-
-  const handleProvinceChange = async (provinceCode: string) => {
-    const code = parseInt(provinceCode);
-    setFormData({ ...formData, cityCode: code, wardCode: 0 });
-    setWards([]);
-
-    if (!code) return;
-
-    setIsLoadingWards(true);
-    try {
-      console.log('🔍 Loading wards for province code:', code);
-      const province = await vietnamProvinceService.getProvinceWithWards(code);
-      console.log('📦 Province data received:', province);
-      
-      if (province && province.wards) {
-        console.log('✅ Wards loaded:', province.wards.length);
-        setWards(province.wards);
-      } else {
-        console.warn('⚠️ No wards found in response');
-        toast.error('Không tìm thấy danh sách phường cho tỉnh này');
-      }
-    } catch (error) {
-      console.error('❌ Error loading wards:', error);
-      toast.error('Không thể tải danh sách phường');
-    } finally {
-      setIsLoadingWards(false);
-    }
-  };
-
-  const handleWardChange = (wardCode: string) => {
-    setFormData({ ...formData, wardCode: parseInt(wardCode) });
-  };
 
   const getShippingFee = () => {
     const method = SHIPPING_METHODS.find(m => m.id === selectedShippingMethod);
@@ -217,18 +157,10 @@ const CheckoutPage: React.FC = () => {
       toast.error('Vui lòng nhập địa chỉ chi tiết');
       return false;
     }
-    if (!formData.cityCode) {
-      toast.error('Vui lòng chọn tỉnh/thành phố');
-      return false;
-    }
-    if (!formData.wardCode) {
-      toast.error('Vui lòng chọn phường');
-      return false;
-    }
     
-    // Kiểm tra xem người dùng có chọn địa chỉ từ autocomplete không
-    if (!selectedAddressSuggestion) {
-      toast.error('Vui lòng chọn địa chỉ từ danh sách gợi ý để đảm bảo tính chính xác');
+    // Kiểm tra xem người dùng có chọn địa chỉ từ OpenStreetMap autocomplete không
+    if (!selectedAddress) {
+      toast.error('Vui lòng chọn địa chỉ từ danh sách gợi ý OpenStreetMap để đảm bảo tọa độ chính xác');
       return false;
     }
     
@@ -239,43 +171,24 @@ const CheckoutPage: React.FC = () => {
     if (!user?.accountId || !cartDetail || !restaurantId) return;
 
     if (!validateForm()) return;
+    if (!selectedAddress) return; // Double check
 
     setIsProcessing(true);
-    setIsValidatingAddress(true);
     
     try {
-      // Lấy tên địa điểm từ code - Sau sáp nhập: chỉ còn city và ward
-      const cityName = provinces.find(p => p.code === formData.cityCode)?.name || '';
-      const wardName = wards.find(w => w.code === formData.wardCode)?.name || '';
+      // Lấy thông tin từ selectedAddress (đã có coordinates từ OpenStreetMap)
+      const { streetAddress, ward, city, latitude, longitude } = selectedAddress;
 
-      // Validate địa chỉ với OpenStreetMap trước khi tạo order
-      const geocodeResult = await addressService.geocodeAddress(
-        formData.deliveryAddress,
-        wardName,
-        cityName
-      );
-
-      if (!geocodeResult.isValid) {
-        toast.error(geocodeResult.message || 'Địa chỉ không hợp lệ. Vui lòng kiểm tra lại.');
-        setIsProcessing(false);
-        setIsValidatingAddress(false);
-        return;
-      }
-
-      // Hiển thị thông báo địa chỉ đã được xác thực
-      toast.success('Địa chỉ đã được xác thực thành công');
-      setIsValidatingAddress(false);
-
-      // Tạo order request - Sau sáp nhập: chỉ còn city và ward
+      // Tạo order request - sử dụng thông tin đã parse từ OpenStreetMap
       const orderRequest = {
         customerId: user.accountId,
         restaurantId: restaurantId,
         receiverName: formData.receiverName,
         receiverEmail: formData.receiverEmail || undefined,
         receiverPhone: formData.receiverPhone,
-        deliveryAddress: formData.deliveryAddress,
-        ward: wardName,
-        city: cityName,
+        deliveryAddress: streetAddress, // Số nhà + tên đường
+        ward: ward,
+        city: city,
         orderNote: formData.orderNote || undefined,
         shippingFee: getShippingFee(),
         orderItems: cartDetail.items.map(item => ({
@@ -283,7 +196,12 @@ const CheckoutPage: React.FC = () => {
           quantity: item.quantity,
           note: item.note,
         })),
+        // Thêm coordinates để backend không cần geocode lại
+        customerLatitude: latitude,
+        customerLongitude: longitude,
       };
+
+      toast.success(`Địa chỉ đã được xác thực: ${city} (${latitude.toFixed(6)}, ${longitude.toFixed(6)})`);
 
       // Tạo order
       const orderResponse = await orderService.createOrder(orderRequest);
@@ -317,7 +235,6 @@ const CheckoutPage: React.FC = () => {
       toast.error('Đã xảy ra lỗi khi đặt hàng');
     } finally {
       setIsProcessing(false);
-      setIsValidatingAddress(false);
     }
   };
 
@@ -426,49 +343,17 @@ const CheckoutPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                  {/* Tỉnh/Thành phố */}
+                  {/* OpenStreetMap Autocomplete - Thay thế Vietnam Provinces */}
                   <div>
-                    <Label>Tỉnh/Thành phố <span className="text-red-500">*</span></Label>
-                    <Combobox
-                      options={provinces.map(p => ({ value: p.code.toString(), label: p.name }))}
-                      value={formData.cityCode ? formData.cityCode.toString() : undefined}
-                      onValueChange={handleProvinceChange}
-                      placeholder="Chọn tỉnh/thành phố"
-                      searchPlaceholder="Tìm tỉnh/thành phố..."
-                      emptyText="Không tìm thấy tỉnh/thành phố"
-                      disabled={isLoadingProvinces}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Phường - Sau sáp nhập hành chính */}
-                  <div>
-                    <Label>Phường <span className="text-red-500">*</span></Label>
-                    <Combobox
-                      options={wards.map(w => ({ value: w.code.toString(), label: w.name }))}
-                      value={formData.wardCode ? formData.wardCode.toString() : undefined}
-                      onValueChange={handleWardChange}
-                      placeholder={isLoadingWards ? "Đang tải..." : "Chọn phường"}
-                      searchPlaceholder="Tìm phường..."
-                      emptyText="Không tìm thấy phường"
-                      disabled={!formData.cityCode || isLoadingWards}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  {/* Địa chỉ chi tiết với Autocomplete */}
-                  <div>
-                    <AddressAutocomplete
+                    <OpenStreetMapAutocomplete
                       value={formData.deliveryAddress}
-                      onChange={(value, suggestion) => {
+                      onChange={(value, address) => {
                         setFormData({ ...formData, deliveryAddress: value });
-                        setSelectedAddressSuggestion(suggestion || null);
+                        setSelectedAddress(address || null);
                       }}
-                      ward={wards.find(w => w.code === formData.wardCode)?.name}
-                      city={provinces.find(p => p.code === formData.cityCode)?.name}
-                      disabled={!formData.wardCode}
-                      placeholder="VD: 123 Nguyễn Huệ"
+                      placeholder="Nhập địa chỉ đầy đủ (VD: 123 Nguyễn Huệ, Quận 1, TP.HCM)"
                       required
+                      countryCode="vn"
                     />
                   </div>
 
@@ -580,7 +465,7 @@ const CheckoutPage: React.FC = () => {
                   {isProcessing ? (
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {isValidatingAddress ? 'Đang xác thực địa chỉ...' : 'Đang xử lý...'}
+                      Đang xử lý thanh toán...
                     </div>
                   ) : (
                     <div className="flex items-center justify-center gap-2">
@@ -589,13 +474,6 @@ const CheckoutPage: React.FC = () => {
                     </div>
                   )}
                 </Button>
-
-                {isValidatingAddress && (
-                  <p className="text-xs text-blue-600 text-center mt-2 flex items-center justify-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    Đang kiểm tra địa chỉ giao hàng với OpenStreetMap...
-                  </p>
-                )}
 
                 <p className="text-xs text-gray-500 text-center mt-4">
                   Bằng việc tiến hành thanh toán, bạn đồng ý với{' '}

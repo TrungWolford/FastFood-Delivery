@@ -13,10 +13,10 @@ public interface RestaurantRepository extends MongoRepository<Restaurant, Object
     // Find by ownerId
     List<Restaurant> findByOwnerId(ObjectId ownerId);
     
-    // Find by city and district
+    // Find by city and ward (✅ Đổi từ district sang ward)
     List<Restaurant> findByCity(String city);
-    List<Restaurant> findByDistrict(String district);
-    List<Restaurant> findByCityAndDistrict(String city, String district);
+    List<Restaurant> findByWard(String ward);
+    List<Restaurant> findByCityAndWard(String city, String ward);
     
     // Find by status
     List<Restaurant> findByStatus(int status);

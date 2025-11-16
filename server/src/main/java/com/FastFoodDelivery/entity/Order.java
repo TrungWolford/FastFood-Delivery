@@ -24,6 +24,10 @@ public class Order {
     private String deliveryAddress; // Số nhà, tên đường
     private String ward; // Phường (sau sáp nhập hành chính 2025)
     private String city; // Thành phố (sau sáp nhập hành chính 2025)
+    
+    // Tọa độ khách hàng (từ OpenStreetMap, dùng để tạo Delivery mà không cần geocode)
+    private Double customerLatitude;
+    private Double customerLongitude;
 
     // Thông tin đơn hàng
     private String orderNote; // Ghi chú đơn hàng
