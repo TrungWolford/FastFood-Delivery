@@ -26,6 +26,7 @@ import {
 import { Search, Package, ChevronLeft, ChevronRight, Eye, Truck, User } from 'lucide-react';
 import { orderService, type OrderResponse } from '../../services/orderService';
 import { droneService } from '../../services/droneService';
+import { shippingService } from '../../services/shippingService';
 import type { Drone } from '../../types/fastfood';
 
 const AdminOrder: React.FC = () => {
@@ -266,34 +267,94 @@ const AdminOrder: React.FC = () => {
         try {
             setIsAssigningDrone(true);
 
-            const response = await orderService.assignDroneAndStartDelivery(
+            // ==========================================
+            // STEP 1: CREATE DELIVERY
+            // ==========================================
+            console.log('🚁 Step 1: Creating delivery...');
+            
+            // Get restaurant location from order
+            const restaurantLat = selectedOrder.restaurantLatitude || 10.8231; // Default HCM
+            const restaurantLng = selectedOrder.restaurantLongitude || 106.6297;
+            
+            // Get customer delivery location from order
+            const customerLat = selectedOrder.deliveryLatitude || restaurantLat;
+            const customerLng = selectedOrder.deliveryLongitude || restaurantLng;
+
+            const deliveryRequest = {
+                droneId: selectedDroneId,
+                orderId: selectedOrder.orderId,
+                startLocation: {
+                    latitude: restaurantLat,
+                    longitude: restaurantLng
+                },
+                endLocation: {
+                    latitude: customerLat,
+                    longitude: customerLng
+                }
+            };
+
+            console.log('📦 Delivery request:', deliveryRequest);
+
+            const deliveryResponse = await shippingService.createShipping(deliveryRequest);
+
+            if (!deliveryResponse.success) {
+                toast.error(deliveryResponse.message || 'Không thể tạo delivery');
+                return;
+            }
+
+            console.log('✅ Delivery created successfully:', deliveryResponse.data);
+
+            // ==========================================
+            // STEP 2: UPDATE ORDER STATUS TO SHIPPING
+            // ==========================================
+            console.log('📝 Step 2: Updating order status to SHIPPING...');
+
+            const orderResponse = await orderService.assignDroneAndStartDelivery(
                 selectedOrder.orderId,
                 selectedDroneId
             );
 
-            if (response.success) {
-                // Update drone status to "IN_USE" (Đang giao)
-                try {
-                    await droneService.updateDroneStatus(selectedDroneId, 'IN_USE');
-                    console.log('✅ Drone status updated to IN_USE');
-                } catch (droneError) {
-                    console.error('⚠️ Failed to update drone status:', droneError);
-                    // Don't block the main flow if drone update fails
-                }
+            if (!orderResponse.success) {
+                // If order update fails, we should ideally rollback the delivery creation
+                // But for now, just show error
+                toast.error(orderResponse.message || 'Không thể cập nhật trạng thái đơn hàng');
+                return;
+            }
 
-                toast.success('Đã giao nhiệm vụ cho drone và bắt đầu giao hàng!');
-                setIsDroneDialogOpen(false);
-                setSelectedDroneId('');
-                loadOrders(currentPage - 1);
-                if (selectedOrder?.orderId) {
-                    setSelectedOrder(response.data || null);
-                }
-            } else {
-                toast.error(response.message || 'Không thể giao nhiệm vụ cho drone');
+            console.log('✅ Order status updated to SHIPPING');
+
+            // ==========================================
+            // STEP 3: UPDATE DRONE STATUS TO IN_USE
+            // ==========================================
+            console.log('🚁 Step 3: Updating drone status to IN_USE...');
+
+            try {
+                await droneService.updateDroneStatus(selectedDroneId, 'IN_USE');
+                console.log('✅ Drone status updated to IN_USE');
+            } catch (droneError) {
+                console.error('⚠️ Failed to update drone status:', droneError);
+                // Don't block the main flow if drone update fails
+            }
+
+            // ==========================================
+            // SUCCESS!
+            // ==========================================
+            console.log('🎉 ===== DELIVERY STARTED SUCCESSFULLY! =====');
+            console.log('📦 Delivery ID:', deliveryResponse.data?.deliveryId);
+            console.log('📝 Order ID:', selectedOrder.orderId);
+            console.log('🚁 Drone ID:', selectedDroneId);
+
+            toast.success('Đã tạo delivery và bắt đầu giao hàng!');
+            setIsDroneDialogOpen(false);
+            setSelectedDroneId('');
+            loadOrders(currentPage - 1);
+            
+            if (selectedOrder?.orderId) {
+                setSelectedOrder(orderResponse.data || null);
             }
         } catch (error) {
-            console.error('Error assigning drone:', error);
-            toast.error('Có lỗi xảy ra khi giao nhiệm vụ cho drone');
+            console.error('❌ Error assigning drone and creating delivery:', error);
+            toast.error('Có lỗi xảy ra khi tạo delivery');
         } finally {
             setIsAssigningDrone(false);
         }
@@ -303,20 +364,73 @@ const AdminOrder: React.FC = () => {
     const handleCompleteOrder = async (orderId: string) => {
         try {
             const order = orders.find(o => o.orderId === orderId);
+            
+            // ==========================================
+            // STEP 1: COMPLETE ORDER (SHIPPING -> DELIVERED)
+            // ==========================================
+            console.log('📦 Step 1: Completing order...');
             const response = await orderService.completeOrder(orderId);
             
-            if (response.success) {
-                // TODO: Update drone status back to "AVAILABLE" via Shipping entity
-                // DroneId is now managed by Shipping/Delivery entity, not Order
-                // Need to get droneId from shipping service first
-                
-                toast.success('Đã hoàn thành đơn hàng!');
-                loadOrders(currentPage - 1);
-                if (selectedOrder?.orderId === orderId) {
-                    setSelectedOrder(response.data || null);
-                }
-            } else {
+            if (!response.success) {
                 toast.error(response.message || 'Không thể hoàn thành đơn hàng');
+                return;
+            }
+            
+            console.log('✅ Order completed successfully');
+
+            // ==========================================
+            // STEP 2: GET DELIVERY INFO AND UPDATE STATUS
+            // ==========================================
+            console.log('🚚 Step 2: Getting delivery info for order...');
+            try {
+                const deliveryResponse = await shippingService.getShippingsByOrder(orderId);
+                
+                if (deliveryResponse.success && deliveryResponse.data && deliveryResponse.data.length > 0) {
+                    const delivery = deliveryResponse.data[0]; // Get the first (most recent) delivery
+                    console.log('📦 Delivery found:', delivery);
+
+                    // Update delivery status to DELIVERED
+                    console.log('📦 Step 2a: Updating delivery status to DELIVERED...');
+                    const updateDeliveryResult = await shippingService.updateShippingStatus(
+                        delivery.deliveryId,
+                        { status: 'DELIVERED' }
+                    );
+                    
+                    if (updateDeliveryResult.success) {
+                        console.log('✅ Delivery status updated to DELIVERED');
+                    } else {
+                        console.warn('⚠️ Failed to update delivery status:', updateDeliveryResult.message);
+                    }
+
+                    // ==========================================
+                    // STEP 3: UPDATE DRONE STATUS TO AVAILABLE
+                    // ==========================================
+                    if (delivery.droneId) {
+                        console.log('🚁 Step 3: Updating drone status to AVAILABLE...');
+                        try {
+                            await droneService.updateDroneStatus(delivery.droneId, 'AVAILABLE');
+                            console.log('✅ Drone status updated to AVAILABLE');
+                        } catch (droneError) {
+                            console.error('⚠️ Failed to update drone status:', droneError);
+                            // Don't block the main flow if drone update fails
+                        }
+                    }
+                } else {
+                    console.warn('⚠️ No delivery found for this order');
+                }
+            } catch (deliveryError) {
+                console.error('⚠️ Error getting/updating delivery:', deliveryError);
+                // Don't block the main flow if delivery update fails
+            }
+
+            // ==========================================
+            // SUCCESS!
+            // ==========================================
+            console.log('🎉 ===== ORDER COMPLETED SUCCESSFULLY! =====');
+            toast.success('Đã hoàn thành đơn hàng!');
+            loadOrders(currentPage - 1);
+            if (selectedOrder?.orderId === orderId) {
+                setSelectedOrder(response.data || null);
             }
         } catch (error) {
             console.error('Error completing order:', error);
