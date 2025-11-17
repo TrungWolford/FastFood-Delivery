@@ -466,7 +466,7 @@ export default function OrderDetail() {
                 <div key={index}>
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <p className="font-semibold">{item.itemName || 'Sản phẩm'}</p>
+                      <p className="font-semibold">{item.name || item.itemName || `Sản phẩm #${item.itemId.substring(0, 8)}`}</p>
                       <p className="text-sm text-gray-600">
                         Số lượng: {item.quantity} × {formatCurrency(item.price)}
                       </p>

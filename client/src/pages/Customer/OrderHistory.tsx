@@ -73,10 +73,13 @@ export default function OrderHistory() {
       if (isNaN(date.getTime())) {
         return 'N/A';
       }
-      return date.toLocaleDateString('vi-VN', {
+      return date.toLocaleString('vi-VN', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
       });
     } catch {
       return 'N/A';

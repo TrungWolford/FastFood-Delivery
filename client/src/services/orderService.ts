@@ -58,9 +58,12 @@ export type OrderStatusNumber = 0 | 1 | 2 | 3 | 4;
 // New Order Response from MongoDB backend (NEW structure)
 export interface OrderItem {
   itemId: string;
-  itemName?: string;
+  name?: string;        // Tên món ăn (từ backend)
+  itemName?: string;    // Alias cho backward compatibility
+  imageUrl?: string;    // URL hình ảnh
   quantity: number;
   price: number;
+  subTotal?: number;
   note?: string;
 }
 
