@@ -17,7 +17,7 @@ import {
 export default function OrderHistory() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
-  
+
   const [orders, setOrders] = useState<OrderResponseNew[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
@@ -109,10 +109,12 @@ export default function OrderHistory() {
         return 'Chờ thanh toán';
       case 'CONFIRMED':
         return 'Đã xác nhận';
-      case 'DELIVERING':
+      case 'PREPARING':
+        return 'Đang chuẩn bị';
+      case 'SHIPPING':
         return 'Đang giao hàng';
-      case 'COMPLETED':
-        return 'Hoàn thành';
+      case 'DELIVERED':
+        return 'Đã giao hàng';
       case 'CANCELLED':
         return 'Đã hủy';
       default:

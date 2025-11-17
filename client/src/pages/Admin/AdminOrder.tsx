@@ -377,10 +377,41 @@ const AdminOrder: React.FC = () => {
         try {
             const order = orders.find(o => o.orderId === orderId);
             
+            console.log('🎯 ===== STARTING ORDER COMPLETION FLOW =====');
+            console.log('📝 Order ID:', orderId);
+            console.log('📦 Order details:', order);
+            
             // ==========================================
-            // STEP 1: COMPLETE ORDER (SHIPPING -> DELIVERED)
+            // STEP 1: GET DELIVERY INFO FIRST
             // ==========================================
-            console.log('📦 Step 1: Completing order...');
+            console.log('� Step 1: Getting delivery info for order...');
+            let deliveryId = null;
+            let droneId = null;
+            
+            try {
+                const deliveryResponse = await shippingService.getShippingsByOrder(orderId);
+                console.log('📦 Delivery response:', deliveryResponse);
+                
+                if (deliveryResponse.success && deliveryResponse.data && deliveryResponse.data.length > 0) {
+                    const delivery = deliveryResponse.data[0]; // Get the first (most recent) delivery
+                    deliveryId = delivery.deliveryId;
+                    droneId = delivery.droneId;
+                    console.log('✅ Delivery found:', {
+                        deliveryId,
+                        droneId,
+                        currentStatus: delivery.status
+                    });
+                } else {
+                    console.warn('⚠️ No delivery found for this order. Response:', deliveryResponse);
+                }
+            } catch (deliveryError) {
+                console.error('❌ Error getting delivery:', deliveryError);
+            }
+
+            // ==========================================
+            // STEP 2: COMPLETE ORDER (SHIPPING -> DELIVERED)
+            // ==========================================
+            console.log('� Step 2: Completing order...');
             const response = await orderService.completeOrder(orderId);
             
             if (!response.success) {
@@ -388,64 +419,72 @@ const AdminOrder: React.FC = () => {
                 return;
             }
             
-            console.log('✅ Order completed successfully');
+            console.log('✅ Order status updated to DELIVERED');
 
             // ==========================================
-            // STEP 2: GET DELIVERY INFO AND UPDATE STATUS
+            // STEP 3: UPDATE DELIVERY STATUS TO DELIVERED
             // ==========================================
-            console.log('🚚 Step 2: Getting delivery info for order...');
-            try {
-                const deliveryResponse = await shippingService.getShippingsByOrder(orderId);
+            if (deliveryId) {
+                console.log('📦 Step 3: Updating delivery status to DELIVERED...');
+                console.log('🔑 Delivery ID:', deliveryId);
                 
-                if (deliveryResponse.success && deliveryResponse.data && deliveryResponse.data.length > 0) {
-                    const delivery = deliveryResponse.data[0]; // Get the first (most recent) delivery
-                    console.log('📦 Delivery found:', delivery);
-
-                    // Update delivery status to DELIVERED
-                    console.log('📦 Step 2a: Updating delivery status to DELIVERED...');
+                try {
                     const updateDeliveryResult = await shippingService.updateShippingStatus(
-                        delivery.deliveryId,
+                        deliveryId,
                         { status: 'DELIVERED' }
                     );
+                    
+                    console.log('📦 Update delivery result:', updateDeliveryResult);
                     
                     if (updateDeliveryResult.success) {
                         console.log('✅ Delivery status updated to DELIVERED');
                     } else {
-                        console.warn('⚠️ Failed to update delivery status:', updateDeliveryResult.message);
+                        console.error('❌ Failed to update delivery status:', updateDeliveryResult.message);
+                        toast.warning('Không thể cập nhật trạng thái vận chuyển');
                     }
-
-                    // ==========================================
-                    // STEP 3: UPDATE DRONE STATUS TO AVAILABLE
-                    // ==========================================
-                    if (delivery.droneId) {
-                        console.log('🚁 Step 3: Updating drone status to AVAILABLE...');
-                        try {
-                            await droneService.updateDroneStatus(delivery.droneId, 'AVAILABLE');
-                            console.log('✅ Drone status updated to AVAILABLE');
-                        } catch (droneError) {
-                            console.error('⚠️ Failed to update drone status:', droneError);
-                            // Don't block the main flow if drone update fails
-                        }
-                    }
-                } else {
-                    console.warn('⚠️ No delivery found for this order');
+                } catch (error) {
+                    console.error('❌ Error updating delivery status:', error);
+                    toast.warning('Có lỗi khi cập nhật trạng thái vận chuyển');
                 }
-            } catch (deliveryError) {
-                console.error('⚠️ Error getting/updating delivery:', deliveryError);
-                // Don't block the main flow if delivery update fails
+            } else {
+                console.warn('⚠️ No deliveryId found, skipping delivery status update');
+            }
+
+            // ==========================================
+            // STEP 4: UPDATE DRONE STATUS TO AVAILABLE
+            // ==========================================
+            if (droneId) {
+                console.log('🚁 Step 4: Updating drone status to AVAILABLE...');
+                console.log('🔑 Drone ID:', droneId);
+                
+                try {
+                    const droneUpdateResult = await droneService.updateDroneStatus(droneId, 'AVAILABLE');
+                    console.log('🚁 Update drone result:', droneUpdateResult);
+                    console.log('✅ Drone status updated to AVAILABLE');
+                } catch (droneError) {
+                    console.error('❌ Failed to update drone status:', droneError);
+                    toast.warning('Không thể cập nhật trạng thái drone');
+                }
+            } else {
+                console.warn('⚠️ No droneId found, skipping drone status update');
             }
 
             // ==========================================
             // SUCCESS!
             // ==========================================
             console.log('🎉 ===== ORDER COMPLETED SUCCESSFULLY! =====');
+            console.log('Summary:');
+            console.log('- Order status: DELIVERED ✅');
+            console.log('- Delivery status:', deliveryId ? 'DELIVERED ✅' : 'Not updated ⚠️');
+            console.log('- Drone status:', droneId ? 'AVAILABLE ✅' : 'Not updated ⚠️');
+            
             toast.success('Đã hoàn thành đơn hàng!');
             loadOrders(currentPage - 1);
             if (selectedOrder?.orderId === orderId) {
                 setSelectedOrder(response.data || null);
             }
         } catch (error) {
-            console.error('Error completing order:', error);
+            console.error('❌ Error completing order:', error);
             toast.error('Có lỗi xảy ra khi hoàn thành đơn hàng');
         }
     };
