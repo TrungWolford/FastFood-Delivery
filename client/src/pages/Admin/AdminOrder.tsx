@@ -396,10 +396,13 @@ const AdminOrder: React.FC = () => {
                     const delivery = deliveryResponse.data[0]; // Get the first (most recent) delivery
                     deliveryId = delivery.deliveryId;
                     droneId = delivery.droneId;
-                    console.log('✅ Delivery found:', {
+                    console.log('✅ Delivery found:', delivery);
+                    console.log('📋 Extracted IDs:', {
                         deliveryId,
                         droneId,
-                        currentStatus: delivery.status
+                        currentStatus: delivery.status,
+                        hasDeliveryId: !!deliveryId,
+                        hasDroneId: !!droneId
                     });
                 } else {
                     console.warn('⚠️ No delivery found for this order. Response:', deliveryResponse);
@@ -431,13 +434,13 @@ const AdminOrder: React.FC = () => {
                 try {
                     const updateDeliveryResult = await shippingService.updateShippingStatus(
                         deliveryId,
-                        { status: 'DELIVERED' }
+                        { status: 2 } // 2 = Delivered (backend expects int)
                     );
                     
                     console.log('📦 Update delivery result:', updateDeliveryResult);
                     
                     if (updateDeliveryResult.success) {
-                        console.log('✅ Delivery status updated to DELIVERED');
+                        console.log('✅ Delivery status updated to DELIVERED (status=2)');
                     } else {
                         console.error('❌ Failed to update delivery status:', updateDeliveryResult.message);
                         toast.warning('Không thể cập nhật trạng thái vận chuyển');
