@@ -27,6 +27,7 @@ import { Search, Package, ChevronLeft, ChevronRight, Eye, Truck, User } from 'lu
 import { orderService, type OrderResponse } from '../../services/orderService';
 import { droneService } from '../../services/droneService';
 import { shippingService } from '../../services/shippingService';
+import { restaurantService } from '../../services/restaurantService';
 import type { Drone } from '../../types/fastfood';
 
 const AdminOrder: React.FC = () => {
@@ -272,13 +273,24 @@ const AdminOrder: React.FC = () => {
             // ==========================================
             console.log('🚁 Step 1: Creating delivery...');
             
-            // Get restaurant location from order
-            const restaurantLat = selectedOrder.restaurantLatitude || 10.8231; // Default HCM
-            const restaurantLng = selectedOrder.restaurantLongitude || 106.6297;
+            // Get restaurant location from Restaurant entity
+            console.log('🏪 Getting restaurant location...');
+            const restaurantResponse = await restaurantService.getRestaurantById(selectedOrder.restaurantId);
+            
+            let restaurantLat = 10.8231; // Default HCM
+            let restaurantLng = 106.6297;
+            
+            if (restaurantResponse.success && restaurantResponse.data) {
+                restaurantLat = restaurantResponse.data.latitude;
+                restaurantLng = restaurantResponse.data.longitude;
+                console.log('✅ Restaurant location:', { lat: restaurantLat, lng: restaurantLng });
+            } else {
+                console.warn('⚠️ Could not get restaurant location, using default');
+            }
             
             // Get customer delivery location from order
-            const customerLat = selectedOrder.deliveryLatitude || restaurantLat;
-            const customerLng = selectedOrder.deliveryLongitude || restaurantLng;
+            const customerLat = selectedOrder.customerLatitude || restaurantLat;
+            const customerLng = selectedOrder.customerLongitude || restaurantLng;
 
             const deliveryRequest = {
                 droneId: selectedDroneId,

@@ -78,7 +78,7 @@ public class DeliveryServiceImpl implements DeliveryService {
             ));
         }
         
-        delivery.setStatus(0);
+        delivery.setStatus(1);
         delivery.setDeliveredAt(new Date());
 
         deliveryRepository.save(delivery);
